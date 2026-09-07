@@ -1,91 +1,287 @@
 <!DOCTYPE html>
-<html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI POS — sign in</title>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI POS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Azeret+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Azeret+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#1B2023;--panel:#242A2D;--line:#394145;--line2:#4A5357;--txt:#E6E9EA;--txt2:#98A2A6;--txt3:#6E787C;--vfd:#5CE0A8;--void:#D2664C}
+:root{
+  --bg:#14181A;--panel:#1E2427;--line:#333B3E;--line2:#454F53;
+  --txt:#E6E9EA;--txt2:#98A2A6;--txt3:#6C7679;
+  --vfd:#5CE0A8;--void:#D2664C;
+  --ease:cubic-bezier(.2,.7,.3,1);
+}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{font-family:Archivo,system-ui,sans-serif;background:radial-gradient(90% 70% at 50% 20%,#252C30,#14181A 70%);
-  color:var(--txt);display:grid;place-items:center;padding:24px;-webkit-font-smoothing:antialiased}
-.box{width:100%;max-width:380px;animation:in .35s cubic-bezier(.2,.7,.3,1)}
-@keyframes in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-.mark{display:flex;align-items:center;gap:10px;margin-bottom:26px}
-.mark .d{width:9px;height:9px;border-radius:50%;background:var(--vfd);box-shadow:0 0 10px rgba(92,224,168,.7)}
-.mark b{font-size:16px;font-weight:600;letter-spacing:-.01em}
-h1{font-size:25px;font-weight:600;letter-spacing:-.02em;margin-bottom:6px}
-p.sub{color:var(--txt2);font-size:14px;line-height:1.6;margin-bottom:22px}
-label{display:block;font-size:12.5px;color:var(--txt2);margin-bottom:6px;margin-top:13px}
-input{width:100%;background:rgba(0,0,0,.28);border:1px solid var(--line2);color:var(--txt);
-  padding:12px 13px;border-radius:5px;font:inherit;font-size:15px;transition:border-color .16s,box-shadow .16s}
-input:focus{outline:none;border-color:var(--vfd);box-shadow:0 0 0 3px rgba(92,224,168,.13)}
-button.go{width:100%;margin-top:20px;padding:13px;border:none;border-radius:5px;cursor:pointer;
-  background:linear-gradient(180deg,#6BE8B4,#5CE0A8);color:#0D1F18;font:inherit;font-size:15px;font-weight:600;
-  box-shadow:0 3px 16px rgba(92,224,168,.2);transition:filter .14s,transform .1s}
-button.go:hover{filter:brightness(1.07)}
+body{font-family:Archivo,system-ui,sans-serif;background:var(--bg);color:var(--txt);
+  -webkit-font-smoothing:antialiased;overflow:hidden}
+.num{font-family:"Azeret Mono",monospace;font-variant-numeric:tabular-nums}
+
+/* The background drifts, slowly. A register sitting idle still has a screen on. */
+.aurora{position:fixed;inset:-30%;z-index:0;filter:blur(90px);opacity:.5;pointer-events:none}
+.aurora i{position:absolute;border-radius:50%;display:block}
+.aurora i:nth-child(1){width:44vw;height:44vw;left:4%;top:8%;
+  background:radial-gradient(circle,rgba(92,224,168,.5),transparent 68%);animation:drift1 26s ease-in-out infinite}
+.aurora i:nth-child(2){width:38vw;height:38vw;right:6%;top:26%;
+  background:radial-gradient(circle,rgba(107,168,216,.42),transparent 68%);animation:drift2 32s ease-in-out infinite}
+.aurora i:nth-child(3){width:30vw;height:30vw;left:34%;bottom:-6%;
+  background:radial-gradient(circle,rgba(224,178,85,.28),transparent 68%);animation:drift3 38s ease-in-out infinite}
+@keyframes drift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(9vw,7vh) scale(1.14)}}
+@keyframes drift2{0%,100%{transform:translate(0,0) scale(1.08)}50%{transform:translate(-8vw,10vh) scale(.94)}}
+@keyframes drift3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(6vw,-8vh) scale(1.2)}}
+
+.wrap{position:relative;z-index:1;height:100%;display:grid;grid-template-columns:1fr 1fr;
+  align-items:center;gap:40px;padding:40px 6vw;max-width:1500px;margin:0 auto}
+
+/* ------------------------------ form ------------------------------ */
+.box{width:100%;max-width:400px;justify-self:end}
+.mark{display:flex;align-items:center;gap:11px;margin-bottom:34px;animation:rise .5s var(--ease) both}
+.mark .dot{width:11px;height:11px;border-radius:50%;background:var(--vfd);flex:none;
+  box-shadow:0 0 14px rgba(92,224,168,.8);animation:beat 2.6s ease-in-out infinite}
+.mark b{font-size:17px;font-weight:600;letter-spacing:-.01em}
+.mark em{font-style:normal;font-size:12.5px;color:var(--txt3)}
+
+.tabs{display:flex;gap:3px;background:rgba(0,0,0,.32);padding:4px;border-radius:9px;margin-bottom:26px;
+  border:1px solid var(--line);animation:rise .5s var(--ease) .05s both;position:relative}
+.tabs button{flex:1;padding:10px;border:none;background:none;color:var(--txt2);font:inherit;
+  font-size:14px;border-radius:6px;cursor:pointer;position:relative;z-index:1;transition:color .22s var(--ease)}
+.tabs button.on{color:var(--txt)}
+.tabs .glide{position:absolute;top:4px;bottom:4px;left:4px;width:calc(50% - 4px);
+  background:var(--panel);border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.3);
+  transition:transform .28s var(--ease)}
+.tabs.up .glide{transform:translateX(100%)}
+
+h1{font-size:29px;font-weight:600;letter-spacing:-.025em;line-height:1.15;margin-bottom:8px}
+p.sub{color:var(--txt2);font-size:14.5px;line-height:1.6;margin-bottom:24px}
+h1,p.sub{animation:rise .5s var(--ease) .1s both}
+
+.field{position:relative;margin-bottom:13px;animation:rise .5s var(--ease) both}
+.field:nth-of-type(1){animation-delay:.14s}
+.field:nth-of-type(2){animation-delay:.18s}
+.field:nth-of-type(3){animation-delay:.22s}
+.field label{position:absolute;left:14px;top:15px;font-size:15px;color:var(--txt3);
+  pointer-events:none;transition:all .2s var(--ease);padding:0 4px}
+.field input{width:100%;background:rgba(0,0,0,.3);border:1px solid var(--line2);color:var(--txt);
+  padding:15px 14px 14px;border-radius:9px;font:inherit;font-size:15px;
+  transition:border-color .2s,box-shadow .2s,background .2s}
+.field input:focus{outline:none;border-color:var(--vfd);background:rgba(0,0,0,.42);
+  box-shadow:0 0 0 4px rgba(92,224,168,.12)}
+.field input:focus+label,.field input:not(:placeholder-shown)+label{
+  top:-8px;left:11px;font-size:11.5px;color:var(--vfd);background:var(--bg)}
+.field input:not(:focus):not(:placeholder-shown)+label{color:var(--txt3)}
+
+button.go{width:100%;margin-top:12px;padding:15px;border:none;border-radius:9px;cursor:pointer;
+  background:linear-gradient(135deg,#6BE8B4,#5CE0A8 55%,#4FD6D6);color:#0B1D16;
+  font:inherit;font-size:15.5px;font-weight:600;box-shadow:0 6px 22px rgba(92,224,168,.22);
+  transition:transform .12s var(--ease),box-shadow .22s,filter .16s;
+  animation:rise .5s var(--ease) .26s both}
+button.go:hover{filter:brightness(1.05);box-shadow:0 8px 30px rgba(92,224,168,.3)}
 button.go:active{transform:translateY(1px)}
-button.go[disabled]{opacity:.5;cursor:not-allowed}
-.swap{margin-top:18px;font-size:13.5px;color:var(--txt2);text-align:center}
-.swap a{color:var(--vfd);cursor:pointer;text-decoration:none}
-.msg{margin-top:15px;font-size:13.5px;color:var(--void);line-height:1.5;min-height:19px}
-.tabs{display:flex;gap:3px;background:rgba(0,0,0,.25);padding:3px;border-radius:7px;margin-bottom:22px}
-.tabs button{flex:1;padding:9px;border:none;background:none;color:var(--txt2);font:inherit;font-size:14px;
-  border-radius:5px;cursor:pointer;transition:background .16s,color .16s}
-.tabs button.on{background:var(--panel);color:var(--txt)}
-</style></head>
+button.go[disabled]{opacity:.55;cursor:not-allowed;box-shadow:none}
+button.go .spin{display:none;width:15px;height:15px;border-radius:50%;
+  border:2px solid rgba(11,29,22,.3);border-top-color:#0B1D16;animation:spin .7s linear infinite;margin:0 auto}
+button.go.busy span{display:none}
+button.go.busy .spin{display:block}
+
+.msg{margin-top:15px;font-size:13.5px;line-height:1.55;min-height:20px;color:var(--void)}
+.msg.show{animation:shake .4s var(--ease)}
+.foot{margin-top:26px;font-size:12.5px;color:var(--txt3);line-height:1.7;
+  animation:rise .5s var(--ease) .3s both}
+
+/* --------------------------- receipt panel --------------------------- */
+.demo{justify-self:start;width:100%;max-width:400px;animation:rise .6s var(--ease) .18s both}
+.tape{background:#F7F6F2;color:#1A1D1E;border-radius:4px 4px 2px 2px;padding:26px 24px 34px;
+  font-family:"Azeret Mono",monospace;font-size:12px;line-height:1.75;
+  box-shadow:0 26px 60px rgba(0,0,0,.5);position:relative;min-height:392px;
+  background-image:repeating-linear-gradient(180deg,rgba(0,0,0,.014) 0 1px,transparent 1px 3px);
+  transition:opacity .5s}
+/* torn edge, the way till roll actually leaves a printer */
+.tape::after{content:"";position:absolute;left:0;right:0;bottom:-9px;height:10px;
+  background:repeating-linear-gradient(-45deg,#F7F6F2 0 7px,transparent 7px 14px)}
+.tape .ctr{text-align:center}
+.tape .big{font-size:15px;font-weight:700}
+.tape hr{border:none;border-top:1px dashed #B0B1AB;margin:9px 0}
+.tape .row{display:flex;justify-content:space-between;gap:10px}
+.tape .ln{opacity:0;animation:print .34s var(--ease) forwards}
+.total{margin-top:17px;background:#11181B;border:1px solid var(--line);border-radius:9px;
+  padding:15px 18px;display:flex;justify-content:space-between;align-items:baseline;
+  box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.total span{font-size:12px;color:var(--txt3);letter-spacing:.02em}
+.total b{font-family:"Azeret Mono",monospace;font-size:31px;font-weight:500;color:var(--vfd);
+  letter-spacing:-.02em;text-shadow:0 0 22px rgba(92,224,168,.35)}
+.caption{margin-top:15px;font-size:12.5px;color:var(--txt3);line-height:1.65;text-align:center}
+
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes print{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+@keyframes beat{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.86)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes shake{0%,100%{transform:none}22%{transform:translateX(-6px)}
+  44%{transform:translateX(5px)}66%{transform:translateX(-3px)}88%{transform:translateX(2px)}}
+
+@media(max-width:980px){
+  body{overflow:auto}
+  .wrap{grid-template-columns:1fr;justify-items:center;height:auto;min-height:100%;padding:40px 24px 60px}
+  .box{justify-self:center}
+  .demo{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
+    transition-duration:.001ms!important}
+  .tape .ln{opacity:1}
+}
+</style>
+</head>
 <body>
-<div class="box">
-  <div class="mark"><span class="d"></span><b>AI POS</b></div>
-  <div class="tabs"><button id="tIn" class="on">Sign in</button><button id="tUp">Create an account</button></div>
-  <h1 id="h">Welcome back</h1>
-  <p class="sub" id="sub">Your pricebook, staff and reports are where you left them.</p>
-  <form id="f">
-    <div id="nameWrap" style="display:none">
-      <label for="storeName">Store name</label>
-      <input id="storeName" placeholder="Palos Hills Food and Fuel" autocomplete="organization">
+<div class="aurora"><i></i><i></i><i></i></div>
+
+<div class="wrap">
+  <div class="box">
+    <div class="mark"><span class="dot"></span><b>AI POS</b><em>for independent retail</em></div>
+
+    <div class="tabs" id="tabs">
+      <div class="glide"></div>
+      <button id="tIn" class="on" type="button">Sign in</button>
+      <button id="tUp" type="button">Create an account</button>
     </div>
-    <label for="email">Email</label>
-    <input id="email" type="email" autocomplete="email" required>
-    <label for="password">Password</label>
-    <input id="password" type="password" autocomplete="current-password" required>
-    <button class="go" id="go" type="submit">Sign in</button>
-  </form>
-  <div class="msg" id="msg"></div>
-  <div class="swap" id="swap"></div>
+
+    <h1 id="h">Welcome back</h1>
+    <p class="sub" id="sub">Your pricebook, staff and reports are where you left them.</p>
+
+    <form id="f">
+      <div class="field" id="storeField" style="display:none">
+        <input id="storeName" placeholder=" " autocomplete="organization">
+        <label for="storeName">Store name</label>
+      </div>
+      <div class="field">
+        <input id="email" type="email" placeholder=" " autocomplete="email" required>
+        <label for="email">Email</label>
+      </div>
+      <div class="field">
+        <input id="password" type="password" placeholder=" " autocomplete="current-password" required>
+        <label for="password">Password</label>
+      </div>
+      <button class="go" id="go" type="submit"><span>Sign in</span><i class="spin"></i></button>
+    </form>
+
+    <div class="msg" id="msg"></div>
+    <div class="foot">Your sales and tax data stay yours. Nobody else can read them, and you can
+      export or delete everything at any time.</div>
+  </div>
+
+  <div class="demo">
+    <div class="tape" id="tape"></div>
+    <div class="total"><span>TOTAL</span><b class="num" id="tot">0.00</b></div>
+    <div class="caption">A register that sets itself up, reads your invoices,<br>
+      and keeps selling when the internet drops.</div>
+  </div>
 </div>
+
 <script>
-let mode="in";
 const $=id=>document.getElementById(id);
+let mode="in";
+
 function setMode(m){
   mode=m;
+  $("tabs").classList.toggle("up",m==="up");
   $("tIn").classList.toggle("on",m==="in");
   $("tUp").classList.toggle("on",m==="up");
   $("h").textContent = m==="in" ? "Welcome back" : "Set up your terminal";
   $("sub").textContent = m==="in"
     ? "Your pricebook, staff and reports are where you left them."
     : "One account per business. You can add more stores to it later.";
-  $("nameWrap").style.display = m==="up" ? "block" : "none";
-  $("go").textContent = m==="in" ? "Sign in" : "Create the account";
+  $("storeField").style.display = m==="up" ? "block" : "none";
+  $("go").querySelector("span").textContent = m==="in" ? "Sign in" : "Create the account";
   $("password").autocomplete = m==="in" ? "current-password" : "new-password";
-  $("msg").textContent="";
+  $("msg").textContent=""; $("msg").classList.remove("show");
+  ["h","sub"].forEach(id=>{const e=$(id);e.style.animation="none";void e.offsetWidth;
+    e.style.animation="rise .4s var(--ease) both"});
 }
 $("tIn").onclick=()=>setMode("in");
 $("tUp").onclick=()=>setMode("up");
+
 $("f").onsubmit=async e=>{
   e.preventDefault();
-  $("go").disabled=true; $("msg").textContent="";
+  const btn=$("go");
+  btn.disabled=true; btn.classList.add("busy");
+  $("msg").textContent=""; $("msg").classList.remove("show");
   try{
     const r=await fetch(mode==="in"?"/api/login":"/api/signup",{
       method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",
-      body:JSON.stringify({email:$("email").value,password:$("password").value,storeName:$("storeName").value})});
+      body:JSON.stringify({email:$("email").value,password:$("password").value,
+        storeName:$("storeName").value})});
     const d=await r.json();
     if(!r.ok)throw new Error(d.error||"That didn't work.");
     location.href="/app.html";
-  }catch(err){ $("msg").textContent=err.message; $("go").disabled=false; }
+  }catch(err){
+    $("msg").textContent=err.message;
+    $("msg").classList.add("show");
+    btn.disabled=false; btn.classList.remove("busy");
+  }
 };
+
+/* The receipt prints itself, tears off, and starts again. Clearest way to say
+   "this is a till" without a paragraph explaining it. */
+const LINES=[
+  {t:"ctrbig",v:"Palos Hills Food and Fuel"},
+  {t:"ctr",v:"8901 W 103rd St"},
+  {t:"hr"},
+  {t:"row",l:"Coffee 16 oz",r:"1.99"},
+  {t:"row",l:"2 × Monster Ultra",r:"7.98"},
+  {t:"row",l:"Marlboro Red Box",r:"11.49"},
+  {t:"note",v:"   ID verified · 21+"},
+  {t:"row",l:"Pump 4 prepay",r:"30.00"},
+  {t:"hr"},
+  {t:"row",l:"Subtotal",r:"51.46"},
+  {t:"row",l:"2 for 5.00 deal",r:"−2.96"},
+  {t:"row",l:"General 9.25%",r:"1.34"},
+  {t:"row",l:"Candy & Soft 9.25%",r:"0.28"},
+  {t:"hr"},
+  {t:"rowbig",l:"TOTAL",r:"50.12"},
+  {t:"row",l:"Visa ****4242",r:"50.12"},
+  {t:"hr"},
+  {t:"ctr",v:"Thank you"}
+];
+const TOTALS=[0,0,0,1.99,9.97,21.46,21.46,51.46,51.46,51.46,48.50,49.84,50.12,50.12,50.12,50.12,50.12,50.12];
+const tape=$("tape"), tot=$("tot");
+const money=n=>n.toFixed(2);
+const render=el=>
+  el.t==="hr" ? `<hr class="ln">`
+  : el.t==="ctrbig" ? `<div class="ln ctr big">${el.v}</div>`
+  : el.t==="ctr" ? `<div class="ln ctr">${el.v}</div>`
+  : el.t==="note" ? `<div class="ln" style="color:#84867F">${el.v}</div>`
+  : el.t==="rowbig" ? `<div class="ln row" style="font-weight:700;font-size:14px"><span>${el.l}</span><span>${el.r}</span></div>`
+  : `<div class="ln row"><span>${el.l}</span><span>${el.r}</span></div>`;
+
+let shown=0,target=0,current=0,raf=null;
+function tick(){
+  const d=target-current;
+  if(Math.abs(d)<0.005){current=target;tot.textContent=money(current);raf=null;return}
+  current+=d*0.18; tot.textContent=money(current);
+  raf=requestAnimationFrame(tick);
+}
+function step(){
+  if(shown>=LINES.length){
+    setTimeout(()=>{ tape.style.opacity="0";
+      setTimeout(()=>{ tape.innerHTML=""; shown=0; target=0; current=0; tot.textContent="0.00";
+        tape.style.opacity="1"; setTimeout(step,400); },520); },2800);
+    return;
+  }
+  tape.insertAdjacentHTML("beforeend",render(LINES[shown]));
+  target=TOTALS[shown];
+  if(!raf)raf=requestAnimationFrame(tick);
+  const wasRule=LINES[shown].t==="hr";
+  shown++;
+  setTimeout(step, wasRule?130:380);
+}
+if(matchMedia("(prefers-reduced-motion: reduce)").matches){
+  tape.innerHTML=LINES.map(render).join(""); tot.textContent="50.12";
+} else step();
+
 setMode("in");
+$("email").focus();
 </script>
-</body></html>
+</body>
+</html>

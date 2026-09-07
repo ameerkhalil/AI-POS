@@ -743,3 +743,22 @@ label.sam:hover{background:rgba(255,255,255,.03)}
 
 .doom{color:var(--void)}
 .pact em.doom{font-size:12px}
+
+/* how-to-fill choices at the end of setup */
+.fillopts{display:grid;gap:10px}
+.fillopts button{text-align:left;border:1px solid var(--paper-line);background:var(--paper-2);
+  border-radius:var(--r2);padding:16px 18px;transition:border-color .16s,transform .12s,background .16s}
+.fillopts button:hover{border-color:var(--ink-soft);transform:translateY(-1px)}
+.fillopts button.dim{opacity:.62}
+.fillopts button.dim:hover{opacity:1}
+.fillopts b{display:block;font-size:16px;font-weight:600;margin-bottom:5px}
+.fillopts span{display:block;font-size:13.5px;color:var(--ink-soft);line-height:1.6}
+
+/* the business-type picker */
+#setup select.bigsel{width:100%;background:var(--paper-2);border:1px solid var(--paper-line);
+  border-radius:var(--r);padding:15px 44px 15px 15px;font:inherit;font-size:16px;color:var(--ink);
+  appearance:none;cursor:pointer;transition:border-color .18s,box-shadow .18s;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'><path d='M1 1l6 6 6-6' stroke='%235C6467' stroke-width='2' fill='none' stroke-linecap='round'/></svg>");
+  background-repeat:no-repeat;background-position:right 16px center}
+#setup select.bigsel:focus{outline:none;border-color:var(--ink-soft);box-shadow:0 0 0 3px rgba(18,22,24,.06)}
+#setup select.bigsel optgroup{font-weight:600;color:var(--ink-soft)}

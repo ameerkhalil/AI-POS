@@ -148,7 +148,32 @@ Return ONLY valid JSON, no prose or fences:
   };
 
   const unconf=CFG.plus.filter(p=>p.upcSrc==="lookup").length;
+  const starters=CFG.plus.filter(p=>p.starter).length;
+  W.clearStarters=()=>{
+    const el=veil(`<div class="card"><h3>Remove the example products</h3>
+      <p>${starters} products were generated as illustrations when this store was set up. They have
+        made-up prices and made-up barcodes. Removing them leaves your departments and settings intact.</p>
+      <div class="row"><button class="no" id="csn">Keep them</button>
+        <button class="danger" id="csy">Remove all ${starters}</button></div></div>`);
+    el.querySelector("#csn").onclick=()=>el.remove();
+    el.querySelector("#csy").onclick=()=>{
+      const ids=CFG.plus.filter(p=>p.starter).map(p=>p.id);
+      CFG.plus=CFG.plus.filter(p=>!p.starter);
+      CFG.menus.forEach(m=>m.keys=m.keys.filter(k=>!ids.includes(k.pluId)));
+      CFG.promos=(CFG.promos||[]).filter(pr=>{
+        pr.pluIds=pr.pluIds.filter(id=>!ids.includes(id));return pr.pluIds.length});
+      el.remove();refresh();reload();
+      toast(`Removed <b>${ids.length}</b> example product${ids.length===1?"":"s"}.`);
+    };
+  };
   $("cfgBody").innerHTML=`
+    ${starters?`<div class="verify"><div class="vhead">${starters} example products in here</div>
+      <p>These were generated when the store was set up. The prices and barcodes are invented — don't
+        sell from them. Import your real pricebook or read in an invoice, then clear these out.</p>
+      <div class="vact">
+        <button class="mini" onclick="__w.clearStarters()">Remove the examples</button>
+        <button class="mini" onclick="TAB='import';drawConfig()">Import my pricebook</button>
+      </div></div>`:""}
     <div class="pbtop">
       <input id="pbSearch" placeholder="Find a product, barcode or brand…" value="${esc(PB_Q)}">
       <button class="mini" style="margin:0" id="pbOrg" onclick="__w.organise()">Auto-organise</button>
@@ -993,11 +1018,7 @@ function applyOp(o,only){
 
 /* --------------------------------- the UI --------------------------------- */
 function tAI(){
-  const seeds=["Strip the case wording out of every product name",
-    "Raise every drink price 25 cents",
-    "Reprice everything with a cost at 40% margin, ending in 9",
-    "Move all the energy drinks into their own department",
-    "Put candy and soft drinks on the Candy & Soft Drinks tax rate"];
+  const seeds=suggestions();
   $("cfgBody").innerHTML=`
     <p class="lede" style="margin:0 0 4px">Describe the change. It writes a rule, this screen works out
       exactly which products the rule hits, and nothing is applied until you approve it. Every change can
@@ -1138,6 +1159,64 @@ ${itemRules()}
     }
     CHATBUSY=false;drawConfig();
   }
+}
+/* Suggestions built from this store, not from a convenience store somebody
+   imagined. A clothing shop should never be told to reprice its energy drinks. */
+function suggestions(){
+  const depts=CFG.depts.filter(d=>!d.fuel);
+  const names=depts.map(d=>d.n);
+  const has=re=>names.find(n=>re.test(n));
+  const biggest=depts.slice().sort((a,b)=>
+    CFG.plus.filter(p=>p.deptId===b.id).length-CFG.plus.filter(p=>p.deptId===a.id).length)[0];
+  const withCost=CFG.plus.filter(p=>p.cost>0).length;
+  const caseNames=CFG.plus.filter(p=>/\b(case|pack|pk|ct)\b/i.test(p.n)).length;
+  const noBarcode=CFG.plus.filter(p=>!p.upc).length;
+  const starters=CFG.plus.filter(p=>p.starter).length;
+  const rates=CFG.taxRates.filter(r=>r.rate>0);
+  const type=(A.type||"").toLowerCase();
+  const out=[];
+
+  /* Things that are actually wrong come first — they're the useful ones. */
+  if(starters)out.push(`Delete the ${starters} example products so I can load my real pricebook`);
+  if(caseNames>2)out.push("Strip the case and pack wording out of every product name");
+  if(withCost>2)out.push(`Reprice everything with a cost at ${CFG.pricing.margin}% margin, ending in 9`);
+  if(noBarcode>3)out.push(`Show me the ${noBarcode} products with no barcode`);
+
+  /* Then something shaped like this kind of shop. */
+  if(/cloth|apparel|boutique|shoe/.test(type)){
+    out.push("Set up sizes as a required modifier group on everything");
+    if(biggest)out.push(`Group ${biggest.n} by brand instead of by type`);
+    out.push("Move anything under $15 into an Accessories department");
+  } else if(/liquor|wine|beer/.test(type)){
+    out.push("Put every spirit on a 21+ age check");
+    out.push("Split wine out of Beer & Wine into its own department");
+    out.push("Add a mix-and-match deal: any 6 bottles of wine for 10% off");
+  } else if(/tobacco|vape|smoke/.test(type)){
+    out.push("Put every product on a 21+ age check");
+    if(biggest)out.push(`Group ${biggest.n} by brand`);
+    out.push("Move anything under $8 into an Accessories department");
+  } else if(/caf|coffee|restaurant|food/.test(type)){
+    out.push("Add size and milk options as modifier groups on the drinks");
+    out.push("Add a breakfast menu for the morning rush");
+    if(rates.length>1)out.push(`Move prepared food onto the ${rates[rates.length-1].n} rate`);
+  } else if(/grocer|market/.test(type)){
+    if(rates.length>1)out.push(`Check every department is on the right tax rate`);
+    out.push("Move candy and soft drinks out of Grocery — they're taxed differently");
+    out.push("Flag the SNAP-eligible staples as EBT");
+  } else if(/hardware/.test(type)){
+    out.push("Group fasteners by size instead of by type");
+    out.push("Move anything under $5 into a Small Parts department");
+  } else {
+    if(biggest)out.push(`Raise every price in ${biggest.n} by 5%`);
+    if(has(/drink|beverage/))out.push("Move all the energy drinks into their own department");
+  }
+
+  /* And one that uses a rate they actually have. */
+  if(rates.length>1&&!out.some(s=>/tax rate/.test(s)))
+    out.push(`Put candy and soft drinks on the ${
+      (rates.find(r=>/candy|soft/i.test(r.n))||rates[0]).n} tax rate`);
+
+  return out.slice(0,5);
 }
 function chatBubble(m){
   if(m.role==="note")return `<div class="cnote">${esc(m.text)}</div>`;

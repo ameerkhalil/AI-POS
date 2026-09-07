@@ -17,12 +17,39 @@ const uid=()=>Math.random().toString(36).slice(2,8);
 const byId=(a,id)=>(a||[]).find(x=>x.id===id);
 const hhmm=d=>d.toTimeString().slice(0,5);
 
-const A={type:"",name:"",desc:"",caps:[],loc:"",margin:"35",ending:"x9",dir:"nearest"};
+const A={type:"",typeOther:"",name:"",desc:"",caps:[],loc:"",margin:"35",ending:"x9",dir:"nearest"};
 let TAXINFO=null;
 const CAPS=[["age","Age-restricted products"],["weight","Items sold by weight"],
   ["foodservice","Prepared food with options"],["fuel","Fuel pumps"],["lottery","Lottery"],
   ["ebt","EBT / SNAP"],["deposit","Bottle deposit"]];
-const TYPES=["Convenience store","Grocery","Tobacco & vape","Clothing","Liquor store","Café","Hardware","Something else"];
+/* The business type steers the departments, the tax categories, which modules
+   load and what the assistant suggests — so eight options meant eight different
+   kinds of shop all being told they sell energy drinks. */
+const TYPE_GROUPS=[
+ ["Convenience & fuel",["Convenience store","Gas station","Truck stop","Bodega / corner shop","Kiosk"]],
+ ["Grocery & food retail",["Grocery store","Supermarket","International market","Health food store",
+   "Butcher","Fishmonger","Produce market","Farm stand","Cheese shop"]],
+ ["Food & drink service",["Café","Coffee shop","Bakery","Deli / sandwich shop","Restaurant",
+   "Fast food","Pizzeria","Food truck","Juice / smoothie bar","Ice cream shop","Bar / pub","Brewery / taproom"]],
+ ["Alcohol, tobacco & vape",["Liquor store","Wine shop","Beer store","Tobacco shop","Vape shop",
+   "Smoke shop","Dispensary"]],
+ ["Clothing & accessories",["Clothing store","Boutique","Shoe store","Streetwear shop",
+   "Children's clothing","Jewelry store","Watch shop","Handbags & accessories","Thrift / consignment"]],
+ ["Health & beauty",["Pharmacy","Beauty supply","Cosmetics shop","Vitamin & supplement store",
+   "Salon","Barbershop","Nail salon","Spa"]],
+ ["Home, garden & trade",["Hardware store","Paint store","Garden centre","Nursery","Furniture store",
+   "Home goods","Lighting store","Flooring / tile"]],
+ ["Speciality retail",["Bookstore","Toy store","Game store","Comic shop","Record shop",
+   "Musical instruments","Craft & hobby","Fabric & yarn","Stationery / office supplies",
+   "Party supplies","Gift shop","Florist","Antiques"]],
+ ["Sport, outdoor & auto",["Sporting goods","Bike shop","Outdoor & camping","Fishing & tackle",
+   "Gun shop","Auto parts","Tire shop","Car wash","Motorcycle / powersports"]],
+ ["Electronics & phones",["Electronics store","Phone & accessories","Computer shop","Repair shop",
+   "Camera store"]],
+ ["Pets & animals",["Pet store","Pet grooming","Feed & farm supply","Aquarium shop"]],
+ ["Something else",["Other retail","Other food service","Other service business"]]
+];
+const TYPES=TYPE_GROUPS.flatMap(g=>g[1]);
 const PALETTE=["#3E464A","#3A5A52","#57493B","#3D4D66","#573D4D","#485435","#4A3F5C","#2F4F55"];
 const PERMS=[["void","Void a line or sale"],["discount","Apply a discount"],["refund","Process a return"],
   ["payout","Pay in and pay out"],["nosale","Open the drawer with no sale"],["pricechange","Override a price"],
@@ -35,8 +62,30 @@ let SHIFT={opened:new Date(),sales:[],startCash:200,paidIn:0,paidOut:0,safeDrops
 /* ========================= wizard ========================= */
 let STEP=0;
 const STEPS=[
- {q:"What kind of business is this?",s:"A starting point. Everything is editable once the terminal is up.",
-  render:()=>chipList(TYPES,A.type,v=>{A.type=v;draw()}),ok:()=>!!A.type},
+ {q:"What kind of business is this?",s:"This decides the departments, which tax categories apply, and which parts of the register load at all. Pick the closest — everything stays editable.",
+  render:()=>`<div class="field">
+      <select id="f0" class="bigsel">
+        <option value="">Choose a business type\u2026</option>
+        ${TYPE_GROUPS.map(([g,list])=>`<optgroup label="${esc(g)}">${
+          list.map(t=>`<option ${A.type===t?"selected":""}>${esc(t)}</option>`).join("")}</optgroup>`).join("")}
+      </select></div>
+    <div class="field" id="otherWrap" style="display:${/^Other /.test(A.type)?"block":"none"}">
+      <input type="text" id="f0b" placeholder="Describe it in a few words" value="${esc(A.typeOther||"")}">
+    </div>
+    <div class="hint">Can't see yours? Pick the nearest — what you write on the next screens is what
+      the pricebook is actually built from.</div>`,
+  bind(){
+    const sel=$("f0"),other=$("otherWrap");
+    sel.onchange=e=>{
+      A.type=e.target.value;
+      other.style.display=/^Other /.test(A.type)?"block":"none";
+      $("goBtn").disabled=!A.type;
+      if(other.style.display==="block"&&$("f0b"))$("f0b").focus();
+    };
+    if($("f0b"))$("f0b").oninput=e=>{A.typeOther=e.target.value};
+    sel.focus();
+  },
+  ok:()=>!!A.type},
  {q:"What's the store called?",s:"This prints at the top of every receipt and shows in the terminal header.",
   render:()=>`<div class="field"><input type="text" id="f1" placeholder="Palos Hills Food and Fuel" value="${esc(A.name)}"></div>`,
   bind(){$("f1").oninput=e=>{A.name=e.target.value;$("goBtn").disabled=!A.name.trim()};$("f1").focus()},ok:()=>!!A.name.trim()},
@@ -113,7 +162,7 @@ async function callAI(prompt,opts={}){
   if(d.error)throw new Error(d.error.message||"API error");
   return parseLoose(d.content.filter(b=>b.type==="text").map(b=>b.text).join(""));
 }
-function ctx(){return`Business type: ${A.type}
+function ctx(){return`Business type: ${A.type}${A.typeOther?` (${A.typeOther})`:""}
 Store name: ${A.name}
 Owner's description: ${A.desc}
 Modules enabled: ${A.caps.length?A.caps.join(", "):"none"}`}
@@ -167,11 +216,65 @@ Rules:
   }
   paint();
   const depts=shell.depts.slice(0,7);
-  depts.forEach(d=>lines.push({t:"Pricing "+d.n,s:1}));
-  lines.push({t:"Building deals",s:1});paint();
+  lines.push({t:"Laying out "+depts.length+" departments",s:2});
+  lines.push({t:"Ready for your products",s:1});paint();
+  /* Departments are structure and safe to suggest. Products are not — an
+     invented price with an invented barcode looks exactly like a real one, and
+     somebody will eventually ring a sale on it. So we stop here and ask. */
+  lines[lines.length-1]={t:"Ready for your products",s:2};
+  paint();
+  const gen={tagline:shell.tagline||"",addr:shell.addr||"",promos:[],
+    depts:depts.map(d=>({n:d.n,food:!!d.food,items:[]}))};
+
+  setTimeout(()=>askHowToFill(gen,depts),400);
+}
+
+/* Four ways in, and the honest default is not "let the model make some up". */
+function askHowToFill(gen,depts){
+  $("buildBody").innerHTML=`
+    <h2>How do you want to fill the pricebook?</h2>
+    <p class="sub" style="margin-bottom:26px">${depts.length} departments are set up for
+      ${esc(A.name)} — ${esc(depts.map(d=>d.n).join(", "))}. Now the products.</p>
+    <div class="fillopts">
+      <button data-f="import"><b>Import a file</b>
+        <span>A CSV or NAXML export from your current POS, a spreadsheet, or a distributor item file.
+          Columns get matched for you and shown before anything is written.</span></button>
+      <button data-f="invoice"><b>Read my invoices</b>
+        <span>Photograph or upload vendor invoices. Products, costs and departments come off the paper,
+          priced at your ${A.margin}% margin. Anything unclear is held for you to check.</span></button>
+      <button data-f="empty"><b>Start empty</b>
+        <span>Add products yourself as you go, or scan them in at the register. Nothing is
+          created that you didn't put there.</span></button>
+      <button data-f="demo" class="dim"><b>Fill it with examples</b>
+        <span>Made-up products at made-up prices, so you can see the register working. Useful for a
+          look around, not for a real store — they're marked and can be cleared in one click.</span></button>
+    </div>`;
+  $("buildBody").querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{
+    const how=b.dataset.f;
+    if(how==="demo")return fillWithExamples(gen,depts);
+    CFG=compile(gen);
+    if(typeof saveNow==="function")saveNow();
+    OPEN_AFTER=how==="import"?"import":how==="invoice"?"invoice":null;
+    boot();
+  });
+}
+let OPEN_AFTER=null;
+
+async function fillWithExamples(gen,depts){
+  const lines=depts.map(d=>({t:"Pricing "+d.n,s:1}));
+  lines.push({t:"Building deals",s:1});
+  const paint=()=>$("buildBody").innerHTML=`<h2>Building example products</h2>`
+    +lines.map(l=>`<div class="tick-line ${l.s===2?"done":""}"><b>${l.s===2?"✓":l.s===3?"!":"·"}</b><span>${esc(l.t)}</span></div>`).join("")
+    +`<div class="hint">These are illustrations at made-up prices, not your pricebook. They're marked
+      as examples and can be cleared in one action from Config → Pricebook.</div>`;
+  paint();
+
   const res=await Promise.all(depts.map(async(d,i)=>{
     try{
-      const r=await callAI(`Write the products for one department of a point-of-sale pricebook. Return ONLY valid JSON, no prose or fences:
+      const r=await callAI(`Write example products for one department of a point-of-sale pricebook.
+These are illustrative, so the owner can see the register working before loading their real pricebook.
+
+Return ONLY valid JSON, no prose or fences:
 {"items":[{"n":string,"p":number,"upc":string,"age":number|null,"wt":boolean|null,"ebt":boolean|null,"dep":number|null}]}
 
 ${ctx()}
@@ -180,29 +283,43 @@ Department: ${d.n}
 Rules:
 - Exactly 5 items that genuinely belong in this department at this business.
 ${itemRules()}`);
-      lines[i+2].s=2;paint();
+      lines[i].s=2;paint();
       return Array.isArray(r.items)?r.items.filter(x=>x&&x.n):[];
-    }catch(e){lines[i+2].s=3;lines[i+2].t=d.n+" — skipped, add items under Config";paint();return[]}
+    }catch(e){
+      lines[i].s=3;lines[i].t=d.n+" — skipped";paint();
+      return [];
+    }
   }));
-  const gen={tagline:shell.tagline||"",addr:shell.addr||"",promos:[],
-    depts:depts.map((d,i)=>({n:d.n,food:!!d.food,items:res[i]})).filter(d=>d.items.length)};
-  if(!gen.depts.length){CFG=compile(FALLBACK());boot();return}
+
+  gen.depts=depts.map((d,i)=>({n:d.n,food:!!d.food,items:res[i]})).filter(d=>d.items.length);
+  if(!gen.depts.length){
+    CFG=compile(gen);
+    if(typeof saveNow==="function")saveNow();
+    return boot();
+  }
+
   const upcs=gen.depts.flatMap(d=>d.items.map(i=>i.upc)).filter(Boolean);
   try{
-    const p=await callAI(`Products sold at ${A.name} (${A.type}), as "name | upc | price":
+    const p=await callAI(`Example products at ${A.name} (${A.type}), as "name | upc | price":
 ${gen.depts.flatMap(d=>d.items.map(i=>`${i.n} | ${i.upc} | ${i.p}`)).join("\n")}
 
 Return ONLY valid JSON, no prose or fences:
 {"promos":[{"n":string,"upcs":string[],"qty":number,"price":number}]}
 
-Write 1 or 2 realistic mix-and-match deals a store like this would run, for example two energy drinks for 5.00. Only reference upcs above. Empty array if none fit.`);
+Write 1 or 2 realistic mix-and-match deals a store like this would run. Only reference upcs above.
+Return an empty array if none fit.`);
     gen.promos=(p.promos||[]).filter(x=>x&&Array.isArray(x.upcs)&&x.upcs.some(u=>upcs.includes(u)));
     lines[lines.length-1].s=2;
-  }catch(e){lines[lines.length-1].s=3;lines[lines.length-1].t="Deals skipped — add them under Config"}
-  const sk=lines.filter(l=>l.s===3).length;
-  if(sk)note=`${sk} step${sk===1?"":"s"} didn't come back. Everything else built normally.`;
-  paint();CFG=compile(gen);setTimeout(boot,340);
+  }catch(e){lines[lines.length-1].s=3;lines[lines.length-1].t="Deals skipped"}
+  paint();
+
+  CFG=compile(gen);
+  /* Marked so they can be found and removed as a set later. */
+  CFG.plus.forEach(p=>p.starter=true);
+  if(typeof saveNow==="function")saveNow();
+  setTimeout(boot,340);
 }
+
 function FALLBACK(){return{tagline:"Thanks for stopping in",addr:"",promos:[],depts:[
   {n:"Drinks",food:false,items:[{n:"Fountain 32 oz",p:1.79,upc:"000000000101"},{n:"Coffee 16 oz",p:1.99,upc:"000000000102"},
    {n:"Bottled Water",p:1.49,upc:"000000000103"},{n:"Energy Drink",p:3.99,upc:"000000000104"}]},
@@ -423,7 +540,11 @@ function startShell(){
   $("hdrMeta").textContent=`Reg ${CFG.site.register} · Store ${CFG.site.store}`;
   drawRail();applyTheme();clock();setInterval(clock,1000);
   $("btnLock").onclick=()=>{ME=null;signIn()};
-  wireSale();go("sale");
+  wireSale();
+  if(typeof OPEN_AFTER!=="undefined"&&OPEN_AFTER){
+    const t=OPEN_AFTER;OPEN_AFTER=null;
+    go("config");TAB=t;drawConfig();
+  } else go("sale");
   toast(`Signed in as <b>${esc(ME.n)}</b> · ${esc(byId(CFG.groups,ME.groupId).n)}`);
 }
 function clock(){
