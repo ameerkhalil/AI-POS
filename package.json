@@ -1,17 +1,19 @@
-{
-  "name": "ai-pos",
-  "version": "0.1.0",
-  "private": true,
-  "description": "AI-configured point of sale",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js"
-  },
-  "engines": { "node": ">=20" },
-  "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "better-sqlite3": "^11.3.0",
-    "express": "^4.21.0"
-  }
+﻿{
+    "name":  "ai-pos",
+    "version":  "0.1.0",
+    "private":  true,
+    "description":  "AI-configured point of sale",
+    "main":  "server.js",
+    "scripts":  {
+                    "start":  "node server.js",
+                    "dev":  "node --watch server.js"
+                },
+    "engines":  {
+                    "node":  "22.x"
+                },
+    "dependencies":  {
+                         "bcryptjs":  "^2.4.3",
+                         "better-sqlite3":  "^13.0.3",
+                         "express":  "^4.21.0"
+                     }
 }
