@@ -1054,26 +1054,42 @@ const STEPS=[
   ok:()=>TRADE_Q.length===0||TRADE_Q.every((_,i)=>A.trade[i]!==undefined)}
 ];
 function chipList3(qi,opts,cur){
-  window.__tq=(i,v)=>{A.trade[i]=v;draw()};
+  window.__tq=(i,v)=>{A.trade[i]=v;draw()};   /* keyed by index, so no collision */
   return`<div class="chips" style="margin-top:10px">`+opts.map(o=>
     `<button class="chip ${cur===o?"on":""}" onclick="__tq(${qi},'${esc(o)}')">
       <span class="tick">\u2713</span>${esc(o)}</button>`).join("")+`</div>`;
 }
 window.__modtog=id=>{const i=A.mods.indexOf(id);i<0?A.mods.push(id):A.mods.splice(i,1);draw()};
 
-function chipList2(pairs,cur,cb){window.__pick2=cb;
+/* Each group gets its own handler. One shared global meant a second group on the
+   same screen silently stole the first one's clicks. */
+let CHIP_N=0;
+const CHIP_CB={};
+window.__chip=(id,v)=>CHIP_CB[id]&&CHIP_CB[id](v);
+function chipList2(pairs,cur,cb){
+  const id="c"+(++CHIP_N);
+  CHIP_CB[id]=cb;
   return`<div class="chips" style="margin-top:12px">`+pairs.map(([k,l])=>
-    `<button class="chip ${cur===k?"on":""}" onclick="__pick2('${k}')"><span class="tick">\u2713</span>${l}</button>`).join("")+`</div>`}
+    `<button class="chip ${cur===k?"on":""}" onclick="__chip('${id}','${k}')"><span class="tick">\u2713</span>${l}</button>`).join("")+`</div>`;
+}
+
 function charmPreview(){
   const m=Math.min(94,Math.max(0,parseFloat(A.margin)||0))/100;
   const raw=m>=1?2:2/(1-m);
   return charm(raw,A.ending,A.dir);
 }
-function chipList(a,c,cb){window.__pick=cb;return`<div class="chips">`+a.map(v=>
-  `<button class="chip ${c===v?"on":""}" onclick="__pick('${esc(v)}')"><span class="tick">✓</span>${esc(v)}</button>`).join("")+`</div>`}
-function chipMulti(p,on,cb){window.__tog=cb;return`<div class="chips">`+p.map(([k,l])=>
-  `<button class="chip ${on.includes(k)?"on":""}" onclick="__tog('${k}')"><span class="tick">✓</span>${esc(l)}</button>`).join("")+`</div>`}
+function chipList(a,c,cb){
+  const id="c"+(++CHIP_N);CHIP_CB[id]=cb;
+  return`<div class="chips">`+a.map(v=>
+    `<button class="chip ${c===v?"on":""}" onclick="__chip('${id}','${esc(v)}')"><span class="tick">✓</span>${esc(v)}</button>`).join("")+`</div>`}
+function chipMulti(p,on,cb){
+  const id="c"+(++CHIP_N);CHIP_CB[id]=cb;
+  return`<div class="chips">`+p.map(([k,l])=>
+    `<button class="chip ${on.includes(k)?"on":""}" onclick="__chip('${id}','${k}')"><span class="tick">✓</span>${esc(l)}</button>`).join("")+`</div>`}
 function draw(){
+  /* Repair anything the old collision wrote into the wrong field. */
+  if(!["x9","99","95","49-99","none"].includes(A.ending))A.ending="x9";
+  if(!["margin","value"].includes(A.priceMode))A.priceMode="margin";
   const st=STEPS[STEP];
   $("setupBody").innerHTML=`<div class="rail-steps">${STEPS.map((_,i)=>`<i class="${i<=STEP?"on":""}"></i>`).join("")}</div>
     <div class="qnum">Question ${STEP+1} of ${STEPS.length}</div><h1>${st.q}</h1><p class="sub">${st.s}</p>${st.render()}
@@ -3285,7 +3301,7 @@ function health(){
   themeIssues().forEach(i=>f.push({sev:i.t==="warn"?"warn":"info",t:"Appearance",d:i.m,fix:null}));
   return f;
 }
-const BUILD="88f5d0fb40";
+const BUILD="c35dd821f3";
 function tHealth(){
   const f=health();
   window.__fix=i=>{f[i].fix&&f[i].fix();reload();drawConfig()};
@@ -3446,6 +3462,48 @@ const numOf = v => {
   return isFinite(n) ? n : null;
 };
 
+/* The model is good at reading headers and bad at noticing that a column of
+   24-character hex strings is a database id rather than a product name. These
+   look at the values instead of the label, and can overrule it. */
+const ID_RE = /^[0-9a-f]{16,}$|^[0-9a-f]{8}-[0-9a-f]{4}-/i;
+const looksLikeId = vals => {
+  const v = vals.filter(Boolean);
+  if (!v.length) return false;
+  return v.filter(x => ID_RE.test(String(x).trim())).length / v.length > 0.6;
+};
+const looksLikeMoney = vals => {
+  const v = vals.map(x => parseFloat(String(x).replace(/[^0-9.\-]/g, ""))).filter(n => isFinite(n));
+  return v.length >= vals.filter(Boolean).length * 0.7 && v.length > 0;
+};
+/* A product name has letters, usually a space, and varies row to row. */
+const nameScore = (vals, header) => {
+  const v = vals.filter(Boolean).map(String);
+  if (!v.length) return -99;
+  if (looksLikeId(v)) return -99;
+  let s = 0;
+  if (/name|title|desc|product|item/i.test(header)) s += 6;
+  if (/handle|slug|id|sku|code|url|path|ref/i.test(header)) s -= 5;
+  const letters = v.filter(x => /[a-z]{3}/i.test(x)).length / v.length;
+  s += letters * 4;
+  if (v.filter(x => /\s/.test(x)).length / v.length > 0.5) s += 3;
+  const avg = v.reduce((a, x) => a + x.length, 0) / v.length;
+  if (avg >= 6 && avg <= 60) s += 2; else s -= 2;
+  if (v.filter(x => x.startsWith("/") || x.startsWith("http")).length / v.length > 0.4) s -= 8;
+  return s;
+};
+/* Categories arrive as "/hoodies, /latest-drops" or "Apparel > Tops". Take
+   something a person would recognise on a department tab. */
+function cleanDept(raw) {
+  let s = String(raw || "").trim();
+  if (!s) return "";
+  s = s.split(",")[0];                       // first of a list
+  s = s.split(">").pop();                    // last of a breadcrumb
+  s = s.replace(/^\/+|\/+$/g, "").split("/").pop();
+  s = s.replace(/[-_]+/g, " ").trim();
+  if (!s) return "";
+  return s.replace(/\b\w/g, c => c.toUpperCase());
+}
+
 let IMPORT = null;   /* { rows, headers, map, sample, source } */
 
 function importView() {
@@ -3499,18 +3557,23 @@ async function readImport(file) {
 
   show(`Read <b>${rows.length}</b> row${rows.length === 1 ? "" : "s"}. Working out what the columns mean…`);
   const sample = rows.slice(0, 8);
+  const colVals = headers.map((h, i) => rows.slice(0, 40).map(r => r[i]));
+  const idCols = headers.map((h, i) => looksLikeId(colVals[i]));
   let map = null;
   try {
     const r = await callAI(`A retailer is importing their pricebook. Work out what each column holds.
 
-Columns: ${headers.map((h, i) => `${i}: "${h}"`).join(" | ")}
+Columns, with a note where the values are clearly database identifiers rather than anything a
+customer would see:
+${headers.map((h, i) => `${i}: "${h}"${idCols[i] ? "  ← values are ids, NOT a product name" : ""}`).join("\n")}
 
 First rows:
 ${sample.map(r => r.map(c => String(c).slice(0, 28)).join(" | ")).join("\n")}
 
 Return ONLY valid JSON, no prose or fences:
 {"map":{"name":number|null,"upc":number|null,"price":number|null,"cost":number|null,
- "dept":number|null,"size":number|null,"packQty":number|null,"vendor":number|null},
+ "dept":number|null,"size":number|null,"packQty":number|null,"vendor":number|null,
+ "group":number|null,"optName":number|null,"optValue":number|null},
  "note":string}
 
 - Each value is the column index holding that field, or null if the file doesn't have it.
@@ -3518,25 +3581,52 @@ Return ONLY valid JSON, no prose or fences:
   money column exists, decide from the header wording and the values which it is — retail is
   normally the larger of two.
 - "upc" is a barcode: 8 to 14 digits. Do not map an internal item number or SKU to it.
+- NEVER map a column of database ids, handles, slugs or URLs to "name". If the only text column is
+  ids, return null for name and say so in the note.
+- Exports from web shops repeat a product across several rows, one per size or colour. When you see
+  that shape, map "group" to the column that is the same on every row of one product (a handle, a
+  title, or a parent id), "optName" to the column naming the option ("Size", "Colour") and
+  "optValue" to the column holding the value ("Large", "Black"). Those rows will be combined into
+  one product with the options as choices, rather than twelve separate products.
 - "note": one sentence on anything ambiguous you had to decide.`,
       { max_tokens: 700, kind: "import-map" });
     map = r.map || null;
-    IMPORT = { rows, headers, map, sample, source, note: r.note || null, file: file.name };
+    let note = r.note || null;
+    /* Overrule a name column that is plainly a set of ids, and pick the best
+       text column instead. This is the difference between a pricebook and a
+       screen full of hex. */
+    if (map && (map.name == null || idCols[map.name])) {
+      const scored = headers.map((h, i) => ({ i, s: nameScore(colVals[i], h) }))
+        .sort((a, b) => b.s - a.s);
+      if (scored[0] && scored[0].s > 0) {
+        note = `The column picked for the product name held database ids, so "${
+          headers[scored[0].i]}" was used instead — check the preview.`;
+        map.name = scored[0].i;
+      }
+    }
+    IMPORT = { rows, headers, map, sample, source, note, file: file.name, idCols };
   } catch (e) {
-    IMPORT = { rows, headers, map: guessMap(headers), sample, source,
-               note: "Columns were matched by name — check them.", file: file.name };
+    IMPORT = { rows, headers, map: guessMap(headers, colVals), sample, source,
+               note: "Columns were matched by name — check them.", file: file.name, idCols };
   }
   drawMapping();
 }
 
 /* Fallback if the model call fails: match on header wording alone. */
-function guessMap(headers) {
+function guessMap(headers, colVals) {
   const find = re => { const i = headers.findIndex(h => re.test(h)); return i < 0 ? null : i; };
+  const best = colVals
+    ? headers.map((h, i) => ({ i, s: nameScore(colVals[i], h) })).sort((a, b) => b.s - a.s)[0]
+    : null;
   return {
-    name: find(/desc|item|product|name/i), upc: find(/upc|barcode|ean|scan/i),
-    price: find(/retail|price|sell/i), cost: find(/cost|whsl|wholesale/i),
-    dept: find(/dept|categ|class|group/i), size: find(/size|pack.?size|volume/i),
-    packQty: find(/pack|case.?qty|units/i), vendor: find(/vendor|supplier|manuf/i)
+    name: (best && best.s > 0) ? best.i : find(/desc|item|product|name|title/i),
+    upc: find(/upc|barcode|ean|scan/i),
+    price: find(/variant price|retail|price|sell/i), cost: find(/cost|whsl|wholesale/i),
+    dept: find(/dept|categ|class|collection|type/i), size: find(/size|pack.?size|volume/i),
+    packQty: find(/pack.?qty|case.?qty|units/i), vendor: find(/vendor|supplier|manuf|brand/i),
+    group: find(/handle|parent|style/i),
+    optName: find(/option.?1.?name|option name/i),
+    optValue: find(/option.?1.?value|option value|^size$|colou?r/i)
   };
 }
 
@@ -3578,12 +3668,20 @@ function drawMapping() {
   window.__icancel = () => { IMPORT = null; drawImport(); };
   window.__irun = runImport;
 
-  const preview = rows.slice(0, 6).map(r => buildRow(r, map));
+  const collapsed = collapseVariants(rows, map);
+  const preview = collapsed.items.slice(0, 6);
+  IMPORT.collapsed = collapsed;
   const priced = preview.filter(p => p.price > 0).length;
   const costed = preview.filter(p => p.cost > 0).length;
 
   $("cfgBody").innerHTML = `
-    <div class="sect">Columns in ${esc(file)} — ${rows.length} rows</div>
+    <div class="sect">Columns in ${esc(file)} — ${rows.length} rows${
+      collapsed.variants ? `, ${collapsed.items.length} products` : ""}</div>
+    ${collapsed.variants ? `<div class="verify ok2"><div class="vhead">
+      ${collapsed.variants} products have size or colour options</div>
+      <p>Rows that repeat the same product for each size are being folded into one product with the
+        options as choices, rather than imported as separate items. The cashier picks the size at the
+        till, and you can see which sizes sell.</p></div>` : ""}
     ${note ? `<div class="cbar"><span class="cdot" style="background:var(--info)"></span>${esc(note)}</div>` : ""}
     <table class="tbl"><thead><tr><th style="width:26%">Field</th><th style="width:34%">Column in your file</th>
       <th>First value</th></tr></thead><tbody>
@@ -3600,7 +3698,7 @@ function drawMapping() {
 
     <div class="sect">Preview</div>
     <table class="tbl"><thead><tr><th>Item</th><th>Barcode</th><th>Cost</th><th>Price</th>
-      <th>Margin</th><th>Department</th></tr></thead><tbody>
+      <th>Margin</th><th>Department</th><th>Options</th></tr></thead><tbody>
     ${preview.map(p => `<tr>
       <td style="padding-left:9px">${esc(p.n || "—")}</td>
       <td style="padding-left:9px" class="num">${esc(p.upc || "—")}</td>
@@ -3608,6 +3706,8 @@ function drawMapping() {
       <td style="padding-left:9px" class="num">${money(p.price)}</td>
       <td style="padding-left:9px;color:var(--txt-2)">${p.cost > 0 ? marginOf(p.cost, p.price).toFixed(0) + "%" : "—"}</td>
       <td style="padding-left:9px;color:var(--txt-2)">${esc(p.deptName || "—")}</td>
+      <td style="padding-left:9px;color:var(--info);font-size:12px">${
+        p.opts && p.opts.length > 1 ? esc(p.opts.map(o => o.n).join(", ").slice(0, 40)) : "—"}</td>
     </tr>`).join("")}
     </tbody></table>
 
@@ -3640,13 +3740,56 @@ function buildRow(r, map) {
   let price = numOf(g(map.price)) || 0;
   if (!price && cost) price = priceFor(cost);
   const upcRaw = g(map.upc).replace(/\D/g, "");
-  const deptName = g(map.dept);
   const size = g(map.size);
+  const base = g(map.name);
   return {
-    n: [g(map.name), size && !g(map.name).includes(size) ? size : ""].filter(Boolean).join(" ").trim(),
+    n: [base, size && !base.includes(size) ? size : ""].filter(Boolean).join(" ").trim(),
     upc: validUPC(upcRaw) || (upcRaw.length >= 8 ? upcRaw : ""),
-    cost, price, deptName, vendor: g(map.vendor)
+    cost, price,
+    deptName: cleanDept(g(map.dept)),
+    vendor: g(map.vendor),
+    groupKey: g(map.group),
+    optName: g(map.optName),
+    optValue: g(map.optValue)
   };
+}
+
+/* Web-shop exports carry one row per size, with the product name only on the
+   first row of each group. Fill the gaps, then fold the sizes into one product
+   with a set of choices — twelve rows of the same hoodie is one hoodie. */
+function collapseVariants(rows, map) {
+  const built = rows.map(r => buildRow(r, map));
+  if (map.group != null) {
+    let lastName = "", lastDept = "", lastKey = "";
+    built.forEach(b => {
+      if (b.groupKey) lastKey = b.groupKey; else b.groupKey = lastKey;
+      if (b.n) lastName = b.n; else b.n = lastName;
+      if (b.deptName) lastDept = b.deptName; else b.deptName = lastDept;
+    });
+  }
+  const canGroup = map.group != null && map.optValue != null;
+  if (!canGroup) return { items: built.filter(b => b.n), variants: 0 };
+
+  const byKey = new Map();
+  built.forEach(b => {
+    if (!b.n) return;
+    const k = b.groupKey || b.n;
+    if (!byKey.has(k)) byKey.set(k, { ...b, opts: [], _rows: 0 });
+    const g = byKey.get(k);
+    g._rows++;
+    if (b.optValue && !g.opts.some(o => o.n === b.optValue))
+      g.opts.push({ n: b.optValue, p: +(b.price - (byKey.get(k).price || 0)).toFixed(2) });
+    /* Cheapest variant becomes the base price; dearer ones carry the difference. */
+    if (b.price > 0 && (!g.price || b.price < g.price)) g.price = b.price;
+    if (b.cost > 0 && (!g.cost || b.cost < g.cost)) g.cost = b.cost;
+    if (b.upc && !g.upc) g.upc = b.upc;
+  });
+  const items = [...byKey.values()].map(g => {
+    g.opts = g.opts.map(o => ({ n: o.n, p: 0 }));
+    g.optLabel = built.find(b => b.optName)?.optName || "Size";
+    return g;
+  });
+  return { items, variants: items.filter(g => g.opts.length > 1).length };
 }
 
 async function runImport() {
@@ -3655,8 +3798,8 @@ async function runImport() {
 
   /* Departments in the file are text. Map them onto real departments, creating
      any that don't exist, so a 40-department file doesn't land in one bucket. */
-  const deptNames = [...new Set(rows.map(r => map.dept == null ? "" : String(r[map.dept] || "").trim())
-    .filter(Boolean))].slice(0, 40);
+  const deptNames = [...new Set((IMPORT.collapsed || collapseVariants(rows, map)).items
+    .map(b => b.deptName).filter(Boolean))].slice(0, 40);
   const deptMap = {};
   deptNames.forEach(n => {
     const hit = CFG.depts.find(d => !d.fuel && d.n.toLowerCase() === n.toLowerCase());
@@ -3674,11 +3817,21 @@ async function runImport() {
     });
   }
 
-  let added = 0, updated = 0, skipped = 0;
+  let added = 0, updated = 0, skipped = 0, withOpts = 0;
   const byUpc = new Map(CFG.plus.filter(p => p.upc).map(p => [p.upc, p]));
-  rows.forEach(r => {
-    const b = buildRow(r, map);
+  const items = (IMPORT.collapsed || collapseVariants(rows, map)).items;
+  items.forEach(b => {
     if (!b.n || !(b.price > 0)) { skipped++; return; }
+    /* A set of sizes becomes a required choice, so nothing is rung without one. */
+    let modId = null;
+    if (b.opts && b.opts.length > 1) {
+      CFG.modGroups = CFG.modGroups || [];
+      const label = `${b.optLabel || "Size"} — ${b.n}`.slice(0, 60);
+      const grp = { id: "MG" + uid(), n: b.optLabel || "Size", required: true, multi: false,
+        opts: b.opts.slice(0, 20) };
+      CFG.modGroups.push(grp);
+      modId = grp.id; withOpts++;
+    }
     const deptId = (b.deptName && deptMap[b.deptName]) || fallbackDept;
     const ex = b.upc ? byUpc.get(b.upc) : null;
     if (ex) {
@@ -3689,7 +3842,8 @@ async function runImport() {
       return;
     }
     const plu = { id: "P" + uid(), upc: b.upc, n: b.n, price: b.price, cost: b.cost || null,
-      deptId, weighed: false, ebt: false, deposit: null, restrictId: null, modIds: [],
+      deptId, weighed: false, ebt: false, deposit: null, restrictId: null,
+      modIds: modId ? [modId] : [],
       vendor: b.vendor || "", upcSrc: b.upc ? "import" : null };
     CFG.plus.push(plu);
     if (plu.upc) byUpc.set(plu.upc, plu);
@@ -3701,6 +3855,7 @@ async function runImport() {
   IMPORT = null;
   MENU = 0; reload(); TAB = "pricebook"; drawConfig();
   toast(`Imported <b>${added}</b> item${added === 1 ? "" : "s"}` +
+    `${withOpts ? `, <b>${withOpts}</b> with size options` : ""}` +
     `${updated ? `, updated <b>${updated}</b>` : ""}` +
     `${unknown.length ? `, created <b>${unknown.length}</b> department${unknown.length === 1 ? "" : "s"}` : ""}` +
     `${skipped ? `. <b>${skipped}</b> row${skipped === 1 ? "" : "s"} skipped for no name or price` : ""}.`);

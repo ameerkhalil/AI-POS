@@ -141,26 +141,42 @@ const STEPS=[
   ok:()=>TRADE_Q.length===0||TRADE_Q.every((_,i)=>A.trade[i]!==undefined)}
 ];
 function chipList3(qi,opts,cur){
-  window.__tq=(i,v)=>{A.trade[i]=v;draw()};
+  window.__tq=(i,v)=>{A.trade[i]=v;draw()};   /* keyed by index, so no collision */
   return`<div class="chips" style="margin-top:10px">`+opts.map(o=>
     `<button class="chip ${cur===o?"on":""}" onclick="__tq(${qi},'${esc(o)}')">
       <span class="tick">\u2713</span>${esc(o)}</button>`).join("")+`</div>`;
 }
 window.__modtog=id=>{const i=A.mods.indexOf(id);i<0?A.mods.push(id):A.mods.splice(i,1);draw()};
 
-function chipList2(pairs,cur,cb){window.__pick2=cb;
+/* Each group gets its own handler. One shared global meant a second group on the
+   same screen silently stole the first one's clicks. */
+let CHIP_N=0;
+const CHIP_CB={};
+window.__chip=(id,v)=>CHIP_CB[id]&&CHIP_CB[id](v);
+function chipList2(pairs,cur,cb){
+  const id="c"+(++CHIP_N);
+  CHIP_CB[id]=cb;
   return`<div class="chips" style="margin-top:12px">`+pairs.map(([k,l])=>
-    `<button class="chip ${cur===k?"on":""}" onclick="__pick2('${k}')"><span class="tick">\u2713</span>${l}</button>`).join("")+`</div>`}
+    `<button class="chip ${cur===k?"on":""}" onclick="__chip('${id}','${k}')"><span class="tick">\u2713</span>${l}</button>`).join("")+`</div>`;
+}
+
 function charmPreview(){
   const m=Math.min(94,Math.max(0,parseFloat(A.margin)||0))/100;
   const raw=m>=1?2:2/(1-m);
   return charm(raw,A.ending,A.dir);
 }
-function chipList(a,c,cb){window.__pick=cb;return`<div class="chips">`+a.map(v=>
-  `<button class="chip ${c===v?"on":""}" onclick="__pick('${esc(v)}')"><span class="tick">✓</span>${esc(v)}</button>`).join("")+`</div>`}
-function chipMulti(p,on,cb){window.__tog=cb;return`<div class="chips">`+p.map(([k,l])=>
-  `<button class="chip ${on.includes(k)?"on":""}" onclick="__tog('${k}')"><span class="tick">✓</span>${esc(l)}</button>`).join("")+`</div>`}
+function chipList(a,c,cb){
+  const id="c"+(++CHIP_N);CHIP_CB[id]=cb;
+  return`<div class="chips">`+a.map(v=>
+    `<button class="chip ${c===v?"on":""}" onclick="__chip('${id}','${esc(v)}')"><span class="tick">✓</span>${esc(v)}</button>`).join("")+`</div>`}
+function chipMulti(p,on,cb){
+  const id="c"+(++CHIP_N);CHIP_CB[id]=cb;
+  return`<div class="chips">`+p.map(([k,l])=>
+    `<button class="chip ${on.includes(k)?"on":""}" onclick="__chip('${id}','${k}')"><span class="tick">✓</span>${esc(l)}</button>`).join("")+`</div>`}
 function draw(){
+  /* Repair anything the old collision wrote into the wrong field. */
+  if(!["x9","99","95","49-99","none"].includes(A.ending))A.ending="x9";
+  if(!["margin","value"].includes(A.priceMode))A.priceMode="margin";
   const st=STEPS[STEP];
   $("setupBody").innerHTML=`<div class="rail-steps">${STEPS.map((_,i)=>`<i class="${i<=STEP?"on":""}"></i>`).join("")}</div>
     <div class="qnum">Question ${STEP+1} of ${STEPS.length}</div><h1>${st.q}</h1><p class="sub">${st.s}</p>${st.render()}
