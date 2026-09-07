@@ -4,11 +4,22 @@
    anything about the register's rendering.
    ========================================================================== */
 let TAB="pricebook";
-const CTABS=[["import","Import"],["invoice","Invoice intake"],["pricebook","Pricebook"],["depts","Departments"],
-  ["menus","Menus"],["mods","Modifiers"],["mops","Payment"],["restricts","Restrictions"],
-  ["promos","Promotions"],["people","People"],["reasons","Reason codes"],["site","Site & tax"],
-  ["look","Appearance"],["hardware","Hardware & payments"],["health","Health"],
-  ["account","Account & data"],["ai","Ask for changes"]];
+/* Modules the owner switched on get their own tab, named for what they are.
+   Everything else stays out of the way. */
+const BASE_TABS=[["import","Import"],["invoice","Invoice intake"],["pricebook","Pricebook"],
+  ["depts","Departments"],["menus","Menus"],["mods","Modifiers"],["mops","Payment"],
+  ["restricts","Restrictions"],["promos","Promotions"],["people","People"],
+  ["reasons","Reason codes"],["site","Site & tax"],["look","Appearance"],
+  ["hardware","Hardware & payments"],["health","Health"],["account","Account & data"],
+  ["ai","Ask for changes"]];
+function ctabs(){
+  const mods=Object.keys(MODULES).filter(modOn).map(k=>["mod_"+k,
+    k==="records"?(listsCfg().lists[0]?.n||MODULES[k].n):MODULES[k].n]);
+  const t=BASE_TABS.slice();
+  t.splice(3,0,...mods);
+  t.splice(t.length-1,0,["modules","Add features"]);
+  return t;
+}
 const W={};window.__w=W;
 
 function drawConfig(){
@@ -16,13 +27,44 @@ function drawConfig(){
     <h2>Configuration</h2>
     <p class="lede">Products, accounting buckets and screen layouts are separate objects. Rearranging a menu never
       touches a price, and changing a tax rate never touches a product.</p>
-    <div class="tabs" id="cfgTabs">${CTABS.map(([k,l])=>
+    <div class="tabs" id="cfgTabs">${ctabs().map(([k,l])=>
       `<button data-t="${k}" class="${TAB===k?"on":""}">${l}</button>`).join("")}</div>
     <div class="edwrap" id="cfgBody"></div></div>`;
   $("cfgTabs").querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{TAB=b.dataset.t;drawConfig()});
-  ({import:importView,invoice:invoiceView,pricebook:tPricebook,depts:tDepts,menus:tMenus,mods:tMods,mops:tMops,
-    restricts:tRestricts,promos:tPromos,people:tPeople,reasons:tReasons,site:tSite,
-    look:tLook,hardware:tHardware,health:tHealth,account:tAccount,ai:tAI})[TAB]();
+  const views={import:importView,invoice:invoiceView,pricebook:tPricebook,depts:tDepts,
+    menus:tMenus,mods:tMods,mops:tMops,restricts:tRestricts,promos:tPromos,people:tPeople,
+    reasons:tReasons,site:tSite,look:tLook,hardware:tHardware,health:tHealth,
+    account:tAccount,ai:tAI,modules:tModules,
+    mod_records:tRecords,mod_expiry:tExpiry,mod_staff:tStaff,
+    mod_customers:tCustomers,mod_tips:tTips,mod_giftcards:tGiftcards,mod_waste:tWaste,
+    mod_commission:tCommission,mod_jobs:tJobs,mod_service:tService};
+  (views[TAB]||tPricebook)();
+}
+
+/* Everything on offer, on or off, describable. Nothing here is generated — each
+   one is a built feature, so switching it on is safe and switching it off loses
+   nothing but the tab. */
+function tModules(){
+  W.togMod=id=>{setModule(id,!modOn(id));refresh();reload();queueSave();
+    toast(modOn(id)?`<b>${esc(MODULES[id].n)}</b> switched on.`:`${esc(MODULES[id].n)} switched off.`)};
+  $("cfgBody").innerHTML=`
+    <p class="lede" style="margin:0 0 4px">Switch on what your trade needs. Each one adds its own tab
+      and nothing else — turning one off later leaves its records intact in case you want it back.</p>
+    <div class="modgrid">${Object.entries(MODULES)
+      .map(([id,m])=>[id,m,modOn(id)?2:(m.fits.test((A.type||"")+" "+(A.desc||""))?1:0)])
+      .sort((a,b)=>b[2]-a[2])
+      .map(([id,m,rank])=>`
+      <button class="modcard ${modOn(id)?"on":""}" onclick="__w.togMod('${id}')">
+        <svg viewBox="0 0 24 24">${m.icon}</svg>
+        <b>${esc(m.n)}</b>
+        <span>${esc(m.what)}</span>
+        <em>${modOn(id)?"On":rank?"Suggested":"Off"}</em>
+      </button>`).join("")}</div>
+    ${CFG.trade?.length?`<div class="sect">What you told me at setup</div>
+      <div class="rpt">${CFG.trade.map(t=>
+        `<div class="rr"><span>${esc(t.q)}</span><b style="font-size:13px">${esc(t.a||"—")}</b></div>`).join("")}</div>`:""}
+    <div class="note">More are coming — customer contact capture, commission tracking, and
+      appointment booking are the next three. If your trade needs something that isn't here, say so.</div>`;
 }
 const refresh=()=>{drawConfig()};
 const reload=()=>{renderTenders();drawMenus();drawGrid();drawCart()};

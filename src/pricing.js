@@ -30,7 +30,10 @@ function charm(p,rule,dir){
   else pick=cands.reduce((a,b)=>Math.abs(b-cents)<=Math.abs(a-cents)?b:a,cands[0]);
   return (pick||cents)/100;
 }
+/* A shop that prices by value gets no suggested retail — a coffee costing 40
+   cents does not sell for 80, and pretending otherwise is worse than a blank. */
 function priceFor(cost){
+  if(CFG.pricing.mode==="value")return 0;
   return charm(fromMargin(cost,CFG.pricing.margin),CFG.pricing.ending,CFG.pricing.dir);
 }
 
@@ -505,6 +508,7 @@ ${lineRules(depts)}`}]}]});
       }
     }
     if(!lineTotal||lineTotal<=0){conf=0;why=why||"no cost could be read"}
+    if(CFG.pricing.mode==="value"){conf=Math.min(conf,.6);why=why||"set the shelf price yourself"}
 
     const cost=(lineTotal||0)/units;
     if(cost>0&&cost<0.01){conf=Math.min(conf,.5);why=why||"unit cost looks too low — check the pack size"}

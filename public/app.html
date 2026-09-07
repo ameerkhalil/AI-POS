@@ -773,6 +773,62 @@ label.sam:hover{background:rgba(255,255,255,.03)}
 #setup select.bigsel:focus{outline:none;border-color:var(--ink-soft);box-shadow:0 0 0 3px rgba(18,22,24,.06)}
 #setup select.bigsel optgroup{font-weight:600;color:var(--ink-soft)}
 
+/* ---- trade questions in setup ---- */
+.tradeq{margin-top:30px;padding-top:24px;border-top:1px solid var(--paper-line)}
+.tradeq:first-child{border-top:none;padding-top:0;margin-top:26px}
+.tqq{font-size:17px;font-weight:500;line-height:1.4}
+.tqw{font-size:13px;color:var(--ink-soft);margin-top:11px;line-height:1.6}
+.modpick{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;margin-top:9px;
+  border:1px solid var(--paper-line);border-radius:var(--r);background:var(--paper-2);cursor:pointer;
+  transition:border-color .16s,background .16s}
+.modpick:hover{border-color:var(--ink-soft)}
+.modpick.on{border-color:var(--ink);background:#EDEEE9}
+.modpick input{width:auto;flex:none;margin-top:3px}
+.modpick b{display:block;font-size:15px;font-weight:600;margin-bottom:4px}
+.modpick em{display:block;font-style:normal;font-size:13px;color:var(--ink-soft);line-height:1.6}
+
+/* ---- module picker ---- */
+.modgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:11px;margin-top:16px}
+.modcard{text-align:left;border:1px solid var(--line);border-radius:var(--r2);padding:17px 18px;
+  background:rgba(255,255,255,.02);position:relative;transition:border-color .18s,background .18s,transform .14s}
+.modcard:hover{border-color:var(--line-2);transform:translateY(-1px)}
+.modcard.on{border-color:var(--vfd);background:rgba(92,224,168,.06)}
+.modcard svg{width:22px;height:22px;stroke:var(--txt-3);fill:none;stroke-width:1.6;
+  stroke-linecap:round;stroke-linejoin:round;margin-bottom:11px}
+.modcard.on svg{stroke:var(--vfd)}
+.modcard b{display:block;font-size:14.5px;font-weight:600;margin-bottom:5px}
+.modcard span{display:block;font-size:12.5px;color:var(--txt-2);line-height:1.6}
+.modcard em{position:absolute;top:16px;right:17px;font-style:normal;font-size:11px;
+  color:var(--txt-3);border:1px solid var(--line);border-radius:20px;padding:2px 9px}
+.modcard.on em{color:var(--vfd);border-color:rgba(92,224,168,.4)}
+
+/* ---- custom lists ---- */
+.listtabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.listtabs button{border:1px solid var(--line);border-radius:20px;padding:8px 15px;font-size:13px;
+  color:var(--txt-2);transition:all .15s}
+.listtabs button:hover{border-color:var(--line-2);color:var(--txt)}
+.listtabs button.on{background:rgba(92,224,168,.12);border-color:var(--vfd);color:var(--txt)}
+.listtabs button em{font-style:normal;margin-left:7px;font-family:"Azeret Mono",monospace;
+  font-size:11.5px;color:var(--txt-3)}
+.listtabs button.add{border-style:dashed}
+
+/* ---- expiry ---- */
+tr.expsoon td{background:rgba(224,178,85,.07)}
+tr.expgone td{background:rgba(210,102,76,.09)}
+
+/* ---- job pipeline ---- */
+.stages{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:9px;margin-top:16px}
+.stagecol{background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:var(--r2);padding:11px}
+.stagehd{display:flex;justify-content:space-between;font-size:11.5px;color:var(--txt-2);
+  padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:9px}
+.stagehd em{font-style:normal;font-family:"Azeret Mono",monospace;color:var(--txt-3)}
+.jobcard{background:rgba(255,255,255,.04);border-radius:var(--r);padding:9px 11px;margin-bottom:6px}
+.jobcard b{display:block;font-size:13px;margin-bottom:3px}
+.jobcard span{display:block;font-size:12px;color:var(--txt-2);line-height:1.5}
+.jobcard em{display:block;font-style:normal;font-size:11px;color:var(--txt-3);margin-top:4px;
+  font-family:"Azeret Mono",monospace}
+.stageempty{color:var(--txt-3);font-size:12px;text-align:center;padding:10px 0}
+
 .tchip.save{transition:color .2s,border-color .2s}
 .tchip.save.pending{color:var(--warn);border-color:rgba(224,178,85,.4)}
 .tchip.save.saving{color:var(--txt-2)}
@@ -874,7 +930,9 @@ const uid=()=>Math.random().toString(36).slice(2,8);
 const byId=(a,id)=>(a||[]).find(x=>x.id===id);
 const hhmm=d=>d.toTimeString().slice(0,5);
 
-const A={type:"",typeOther:"",name:"",desc:"",caps:[],loc:"",margin:"35",ending:"x9",dir:"nearest"};
+const A={type:"",typeOther:"",name:"",desc:"",caps:[],loc:"",margin:"35",ending:"x9",dir:"nearest",
+  priceMode:"margin",trade:{},mods:[]};
+let TRADE_Q=[],REC_MODS=[],TRADE_ASKED=false;
 let TAXINFO=null;
 const CAPS=[["age","Age-restricted products"],["weight","Items sold by weight"],
   ["foodservice","Prepared food with options"],["fuel","Fuel pumps"],["lottery","Lottery"],
@@ -913,7 +971,7 @@ const PERMS=[["void","Void a line or sale"],["discount","Apply a discount"],["re
   ["reports","Read reports"],["zreport","Close the shift"],["config","Change configuration"]];
 
 let CFG=null,CART=[],MENU=0,SEL=null,DISC=null,RETURN=false,HELD=[],FILTER="",TRAIN=false;
-let ME=null,VIEW="sale",FRESH=null,RETREF=null;
+let ME=null,VIEW="sale",FRESH=null,RETREF=null,SALE_TIP=0,SALE_CUST=null,PART_PAID=null;
 let SHIFT={opened:new Date(),sales:[],startCash:200,paidIn:0,paidOut:0,safeDrops:0,noSales:0,num:1,exceptions:[]};
 
 /* ========================= wizard ========================= */
@@ -957,18 +1015,52 @@ const STEPS=[
   ok:()=>A.desc.trim().length>=12},
  {q:"Which of these apply to you?",s:"Each one turns on a module. What you leave off never loads and never reaches the cashier's screen.",
   render:()=>chipMulti(CAPS,A.caps,k=>{const i=A.caps.indexOf(k);i<0?A.caps.push(k):A.caps.splice(i,1);draw()}),ok:()=>true},
- {q:"How do you price?",s:"Give me a target margin and a price ending, and every cost that comes in off an invoice turns into a shelf price without anyone typing one.",
-  render:()=>`<div class="taxrow">
+ {q:"How do you price?",s:"If you mark up from cost, tell me the margin and invoice costs turn into shelf prices on their own. Plenty of trades don't price that way — a coffee that costs 40 cents doesn't sell for 80.",
+  render:()=>`${chipList2([["margin","I mark up from cost"],["value","I price by what it's worth"]],
+      A.priceMode||"margin",v=>{A.priceMode=v;draw()})}
+    ${A.priceMode!=="value"?`<div class="taxrow" style="margin-top:26px">
       <div><label for="f4">Target gross margin</label><input type="text" id="f4" class="num" placeholder="35" value="${esc(A.margin)}"></div>
       <div style="align-self:flex-end;color:var(--ink-soft);font-size:14px;padding-bottom:14px">
-        a $2.00 cost becomes <b id="egp">${money(charmPreview())}</b></div></div>
+        a $2.00 cost becomes <b id="egp">${money(charmPreview())}</b></div></div>`
+      :`<div class="hint" style="margin-top:22px">Prices stay however you set them. Costs are still
+        recorded from invoices, and margin is still reported — nothing gets repriced behind your back.</div>`}
     <div class="hint" style="margin-top:22px">Round prices to</div>
     ${chipList2([["x9","End in 9 cents"],["99","Always .99"],["95","Always .95"],["49-99",".49 or .99"],["none","Don't round"]],A.ending,v=>{A.ending=v;draw()})}`,
-  bind(){$("f4").oninput=e=>{A.margin=e.target.value;
-    $("goBtn").disabled=isNaN(parseFloat(A.margin))||parseFloat(A.margin)<0||parseFloat(A.margin)>94;
-    $("egp").textContent=money(charmPreview())}},
-  ok:()=>{const m=parseFloat(A.margin);return !isNaN(m)&&m>=0&&m<=94}}
+  bind(){
+    const f=$("f4");
+    if(f)f.oninput=e=>{A.margin=e.target.value;
+      $("goBtn").disabled=isNaN(parseFloat(A.margin))||parseFloat(A.margin)<0||parseFloat(A.margin)>94;
+      $("egp").textContent=money(charmPreview())};
+  },
+  ok:()=>{if(A.priceMode==="value")return true;
+    const m=parseFloat(A.margin);return !isNaN(m)&&m>=0&&m<=94}},
+
+ /* The last question isn't written by me — it's written for this trade. A
+    butcher and a phone shop need different things and shouldn't be asked the
+    same script. */
+ {q:"A few things about your trade",s:"These came from what you told me. They decide which parts of the register get built.",
+  render:()=>TRADE_Q.length
+    ? TRADE_Q.map((q,i)=>`<div class="tradeq">
+        <div class="tqq">${esc(q.q)}</div>
+        ${chipList3(i,q.opts||["Yes","No"],A.trade[i])}
+        ${q.why?`<div class="tqw">${esc(q.why)}</div>`:""}</div>`).join("")
+      +(REC_MODS.length?`<div class="tradeq">
+        <div class="tqq">Parts of the register I'd switch on for you</div>
+        ${REC_MODS.map(id=>`<label class="modpick ${A.mods.includes(id)?"on":""}">
+          <input type="checkbox" ${A.mods.includes(id)?"checked":""} onchange="__modtog('${id}')">
+          <span><b>${esc(MODULES[id].n)}</b><em>${esc(MODULES[id].what)}</em></span></label>`).join("")}
+        </div>`:"")
+    : `<div class="hint">Working out what to ask you…</div>`,
+  ok:()=>TRADE_Q.length===0||TRADE_Q.every((_,i)=>A.trade[i]!==undefined)}
 ];
+function chipList3(qi,opts,cur){
+  window.__tq=(i,v)=>{A.trade[i]=v;draw()};
+  return`<div class="chips" style="margin-top:10px">`+opts.map(o=>
+    `<button class="chip ${cur===o?"on":""}" onclick="__tq(${qi},'${esc(o)}')">
+      <span class="tick">\u2713</span>${esc(o)}</button>`).join("")+`</div>`;
+}
+window.__modtog=id=>{const i=A.mods.indexOf(id);i<0?A.mods.push(id):A.mods.splice(i,1);draw()};
+
 function chipList2(pairs,cur,cb){window.__pick2=cb;
   return`<div class="chips" style="margin-top:12px">`+pairs.map(([k,l])=>
     `<button class="chip ${cur===k?"on":""}" onclick="__pick2('${k}')"><span class="tick">\u2713</span>${l}</button>`).join("")+`</div>`}
@@ -988,7 +1080,14 @@ function draw(){
     <div class="nav"><button class="go" id="goBtn" ${st.ok()?"":"disabled"}>${STEP===STEPS.length-1?"Build my site":"Next"}</button>
     ${STEP>0?`<button class="back" id="backBtn">Back</button>`:""}</div>`;
   st.bind&&st.bind();
-  $("goBtn").onclick=()=>{STEP===STEPS.length-1?build():(STEP++,draw())};
+  $("goBtn").onclick=()=>{
+    if(STEP===STEPS.length-1)return build();
+    STEP++;
+    /* The trade questions are written for this business, so they can't exist
+       until the earlier answers do. */
+    if(STEP===STEPS.length-1&&!TRADE_Q.length&&!TRADE_ASKED){TRADE_ASKED=true;askTrade()}
+    draw();
+  };
   $("backBtn")&&($("backBtn").onclick=()=>{STEP--;draw()});
 }
 /* start is owned by initApp() in persist.js */
@@ -1009,10 +1108,47 @@ function parseLoose(raw){
   while(st.length)s+=st.pop()==="{"?"}":"]";
   return JSON.parse(s);
 }
+/* Ask the model what a fitter would ask this particular trade, and which of the
+   modules we actually have would earn their place. It picks from a fixed list —
+   it cannot invent a feature, only recognise a need for one that exists. */
+async function askTrade(){
+  try{
+    const r=await callAI(`You are setting up a point-of-sale system and want to ask the owner the two
+or three questions that actually matter for THEIR trade — not a generic script.
+
+${ctx()}
+Sells: ${A.desc}
+
+Available modules (you may only choose from these, by key):
+${Object.entries(MODULES).map(([k,m])=>`  ${k} — ${m.n}: ${m.what}`).join("\n")}
+
+Return ONLY valid JSON, no prose or fences:
+{"questions":[{"q":string,"opts":[string],"why":string}],"modules":[string]}
+
+- 2 or 3 questions, specific to this trade, that change how the register should be set up.
+  A butcher gets asked about cutting and batch dates. A phone shop gets asked about
+  trade-ins, warranties and commission. A café gets asked about sizes, milk options and
+  whether they cost their recipes. Do not ask things you already know from above.
+- "opts": 2 to 4 short answers. Keep them concrete.
+- "why": one short line on what the answer changes. Plain language, no jargon.
+- "modules": the keys worth switching on for this business. Empty array if none fit.
+  Do not invent keys.`,{max_tokens:900,kind:"trade-questions"});
+    TRADE_Q=(r.questions||[]).slice(0,3).filter(q=>q&&q.q);
+    REC_MODS=(r.modules||[]).filter(k=>MODULES[k]);
+    A.mods=[...REC_MODS];
+  }catch(e){
+    /* No questions is better than made-up questions. */
+    TRADE_Q=[];REC_MODS=Object.keys(MODULES).filter(k=>MODULES[k].fits.test(A.type+" "+A.desc));
+    A.mods=[...REC_MODS];
+  }
+  if(STEP===STEPS.length-1)draw();
+}
+
 function ctx(){return`Business type: ${A.type}${A.typeOther?` (${A.typeOther})`:""}
 Store name: ${A.name}
 Owner's description: ${A.desc}
-Modules enabled: ${A.caps.length?A.caps.join(", "):"none"}`}
+Modules enabled: ${A.caps.length?A.caps.join(", "):"none"}${
+  TRADE_Q.length?"\n"+TRADE_Q.map((q,i)=>`${q.q} ${A.trade[i]||"—"}`).join("\n"):""}`}
 function itemRules(){
   const r=["Real, specific product names and realistic US retail prices. No placeholders.",
     `"upc": a unique plausible 12-digit UPC string per item.`];
@@ -1204,7 +1340,10 @@ function compile(gen){
     tax:TAXINFO?{place:TAXINFO.place,state:TAXINFO.state,sources:TAXINFO.sources||[],
       verifyUrl:TAXINFO.verifyUrl||"",conflict:TAXINFO.conflict||null,sumNote:TAXINFO.sumNote||null,
       recent:TAXINFO.recent||null,confirmed:false,searched:true}:{confirmed:false},
-    pricing:{margin:parseFloat(A.margin)||35,ending:A.ending,dir:A.dir},
+    pricing:{margin:parseFloat(A.margin)||35,ending:A.ending,dir:A.dir,
+      mode:A.priceMode||"margin"},
+    modules:Object.fromEntries((A.mods||[]).map(k=>[k,{on:true,cfg:{}}])),
+    trade:TRADE_Q.map((q,i)=>({q:q.q,a:A.trade[i]||null})),
     taxRates,depts:[],plus:[],menus:[],mops:[],restricts,promos:[],
     groups:[],employees:[],reasons:[],modGroups:[],reminders:[]};
 
@@ -1445,6 +1584,8 @@ function wireSale(){
   toast("Tap a key, scan a barcode, or search to start a sale.");
 }
 function renderTenders(){
+  if(typeof modOn==="function"&&modOn("giftcards")&&!CFG.mops.some(m=>m.kind==="gift"))
+    CFG.mops.push({id:"MOP"+uid(),n:"Gift card",kind:"gift",drawer:false,change:false});
   $("tenders").innerHTML=CFG.mops.map(m=>
     `<button class="tender ${m.kind==="cash"?"cash":""}" data-m="${m.id}">${esc(m.n)}</button>`).join("");
 }
@@ -1786,15 +1927,34 @@ function payIn(){ask({t:"Pay in",p:"Cash added to the drawer from outside a sale
   done:v=>{SHIFT.paidIn+=+v;toast(`Paid in <b>${money(+v)}</b>`)}})}
 function safeDrop(){ask({t:"Safe drop",p:"Cash moved from the drawer to the safe.",num:"100.00",
   done:v=>{SHIFT.safeDrops+=+v;toast(`Safe drop <b>${money(+v)}</b> recorded.`)}})}
-function hold(){if(!CART.length)return;
+function hold(){
+  if(!CART.length)return;
+  if(typeof modOn==="function"&&modOn("service"))return holdNamed();
   HELD.push({lines:CART,disc:DISC,at:new Date(),n:HELD.length+1,by:ME.n});
   CART=[];SEL=null;DISC=null;drawCart();renderSubops();toast(`Sale suspended. ${HELD.length} on hold.`)}
+function holdNamed(){
+  const el=veil(`<div class="card"><h3>Open a tab</h3>
+    <p>A table number or a name, so it can be found again.</p>
+    <input id="tbn" class="big" style="text-align:left;font-size:19px" placeholder="Table 6">
+    <div class="row"><button class="no" id="tbc">Cancel</button>
+      <button class="ok" id="tbo">Open it</button></div></div>`);
+  const inp=el.querySelector("#tbn");inp.focus();
+  const go=()=>{
+    const label=inp.value.trim()||("#"+(HELD.length+1));
+    HELD.push({lines:CART,disc:DISC,at:new Date(),n:HELD.length+1,by:ME.n,label});
+    CART=[];SEL=null;DISC=null;el.remove();drawCart();renderSubops();
+    toast(`Tab <b>${esc(label)}</b> opened. ${HELD.length} running.`);
+  };
+  el.querySelector("#tbc").onclick=()=>el.remove();
+  el.querySelector("#tbo").onclick=go;
+  inp.onkeydown=e=>{if(e.key==="Enter")go()};
+}
 function recall(){
   if(!HELD.length)return toast("Nothing on hold.");
   const el=veil(`<div class="card"><h3>Suspended sales</h3><p>Pick one to bring back to the register.</p>
     <div class="opts" style="flex-direction:column">${HELD.map((h,i)=>{
       const n=h.lines.reduce((s,c)=>s+c.q,0),v=h.lines.reduce((s,c)=>s+c.price*c.q,0);
-      return`<button data-i="${i}" style="width:100%">#${h.n} · ${n} item${n===1?"":"s"} · $${money(v)} · ${h.by} · ${h.at.toLocaleTimeString()}</button>`}).join("")}</div>
+      return`<button data-i="${i}" style="width:100%">${esc(h.label||("#"+h.n))} · ${n} item${n===1?"":"s"} · $${money(v)} · ${h.by} · ${h.at.toLocaleTimeString()}</button>`}).join("")}</div>
     <div class="row"><button class="no" id="hn">Cancel</button></div></div>`);
   el.querySelector("#hn").onclick=()=>el.remove();
   el.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{
@@ -1803,8 +1963,26 @@ function recall(){
 }
 
 /* ========================= tender ========================= */
-function tender(mop){
+/* Modules that reach into the sale hook here. Each one checks whether it is
+   switched on first, so a shop that wants none of this sees none of it. */
+async function tender(mop){
   const t=calc();let due=Math.abs(t.tot);
+  if(!RETURN){
+    if(typeof modOn==="function"&&modOn("giftcards")&&mop.kind==="gift"){
+      const paid=await redeemGiftCard(due);
+      if(paid===null)return;
+      due=paid.remaining;
+      if(due<=0.005)return finish([{mop:mop.n,amt:paid.used,card:paid.code}],0);
+      PART_PAID=[{mop:mop.n,amt:paid.used,card:paid.code}];
+    }
+    if(typeof modOn==="function"&&modOn("customers")){
+      const c=custCfg();
+      if(c.ask==="ask"||(c.ask==="card"&&!mop.change))SALE_CUST=await askCustomer();
+    }
+    if(typeof modOn==="function"&&modOn("tips")&&!mop.change){
+      SALE_TIP=await askTip(due);due+=SALE_TIP;
+    }
+  }
   if(RETURN)return auth("refund","Refund",()=>reasonPrompt("refund","Reason for return",r=>doRefund(mop,due,r)));
   if(mop.ebtOnly){
     const el=CART.filter(c=>c.ebt).reduce((s,c)=>s+c.price*c.q,0);
@@ -1907,14 +2085,46 @@ function finishRefund(pays,reason){
   RETREF=null;
 }
 
+function redeemGiftCard(due){
+  const c=gcCfg();
+  return new Promise(res=>{
+    const el=veil(`<div class="card"><h3>Gift card</h3>
+      <p>Enter or scan the card number. ${money(due)} to pay.</p>
+      <input id="gcv" class="big num" placeholder="card number">
+      <div id="gcr" style="margin-top:12px"></div>
+      <div class="row"><button class="no" id="gcn">Cancel</button>
+        <button class="ok" id="gcy">Use it</button></div></div>`);
+    const inp=el.querySelector("#gcv"),out=el.querySelector("#gcr");
+    let card=null;
+    inp.oninput=()=>{
+      card=c.cards.find(x=>x.code===inp.value.trim());
+      out.innerHTML=card
+        ?`<div class="chg"><span>Balance</span><b>${money(card.bal)}</b></div>`
+        :inp.value.trim().length>5?`<p style="color:var(--void);font-size:13px">No card with that number.</p>`:"";
+    };
+    inp.focus();
+    el.querySelector("#gcn").onclick=()=>{el.remove();res(null)};
+    el.querySelector("#gcy").onclick=()=>{
+      if(!card||card.bal<=0.005)return;
+      const used=Math.min(card.bal,due);
+      card.bal=+(card.bal-used).toFixed(2);
+      setModule("giftcards",true,c);queueSave();
+      el.remove();res({used,remaining:+(due-used).toFixed(2),code:card.code});
+    };
+  });
+}
+
 function finish(pays,roundAdj,reason,cid){
+  if(PART_PAID){pays=PART_PAID.concat(pays);PART_PAID=null}
   const t=calc();
   const sale={n:SHIFT.num++,at:new Date(),by:ME.n,lines:JSON.parse(JSON.stringify(CART)),...t,pays,
     ret:RETURN,manualDisc:DISC,roundAdj:roundAdj||0,reason:reason?.n,train:TRAIN,
     against:RETREF?RETREF.n:null,
+    tip:SALE_TIP||0,customer:SALE_CUST||null,
     cid:cid||(Date.now().toString(36)+Math.random().toString(36).slice(2,8))};
   if(!TRAIN){SHIFT.sales.push(sale);postSale(sale)}
-  CART=[];SEL=null;DISC=null;const wasRet=RETURN;RETURN=false;RETREF=null;drawCart();
+  CART=[];SEL=null;DISC=null;SALE_TIP=0;SALE_CUST=null;
+  const wasRet=RETURN;RETURN=false;RETREF=null;drawCart();
   const paid=pays.map(p=>`${p.mop} ${money(Math.abs(p.amt))}`).join(" + ");
   const ch=pays.find(p=>p.change>0.001);
   /* Record first, then take the money. If anything fails between the two, the
@@ -1953,6 +2163,9 @@ function receipt(s){
     ${s.pays.map(p=>`<div class="rr"><span>${esc(p.mop)}${
       p.brand?` ${esc(p.brand)} ****${esc(p.last4||"")}`:""}${p.refund?" refund":""}</span><span>${money(Math.abs(p.amt))}</span></div>`
       +(p.change>0.001?`<div class="rr"><span>Change</span><span>${money(p.change)}</span></div>`:"")).join("")}
+    ${s.tip>0.005?`<div class="rr"><span>Tip</span><span>${money(s.tip)}</span></div>`:""}
+    ${s.customer?`<hr><div class="ctr">${esc(s.customer.n||s.customer.phone||"")}${
+      s.pointsEarned?` · ${s.pointsEarned} points`:""}</div>`:""}
     ${s.against?`<hr><div class="ctr">Refund against sale #${s.against}</div>`:""}
     ${s.reason?`<hr><div class="ctr">Reason: ${esc(s.reason)}</div>`:""}
     <hr><div class="ctr">Thank you</div></div>
@@ -2208,7 +2421,10 @@ function charm(p,rule,dir){
   else pick=cands.reduce((a,b)=>Math.abs(b-cents)<=Math.abs(a-cents)?b:a,cands[0]);
   return (pick||cents)/100;
 }
+/* A shop that prices by value gets no suggested retail — a coffee costing 40
+   cents does not sell for 80, and pretending otherwise is worse than a blank. */
 function priceFor(cost){
+  if(CFG.pricing.mode==="value")return 0;
   return charm(fromMargin(cost,CFG.pricing.margin),CFG.pricing.ending,CFG.pricing.dir);
 }
 
@@ -2683,6 +2899,7 @@ ${lineRules(depts)}`}]}]});
       }
     }
     if(!lineTotal||lineTotal<=0){conf=0;why=why||"no cost could be read"}
+    if(CFG.pricing.mode==="value"){conf=Math.min(conf,.6);why=why||"set the shelf price yourself"}
 
     const cost=(lineTotal||0)/units;
     if(cost>0&&cost<0.01){conf=Math.min(conf,.5);why=why||"unit cost looks too low — check the pack size"}
@@ -3068,7 +3285,7 @@ function health(){
   themeIssues().forEach(i=>f.push({sev:i.t==="warn"?"warn":"info",t:"Appearance",d:i.m,fix:null}));
   return f;
 }
-const BUILD="86499e9619";
+const BUILD="88f5d0fb40";
 function tHealth(){
   const f=health();
   window.__fix=i=>{f[i].fix&&f[i].fix();reload();drawConfig()};
@@ -3831,17 +4048,790 @@ async function loadPayCfg() {
   return PAYCFG;
 }
 
+/* ===========================================================================
+   Modules.
+
+   A POS for a butcher and a POS for a phone shop need genuinely different
+   things — batch tracking versus commission reporting — but they must not be
+   different software. What varies is which modules are switched on and how
+   they're configured; the code is the same everywhere, tested once.
+
+   Three of them are deliberately generic:
+     records  — a definable list. Recipes, customer contacts, a cut log, a
+                maintenance sheet. One implementation, a hundred uses.
+     expiry   — dated stock, with a board of what's about to be worthless.
+     staff    — who sold what, out of the sales journal we already keep.
+
+   The setup interview decides which to suggest. The owner decides which to
+   keep, and can switch any of them on later.
+   =========================================================================== */
+
+const MODULES = {
+  records: {
+    n: "Custom lists",
+    what: "Any list your trade needs — recipes, customer contacts, a cut log, supplier notes. You define the columns.",
+    fits: /caf|coffee|bakery|restaurant|deli|butcher|pizz|juice|brewery|bar|salon|barber|repair|florist|craft/i,
+    icon: '<path d="M4 6h16M4 12h16M4 18h10"/><circle cx="19" cy="18" r="2"/>'
+  },
+  expiry: {
+    n: "Expiration tracking",
+    what: "Dated stock with a board of what's about to expire, so it gets marked down before it's a write-off.",
+    fits: /grocer|market|butcher|fish|deli|bakery|convenience|cheese|produce|pharmac|health food|farm/i,
+    icon: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18M12 15v3"/>'
+  },
+  staff: {
+    n: "Staff performance",
+    what: "Who rang what, average basket per person, and which upsells actually land.",
+    fits: /phone|electronic|cloth|boutique|shoe|jewel|furniture|sporting|salon|beauty|cosmetic|auto/i,
+    icon: '<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 11l2 2 4-4"/>'
+  }
+};
+
+const modOn = id => !!(CFG.modules && CFG.modules[id] && CFG.modules[id].on);
+const modCfg = id => (CFG.modules && CFG.modules[id] && CFG.modules[id].cfg) || {};
+function setModule(id, on, cfg) {
+  CFG.modules = CFG.modules || {};
+  CFG.modules[id] = { on, cfg: cfg || modCfg(id) };
+}
+
+/* ============================== custom lists ============================== */
+/* A record type is a name, a set of fields, and rows. That covers a recipe
+   card, a customer list and a butchery log without three implementations. */
+const FIELD_TYPES = [["text", "Text"], ["longtext", "Long text"], ["number", "Number"],
+  ["money", "Money"], ["date", "Date"], ["choice", "Choice"], ["check", "Yes / no"],
+  ["product", "Product"], ["staff", "Staff member"]];
+
+function listsCfg() {
+  const c = modCfg("records");
+  if (!c.lists) c.lists = [];
+  return c;
+}
+function tRecords() {
+  const c = listsCfg();
+  const cur = c.lists.find(l => l.id === REC_OPEN) || c.lists[0];
+
+  W.addList = () => {
+    const el = veil(`<div class="card"><h3>New list</h3>
+      <p>What is this a list of? Recipes, customers, deliveries, anything you need to keep track of.</p>
+      <input id="nlName" placeholder="Recipes" style="margin-top:14px">
+      <div class="opts">${["Recipes","Customers","Deliveries","Cut log","Maintenance","Suppliers","Waste log"]
+        .map(v => `<button data-p="${v}">${v}</button>`).join("")}</div>
+      <div class="row"><button class="no" id="nln">Cancel</button>
+        <button class="ok" id="nly">Create it</button></div></div>`);
+    el.querySelectorAll("[data-p]").forEach(b => b.onclick = () => el.querySelector("#nlName").value = b.dataset.p);
+    el.querySelector("#nln").onclick = () => el.remove();
+    el.querySelector("#nly").onclick = () => {
+      const n = el.querySelector("#nlName").value.trim(); if (!n) return;
+      const id = "L" + uid();
+      c.lists.push({ id, n, fields: [{ k: "f" + uid(), n: "Name", t: "text" }], rows: [] });
+      REC_OPEN = id; setModule("records", true, c);
+      el.remove(); refresh(); queueSave();
+    };
+  };
+  W.pickList = id => { REC_OPEN = id; refresh(); };
+  W.delList = id => {
+    const l = c.lists.find(x => x.id === id);
+    const el = veil(`<div class="card"><h3>Delete "${esc(l.n)}"</h3>
+      <p>This removes the list and its ${l.rows.length} record${l.rows.length === 1 ? "" : "s"}.</p>
+      <div class="row"><button class="no" id="dn">Keep it</button>
+        <button class="danger" id="dy">Delete</button></div></div>`);
+    el.querySelector("#dn").onclick = () => el.remove();
+    el.querySelector("#dy").onclick = () => {
+      c.lists = c.lists.filter(x => x.id !== id); REC_OPEN = null;
+      setModule("records", true, c); el.remove(); refresh(); queueSave();
+    };
+  };
+  W.addField = id => {
+    const l = c.lists.find(x => x.id === id);
+    l.fields.push({ k: "f" + uid(), n: "New column", t: "text" });
+    refresh(); queueSave();
+  };
+  W.setField = (lid, k, prop, v) => {
+    const f = c.lists.find(x => x.id === lid).fields.find(x => x.k === k);
+    f[prop] = v; queueSave();
+    if (prop === "t") refresh();
+  };
+  W.delField = (lid, k) => {
+    const l = c.lists.find(x => x.id === lid);
+    l.fields = l.fields.filter(f => f.k !== k);
+    l.rows.forEach(r => delete r[k]);
+    refresh(); queueSave();
+  };
+  W.addRow = id => {
+    const l = c.lists.find(x => x.id === id);
+    l.rows.unshift({ _id: "R" + uid(), _at: new Date().toISOString() });
+    refresh(); queueSave();
+  };
+  W.setCell = (lid, rid, k, v) => {
+    const r = c.lists.find(x => x.id === lid).rows.find(x => x._id === rid);
+    r[k] = v; queueSave();
+  };
+  W.delRow = (lid, rid) => {
+    const l = c.lists.find(x => x.id === lid);
+    l.rows = l.rows.filter(r => r._id !== rid);
+    refresh(); queueSave();
+  };
+  W.recQ = v => { REC_Q = v; const el = $("recRows"); if (el) el.innerHTML = recRows(cur); };
+
+  $("cfgBody").innerHTML = `
+    ${c.lists.length ? `<div class="listtabs">${c.lists.map(l =>
+      `<button class="${cur && l.id === cur.id ? "on" : ""}" onclick="__w.pickList('${l.id}')">
+        ${esc(l.n)}<em>${l.rows.length}</em></button>`).join("")}
+      <button class="add" onclick="__w.addList()">+ New list</button></div>` : ""}
+
+    ${!cur ? `<div class="drop" style="cursor:default">
+      <svg viewBox="0 0 24 24">${MODULES.records.icon}</svg>
+      <b>No lists yet</b>
+      <span>A list is whatever your trade needs to keep track of. A café keeps recipes with yields and
+        costs. A clothing shop keeps customers and their sizes. A butcher keeps what was cut, when, and
+        by whom. You define the columns; the register keeps the records.</span>
+      <button class="mini" onclick="__w.addList()">Create your first list</button></div>`
+    : `
+      <div class="sect">Columns in ${esc(cur.n)}</div>
+      <table class="tbl"><thead><tr><th style="width:44%">Column</th><th style="width:30%">Type</th>
+        <th style="width:20%">Options</th><th></th></tr></thead><tbody>
+      ${cur.fields.map(f => `<tr>
+        <td><input value="${esc(f.n)}" oninput="__w.setField('${cur.id}','${f.k}','n',this.value)"></td>
+        <td><select onchange="__w.setField('${cur.id}','${f.k}','t',this.value)">${
+          FIELD_TYPES.map(([k, l]) => `<option value="${k}" ${f.t === k ? "selected" : ""}>${l}</option>`).join("")}</select></td>
+        <td>${f.t === "choice"
+          ? `<input value="${esc(f.opts || "")}" placeholder="One, Two, Three"
+              oninput="__w.setField('${cur.id}','${f.k}','opts',this.value)">`
+          : `<span style="color:var(--txt-3);font-size:12px;padding-left:8px">—</span>`}</td>
+        <td>${cur.fields.length > 1 ? `<button class="del" onclick="__w.delField('${cur.id}','${f.k}')">×</button>` : ""}</td>
+      </tr>`).join("")}
+      </tbody></table>
+      <button class="mini" onclick="__w.addField('${cur.id}')">Add a column</button>
+      <button class="mini" style="border-color:var(--void);color:var(--void)"
+        onclick="__w.delList('${cur.id}')">Delete this list</button>
+
+      <div class="sect">${esc(cur.n)} — ${cur.rows.length} record${cur.rows.length === 1 ? "" : "s"}</div>
+      <div class="pbtop">
+        <input id="recSearch" placeholder="Search ${esc(cur.n.toLowerCase())}…" value="${esc(REC_Q)}">
+        <button class="mini" style="margin:0" onclick="__w.addRow('${cur.id}')">Add a record</button>
+      </div>
+      <div id="recRows">${recRows(cur)}</div>`}`;
+
+  const s = $("recSearch");
+  if (s) s.oninput = e => W.recQ(e.target.value);
+}
+let REC_OPEN = null, REC_Q = "";
+
+function recRows(l) {
+  if (!l) return "";
+  const q = REC_Q.trim().toLowerCase();
+  const rows = q ? l.rows.filter(r => l.fields.some(f =>
+    String(r[f.k] ?? "").toLowerCase().includes(q))) : l.rows;
+  if (!rows.length) return `<p style="color:var(--txt-3);font-size:13px;padding:14px 2px">${
+    q ? `Nothing matches “${esc(q)}”.` : "No records yet."}</p>`;
+  return `<table class="tbl"><thead><tr>${l.fields.map(f =>
+    `<th>${esc(f.n)}</th>`).join("")}<th style="width:34px"></th></tr></thead><tbody>
+    ${rows.map(r => `<tr>${l.fields.map(f => `<td>${cell(l, r, f)}</td>`).join("")}
+      <td><button class="del" onclick="__w.delRow('${l.id}','${r._id}')">×</button></td></tr>`).join("")}
+  </tbody></table>`;
+}
+function cell(l, r, f) {
+  const v = r[f.k] ?? "";
+  const set = `__w.setCell('${l.id}','${r._id}','${f.k}',this.value)`;
+  switch (f.t) {
+    case "longtext": return `<textarea rows="2" oninput="${set}"
+      style="min-height:38px;resize:vertical">${esc(v)}</textarea>`;
+    case "number": return `<input class="n" value="${esc(v)}" oninput="${set}">`;
+    case "money": return `<input class="n" value="${esc(v)}" placeholder="0.00" oninput="${set}">`;
+    case "date": return `<input type="date" value="${esc(v)}" oninput="${set}">`;
+    case "check": return `<input type="checkbox" ${v ? "checked" : ""} style="width:auto"
+      onchange="__w.setCell('${l.id}','${r._id}','${f.k}',this.checked)">`;
+    case "choice": return `<select onchange="${set}"><option value=""></option>${
+      String(f.opts || "").split(",").map(o => o.trim()).filter(Boolean)
+        .map(o => `<option ${v === o ? "selected" : ""}>${esc(o)}</option>`).join("")}</select>`;
+    case "product": return `<select onchange="${set}"><option value=""></option>${
+      CFG.plus.map(p => `<option value="${p.id}" ${v === p.id ? "selected" : ""}>${esc(p.n)}</option>`).join("")}</select>`;
+    case "staff": return `<select onchange="${set}"><option value=""></option>${
+      CFG.employees.map(e => `<option ${v === e.n ? "selected" : ""}>${esc(e.n)}</option>`).join("")}</select>`;
+    default: return `<input value="${esc(v)}" oninput="${set}">`;
+  }
+}
+
+/* ============================ expiration =============================== */
+/* Dated stock. The point isn't the dates, it's the board that tells you what to
+   mark down this morning while it's still worth something. */
+function expCfg() {
+  const c = modCfg("expiry");
+  if (!c.batches) c.batches = [];
+  if (!c.warnDays) c.warnDays = 7;
+  return c;
+}
+const daysUntil = d => Math.floor((new Date(d) - new Date().setHours(0, 0, 0, 0)) / 864e5);
+
+function tExpiry() {
+  const c = expCfg();
+  W.addBatch = () => {
+    const p = CFG.plus[0];
+    c.batches.unshift({ id: "B" + uid(), pluId: p ? p.id : null, qty: 1,
+      exp: new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10),
+      received: new Date().toISOString().slice(0, 10), by: ME?.n || "", note: "" });
+    setModule("expiry", true, c); refresh(); queueSave();
+  };
+  W.setBatch = (id, f, v) => {
+    const b = c.batches.find(x => x.id === id);
+    b[f] = f === "qty" ? (parseFloat(v) || 0) : v;
+    queueSave(); if (f === "exp") refresh();
+  };
+  W.delBatch = id => { c.batches = c.batches.filter(b => b.id !== id); refresh(); queueSave(); };
+  W.setWarn = v => { c.warnDays = parseInt(v) || 7; setModule("expiry", true, c); refresh(); queueSave(); };
+
+  const sorted = c.batches.slice().sort((a, b) => new Date(a.exp) - new Date(b.exp));
+  const gone = sorted.filter(b => daysUntil(b.exp) < 0);
+  const soon = sorted.filter(b => { const d = daysUntil(b.exp); return d >= 0 && d <= c.warnDays; });
+
+  $("cfgBody").innerHTML = `
+    <div class="cards" style="margin-top:2px">
+      <div class="stat"><div class="lbl">Already expired</div>
+        <div class="val ${gone.length ? "" : "g"}" style="${gone.length ? "color:var(--void)" : ""}">${gone.length}</div>
+        <div class="sub2">pull these off the shelf</div></div>
+      <div class="stat"><div class="lbl">Within ${c.warnDays} days</div>
+        <div class="val ${soon.length ? "w" : "g"}">${soon.length}</div>
+        <div class="sub2">mark down while they still sell</div></div>
+      <div class="stat"><div class="lbl">Tracked</div><div class="val">${c.batches.length}</div>
+        <div class="sub2">dated batches on file</div></div>
+    </div>
+    <div class="frm" style="margin-top:14px">
+      <label>Warn me this many days ahead
+        <input class="n" value="${c.warnDays}" oninput="__w.setWarn(this.value)"></label>
+    </div>
+    <div class="sect">Dated stock</div>
+    <table class="tbl"><thead><tr>
+      <th style="width:26%">Product</th><th style="width:9%">Qty</th>
+      <th style="width:14%">Received</th><th style="width:14%">Expires</th>
+      <th style="width:11%">Days left</th><th style="width:14%">Logged by</th>
+      <th>Note</th><th></th></tr></thead><tbody>
+    ${sorted.map(b => {
+      const d = daysUntil(b.exp);
+      const cls = d < 0 ? "expgone" : d <= c.warnDays ? "expsoon" : "";
+      return `<tr class="${cls}">
+        <td><select onchange="__w.setBatch('${b.id}','pluId',this.value)">${
+          CFG.plus.map(p => `<option value="${p.id}" ${b.pluId === p.id ? "selected" : ""}>${esc(p.n)}</option>`).join("")}</select></td>
+        <td><input class="n" value="${b.qty}" oninput="__w.setBatch('${b.id}','qty',this.value)"></td>
+        <td><input type="date" value="${esc(b.received || "")}" oninput="__w.setBatch('${b.id}','received',this.value)"></td>
+        <td><input type="date" value="${esc(b.exp)}" oninput="__w.setBatch('${b.id}','exp',this.value)"></td>
+        <td style="padding-left:9px;font-family:'Azeret Mono',monospace;font-size:12.5px">${
+          d < 0 ? `${-d} ago` : d === 0 ? "today" : `${d}`}</td>
+        <td><select onchange="__w.setBatch('${b.id}','by',this.value)"><option value=""></option>${
+          CFG.employees.map(e => `<option ${b.by === e.n ? "selected" : ""}>${esc(e.n)}</option>`).join("")}</select></td>
+        <td><input value="${esc(b.note || "")}" oninput="__w.setBatch('${b.id}','note',this.value)"></td>
+        <td><button class="del" onclick="__w.delBatch('${b.id}')">×</button></td></tr>`;
+    }).join("") || `<tr><td colspan="8" style="padding:14px;color:var(--txt-3)">
+      Nothing dated yet. Add a batch when stock comes in, or scan it at goods-in.</td></tr>`}
+    </tbody></table>
+    <button class="mini" onclick="__w.addBatch()">Add a batch</button>
+    <div class="note">One product can have several batches with different dates — that's the point.
+      The oldest one is what should sell first, and what should be marked down before it can't.</div>`;
+}
+
+/* ============================ staff performance ========================== */
+function tStaff() {
+  const S = SHIFT.sales.filter(s => !s.ret);
+  const by = {};
+  S.forEach(s => {
+    const k = s.by || "—";
+    by[k] = by[k] || { n: 0, total: 0, items: 0, disc: 0, voids: 0 };
+    by[k].n++; by[k].total += s.tot;
+    by[k].items += s.lines.reduce((a, c) => a + c.q, 0);
+    by[k].disc += Math.abs(s.disc || 0) + Math.abs(s.promoOff || 0);
+  });
+  SHIFT.exceptions.forEach(x => {
+    if (/void/i.test(x.what) && by[x.by]) by[x.by].voids++;
+  });
+  const rows = Object.entries(by).sort((a, b) => b[1].total - a[1].total);
+  const max = Math.max(0.01, ...rows.map(r => r[1].total));
+
+  $("cfgBody").innerHTML = `
+    <p class="lede" style="margin:0 0 6px">This shift, by who rang it. Sales are stamped with the
+      cashier when they're recorded, so this needs nothing extra from anyone.</p>
+    ${rows.length ? `
+      <div class="sect">Takings</div>
+      ${rows.map(([n, v], i) => `<div class="hbar">
+        <span class="hn">${esc(n)}</span>
+        <span class="ht"><span class="hf" style="width:${Math.max(2, v.total / max * 100)}%;
+          background:var(--vfd);animation-delay:${i * 60}ms"></span></span>
+        <span class="hv">${money(v.total)}</span></div>`).join("")}
+
+      <div class="sect">Detail</div>
+      <table class="tbl"><thead><tr><th style="width:22%">Cashier</th><th>Sales</th>
+        <th>Items</th><th>Average basket</th><th>Items per sale</th>
+        <th>Discounts given</th><th>Voids</th></tr></thead><tbody>
+      ${rows.map(([n, v]) => `<tr>
+        <td style="padding-left:9px">${esc(n)}</td>
+        <td style="padding-left:9px" class="num">${v.n}</td>
+        <td style="padding-left:9px" class="num">${v.items}</td>
+        <td style="padding-left:9px" class="num">${money(v.total / v.n)}</td>
+        <td style="padding-left:9px" class="num">${(v.items / v.n).toFixed(1)}</td>
+        <td style="padding-left:9px" class="num">${money(v.disc)}</td>
+        <td style="padding-left:9px" class="num ${v.voids > 3 ? "" : ""}"
+          style="${v.voids > 3 ? "color:var(--warn)" : ""}">${v.voids}</td></tr>`).join("")}
+      </tbody></table>
+      <div class="note">Items per sale is the upsell number — it moves when someone actually asks.
+        Voids are here because a cashier voiding far more than everyone else is worth a look, not
+        because voiding is wrong.</div>`
+    : `<p style="color:var(--txt-3);font-size:13px;padding:16px 2px">No sales on this shift yet.</p>`}`;
+}
+
+/* ===========================================================================
+   Module library, part two.
+
+   Everything here is built and tested. What varies per store is which ones are
+   switched on — a barber never sees gift cards, a butcher never sees table
+   numbers. Several of these reach into the sale itself rather than sitting off
+   to the side, so they hook the tender and completion paths explicitly.
+   =========================================================================== */
+
+Object.assign(MODULES, {
+  customers: {
+    n: "Customers & loyalty",
+    what: "Capture a name and number at the till, keep purchase history, and run points or a punch card.",
+    fits: /cloth|boutique|shoe|jewel|salon|barber|nail|spa|caf|coffee|bakery|restaurant|pet|florist|bike|repair/i,
+    icon: '<circle cx="12" cy="8" r="3.4"/><path d="M4 21a8 8 0 0 1 16 0"/>'
+  },
+  tips: {
+    n: "Tips",
+    what: "A tip prompt on card payments, with the amount split out on the receipt and reported per person.",
+    fits: /caf|coffee|restaurant|bar|pub|deli|salon|barber|nail|spa|food truck|pizz|brewery|juice/i,
+    icon: '<path d="M12 2v20M17 6.5c0-2-2.2-3.5-5-3.5S7 4.5 7 6.5 9.2 10 12 10s5 1.5 5 3.5-2.2 3.5-5 3.5-5-1.5-5-3.5"/>'
+  },
+  giftcards: {
+    n: "Gift cards",
+    what: "Issue a card with a balance, take it as payment, and see what's still outstanding.",
+    fits: /cloth|boutique|jewel|salon|barber|spa|restaurant|caf|book|gift|toy|record|sporting|nail/i,
+    icon: '<rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 11h20M12 6v13"/><path d="M12 6c-1.5-3-5-3-5-1s3.5 1 5 1zM12 6c1.5-3 5-3 5-1s-3.5 1-5 1z"/>'
+  },
+  waste: {
+    n: "Waste log",
+    what: "Record what got thrown out and why, costed against what you paid for it.",
+    fits: /grocer|market|butcher|fish|deli|bakery|caf|coffee|restaurant|produce|florist|cheese|juice|pizz/i,
+    icon: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/>'
+  },
+  commission: {
+    n: "Commission",
+    what: "A percentage per department, worked out per person from the sales they rang.",
+    fits: /phone|electronic|cloth|boutique|jewel|furniture|shoe|auto|tire|sporting|watch|camera|bike/i,
+    icon: '<path d="M19 5L5 19"/><circle cx="7.5" cy="7.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/>'
+  },
+  jobs: {
+    n: "Bookings & jobs",
+    what: "Appointments or repair tickets, with a status you move along and a customer attached.",
+    fits: /salon|barber|nail|spa|repair|phone|computer|auto|tire|bike|watch|tailor|flooring|camera/i,
+    icon: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/><path d="M9 15l2 2 4-4"/>'
+  },
+  service: {
+    n: "Tabs & tables",
+    what: "Open a tab against a table or a name, add to it through the night, settle it at the end.",
+    fits: /bar|pub|restaurant|brewery|taproom|pizz|caf|food truck|deli/i,
+    icon: '<path d="M4 4h16v6a8 8 0 0 1-16 0z"/><path d="M12 18v3M8 21h8"/>'
+  }
+});
+
+/* ============================== customers ============================== */
+function custCfg(){
+  const c=modCfg("customers");
+  if(!c.people)c.people=[];
+  if(!c.loyalty)c.loyalty={on:false,kind:"points",per:1,reward:100,rewardValue:5};
+  if(!c.ask)c.ask="ask";
+  return c;
+}
+function findCustomer(q){
+  const c=custCfg(),k=String(q||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+  if(!k)return null;
+  return c.people.find(p=>String(p.phone||"").replace(/\D/g,"").includes(k)
+    ||String(p.n||"").toLowerCase().includes(String(q).toLowerCase()));
+}
+/* Runs at tender. Skipped entirely when the module is off, so a shop that
+   doesn't want to ask never sees a prompt. */
+function askCustomer(){
+  const c=custCfg();
+  if(!modOn("customers")||c.ask==="never")return Promise.resolve(null);
+  return new Promise(res=>{
+    const el=veil(`<div class="card"><h3>Customer</h3>
+      <p>Phone number or name. Leave it blank to carry on without one.</p>
+      <input id="cuq" class="big" style="text-align:left;font-size:18px" placeholder="555 0100">
+      <div id="cures" style="margin-top:12px"></div>
+      <div class="row"><button class="no" id="cusk">Skip</button>
+        <button class="ok" id="cuok">Use this</button></div></div>`);
+    const inp=el.querySelector("#cuq"),out=el.querySelector("#cures");
+    let hit=null;
+    inp.oninput=()=>{
+      hit=findCustomer(inp.value);
+      out.innerHTML=hit?`<div class="chg"><span>${esc(hit.n||"—")}<br>
+        <span style="font-size:11.5px;color:var(--txt-3)">${esc(hit.phone||"")} ·
+        ${hit.visits||0} visit${hit.visits===1?"":"s"}</span></span>
+        ${c.loyalty.on?`<b>${hit.points||0} pts</b>`:""}</div>`
+        :inp.value.trim()?`<p style="color:var(--txt-3);font-size:12.5px">New customer — they'll be
+          added when the sale completes.</p>`:"";
+    };
+    inp.focus();
+    el.querySelector("#cusk").onclick=()=>{el.remove();res(null)};
+    el.querySelector("#cuok").onclick=()=>{
+      const v=inp.value.trim();el.remove();
+      if(!v)return res(null);
+      res(hit||{id:"C"+uid(),n:/\d/.test(v)?"":v,phone:/\d/.test(v)?v:"",visits:0,points:0,spent:0});
+    };
+    inp.onkeydown=e=>{if(e.key==="Enter")el.querySelector("#cuok").click()};
+  });
+}
+function recordCustomer(sale){
+  if(!modOn("customers")||!sale.customer)return;
+  const c=custCfg();
+  let p=c.people.find(x=>x.id===sale.customer.id);
+  if(!p){p={...sale.customer,first:new Date().toISOString().slice(0,10)};c.people.push(p)}
+  p.visits=(p.visits||0)+1;
+  p.spent=(p.spent||0)+Math.abs(sale.tot);
+  p.last=new Date().toISOString().slice(0,10);
+  if(c.loyalty.on){
+    const earned=c.loyalty.kind==="punch"?1:Math.floor(Math.abs(sale.tot)*c.loyalty.per);
+    p.points=(p.points||0)+earned;
+    sale.pointsEarned=earned;
+  }
+  setModule("customers",true,c);
+}
+function tCustomers(){
+  const c=custCfg();
+  W.setCu=(id,f,v)=>{const p=c.people.find(x=>x.id===id);p[f]=f==="points"?(parseInt(v)||0):v;queueSave()};
+  W.delCu=id=>{c.people=c.people.filter(p=>p.id!==id);setModule("customers",true,c);refresh();queueSave()};
+  W.setLoy=(f,v)=>{c.loyalty[f]=(f==="on")?v:(f==="kind"?v:(parseFloat(v)||0));
+    setModule("customers",true,c);refresh();queueSave()};
+  W.setAsk=v=>{c.ask=v;setModule("customers",true,c);queueSave()};
+  const top=c.people.slice().sort((a,b)=>(b.spent||0)-(a.spent||0));
+  $("cfgBody").innerHTML=`
+    <div class="cards" style="margin-top:2px">
+      <div class="stat"><div class="lbl">Customers</div><div class="val">${c.people.length}</div></div>
+      <div class="stat"><div class="lbl">Repeat</div>
+        <div class="val g">${c.people.filter(p=>(p.visits||0)>1).length}</div>
+        <div class="sub2">more than one visit</div></div>
+      <div class="stat"><div class="lbl">Average spend</div>
+        <div class="val num">${money(c.people.length?c.people.reduce((a,p)=>a+(p.spent||0),0)/c.people.length:0)}</div></div>
+    </div>
+    <div class="sect">At the till</div>
+    <div class="frm">
+      <label>Ask for a customer<select onchange="__w.setAsk(this.value)">
+        <option value="ask" ${c.ask==="ask"?"selected":""}>On every sale</option>
+        <option value="card" ${c.ask==="card"?"selected":""}>Only on card payments</option>
+        <option value="never" ${c.ask==="never"?"selected":""}>Never — I'll add them here</option>
+      </select></label>
+    </div>
+    <div class="sect">Loyalty</div>
+    <div class="frm">
+      <label>Scheme<select onchange="__w.setLoy('kind',this.value)">
+        <option value="points" ${c.loyalty.kind==="points"?"selected":""}>Points per dollar</option>
+        <option value="punch" ${c.loyalty.kind==="punch"?"selected":""}>Punch card — one per visit</option>
+      </select></label>
+      ${c.loyalty.kind==="points"
+        ?`<label>Points per dollar<input class="n" value="${c.loyalty.per}" oninput="__w.setLoy('per',this.value)"></label>`
+        :``}
+      <label>Reward at<input class="n" value="${c.loyalty.reward}" oninput="__w.setLoy('reward',this.value)"></label>
+      <label>Reward worth<input class="n" value="${money(c.loyalty.rewardValue)}" oninput="__w.setLoy('rewardValue',this.value)"></label>
+      <label>Running<br><input type="checkbox" ${c.loyalty.on?"checked":""}
+        onchange="__w.setLoy('on',this.checked)" style="width:auto;margin-top:10px"></label>
+    </div>
+    <div class="sect">People — ${c.people.length}</div>
+    ${c.people.length?`<table class="tbl"><thead><tr><th style="width:24%">Name</th>
+      <th style="width:18%">Phone</th><th style="width:22%">Email</th><th>Visits</th>
+      <th>Spent</th>${c.loyalty.on?`<th>Points</th>`:""}<th>Last in</th><th></th></tr></thead><tbody>
+      ${top.map(p=>`<tr>
+        <td><input value="${esc(p.n||"")}" oninput="__w.setCu('${p.id}','n',this.value)"></td>
+        <td><input class="n" value="${esc(p.phone||"")}" oninput="__w.setCu('${p.id}','phone',this.value)"></td>
+        <td><input value="${esc(p.email||"")}" placeholder="for deals" oninput="__w.setCu('${p.id}','email',this.value)"></td>
+        <td style="padding-left:9px" class="num">${p.visits||0}</td>
+        <td style="padding-left:9px" class="num">${money(p.spent||0)}</td>
+        ${c.loyalty.on?`<td><input class="n" value="${p.points||0}" oninput="__w.setCu('${p.id}','points',this.value)"></td>`:""}
+        <td style="padding-left:9px;color:var(--txt-2);font-size:12.5px">${esc(p.last||"—")}</td>
+        <td><button class="del" onclick="__w.delCu('${p.id}')">×</button></td></tr>`).join("")}
+      </tbody></table>`
+    :`<p style="color:var(--txt-3);font-size:13px;padding:14px 2px">Nobody yet. They're added from the
+      till when a cashier takes a number.</p>`}
+    <div class="note">Email addresses are collected so you can send offers. That's a marketing list —
+      only send to people who agreed to it, and give them a way out.</div>`;
+}
+
+/* ================================= tips ================================ */
+function tipCfg(){const c=modCfg("tips");if(!c.presets)c.presets=[15,18,20];return c}
+function askTip(due){
+  if(!modOn("tips"))return Promise.resolve(0);
+  const c=tipCfg();
+  return new Promise(res=>{
+    const el=veil(`<div class="card"><h3>Add a tip?</h3>
+      <p>On ${money(due)}. Turn the screen to the customer.</p>
+      <div class="opts">${c.presets.map(p=>
+        `<button data-t="${p}">${p}%<em style="display:block;font-style:normal;font-size:11.5px;
+          color:var(--txt-3);margin-top:3px">${money(due*p/100)}</em></button>`).join("")}
+        <button data-t="0">No tip</button></div>
+      <input id="tipv" class="big num" value="0.00" inputmode="decimal">
+      <div class="row"><button class="no" id="tipn">Skip</button>
+        <button class="ok" id="tipy">Add this amount</button></div></div>`);
+    el.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{el.remove();res(due*(+b.dataset.t)/100)});
+    el.querySelector("#tipn").onclick=()=>{el.remove();res(0)};
+    el.querySelector("#tipy").onclick=()=>{el.remove();res(parseFloat(el.querySelector("#tipv").value)||0)};
+  });
+}
+function tTips(){
+  const c=tipCfg();
+  W.setTip=(i,v)=>{c.presets[i]=parseFloat(v)||0;setModule("tips",true,c);queueSave()};
+  const byStaff={};
+  SHIFT.sales.forEach(s=>{if(s.tip>0){const k=s.by||"—";byStaff[k]=(byStaff[k]||0)+s.tip}});
+  const total=Object.values(byStaff).reduce((a,v)=>a+v,0);
+  $("cfgBody").innerHTML=`
+    <div class="cards" style="margin-top:2px">
+      <div class="stat"><div class="lbl">Tips this shift</div><div class="val g num">${money(total)}</div></div>
+      <div class="stat"><div class="lbl">Sales tipped</div>
+        <div class="val">${SHIFT.sales.filter(s=>s.tip>0).length} of ${SHIFT.sales.length}</div></div>
+    </div>
+    <div class="sect">Suggested percentages</div>
+    <div class="frm">${c.presets.map((p,i)=>
+      `<label>Option ${i+1}<input class="n" value="${p}" oninput="__w.setTip(${i},this.value)"></label>`).join("")}</div>
+    <div class="sect">By person</div>
+    ${Object.keys(byStaff).length?`<div class="rpt">${Object.entries(byStaff)
+      .sort((a,b)=>b[1]-a[1]).map(([n,v])=>
+      `<div class="rr"><span>${esc(n)}</span><b>${money(v)}</b></div>`).join("")}</div>`
+    :`<p style="color:var(--txt-3);font-size:13px;padding:12px 2px">No tips yet this shift.</p>`}
+    <div class="note">The prompt appears on card payments only, and the tip prints as its own line so
+      the sale total and the tip never get confused on a report.</div>`;
+}
+
+/* ============================== gift cards ============================= */
+function gcCfg(){const c=modCfg("giftcards");if(!c.cards)c.cards=[];return c}
+function tGiftcards(){
+  const c=gcCfg();
+  W.issueGC=()=>ask({t:"Issue a gift card",p:"How much is on it?",num:"25.00",yes:"Issue it",
+    done:v=>{
+      const code=String(Math.floor(1e11+Math.random()*9e11));
+      c.cards.unshift({code,start:+v,bal:+v,at:new Date().toISOString().slice(0,10),by:ME?.n||""});
+      setModule("giftcards",true,c);refresh();queueSave();
+      alertCard("Card issued",`Code ${code} — ${money(+v)}. Write it on the card or print the receipt.`);
+    }});
+  W.voidGC=code=>{c.cards=c.cards.filter(x=>x.code!==code);setModule("giftcards",true,c);refresh();queueSave()};
+  const live=c.cards.filter(x=>x.bal>0.005);
+  $("cfgBody").innerHTML=`
+    <div class="cards" style="margin-top:2px">
+      <div class="stat"><div class="lbl">Cards live</div><div class="val">${live.length}</div></div>
+      <div class="stat"><div class="lbl">Outstanding</div>
+        <div class="val w num">${money(live.reduce((a,x)=>a+x.bal,0))}</div>
+        <div class="sub2">money you already took</div></div>
+      <div class="stat"><div class="lbl">Issued all time</div>
+        <div class="val num">${money(c.cards.reduce((a,x)=>a+x.start,0))}</div></div>
+    </div>
+    <button class="mini" onclick="__w.issueGC()">Issue a card</button>
+    <div class="sect">Cards</div>
+    ${c.cards.length?`<table class="tbl"><thead><tr><th style="width:26%">Code</th>
+      <th>Issued for</th><th>Balance</th><th>Issued</th><th>By</th><th></th></tr></thead><tbody>
+      ${c.cards.map(x=>`<tr>
+        <td style="padding-left:9px" class="num">${esc(x.code)}</td>
+        <td style="padding-left:9px" class="num">${money(x.start)}</td>
+        <td style="padding-left:9px" class="num" style="color:${x.bal>0.005?"var(--vfd)":"var(--txt-3)"}">${money(x.bal)}</td>
+        <td style="padding-left:9px;color:var(--txt-2);font-size:12.5px">${esc(x.at)}</td>
+        <td style="padding-left:9px;color:var(--txt-2);font-size:12.5px">${esc(x.by||"—")}</td>
+        <td><button class="del" onclick="__w.voidGC('${x.code}')">×</button></td></tr>`).join("")}
+      </tbody></table>`
+    :`<p style="color:var(--txt-3);font-size:13px;padding:14px 2px">None issued yet.</p>`}
+    <div class="note">An outstanding balance is money you've been paid for goods you haven't handed over.
+      Worth remembering it's a liability, not takings.</div>`;
+}
+
+/* ================================ waste ================================ */
+function wasteCfg(){const c=modCfg("waste");if(!c.log)c.log=[];return c}
+function tWaste(){
+  const c=wasteCfg();
+  const REASONS=["Expired","Damaged","Spoiled","Dropped","Customer return","Staff error","Theft","Other"];
+  W.addWaste=()=>{
+    c.log.unshift({id:"W"+uid(),pluId:CFG.plus[0]?.id||null,qty:1,reason:"Expired",
+      at:new Date().toISOString().slice(0,10),by:ME?.n||"",note:""});
+    setModule("waste",true,c);refresh();queueSave();
+  };
+  W.setWaste=(id,f,v)=>{const w=c.log.find(x=>x.id===id);
+    w[f]=f==="qty"?(parseFloat(v)||0):v;queueSave();if(f!=="note")refresh()};
+  W.delWaste=id=>{c.log=c.log.filter(x=>x.id!==id);setModule("waste",true,c);refresh();queueSave()};
+  const costOf=w=>{const p=byId(CFG.plus,w.pluId);return (p?.cost||0)*w.qty};
+  const total=c.log.reduce((a,w)=>a+costOf(w),0);
+  const byReason={};c.log.forEach(w=>byReason[w.reason]=(byReason[w.reason]||0)+costOf(w));
+  const worst=Object.entries(byReason).sort((a,b)=>b[1]-a[1]);
+  $("cfgBody").innerHTML=`
+    <div class="cards" style="margin-top:2px">
+      <div class="stat"><div class="lbl">Written off</div>
+        <div class="val ${total?"":"g"}" style="${total?"color:var(--void)":""}">${money(total)}</div>
+        <div class="sub2">at what you paid</div></div>
+      <div class="stat"><div class="lbl">Entries</div><div class="val">${c.log.length}</div></div>
+      <div class="stat"><div class="lbl">Biggest cause</div>
+        <div class="val" style="font-size:19px">${worst[0]?esc(worst[0][0]):"—"}</div>
+        <div class="sub2">${worst[0]?money(worst[0][1]):""}</div></div>
+    </div>
+    <button class="mini" onclick="__w.addWaste()">Log something</button>
+    <div class="sect">Log</div>
+    <table class="tbl"><thead><tr><th style="width:26%">Product</th><th style="width:8%">Qty</th>
+      <th style="width:16%">Reason</th><th style="width:12%">Cost</th><th style="width:13%">Date</th>
+      <th style="width:13%">By</th><th>Note</th><th></th></tr></thead><tbody>
+    ${c.log.map(w=>`<tr>
+      <td><select onchange="__w.setWaste('${w.id}','pluId',this.value)">${CFG.plus.map(p=>
+        `<option value="${p.id}" ${w.pluId===p.id?"selected":""}>${esc(p.n)}</option>`).join("")}</select></td>
+      <td><input class="n" value="${w.qty}" oninput="__w.setWaste('${w.id}','qty',this.value)"></td>
+      <td><select onchange="__w.setWaste('${w.id}','reason',this.value)">${REASONS.map(r=>
+        `<option ${w.reason===r?"selected":""}>${r}</option>`).join("")}</select></td>
+      <td style="padding-left:9px" class="num">${money(costOf(w))}</td>
+      <td><input type="date" value="${esc(w.at)}" oninput="__w.setWaste('${w.id}','at',this.value)"></td>
+      <td><select onchange="__w.setWaste('${w.id}','by',this.value)"><option value=""></option>${
+        CFG.employees.map(e=>`<option ${w.by===e.n?"selected":""}>${esc(e.n)}</option>`).join("")}</select></td>
+      <td><input value="${esc(w.note||"")}" oninput="__w.setWaste('${w.id}','note',this.value)"></td>
+      <td><button class="del" onclick="__w.delWaste('${w.id}')">×</button></td></tr>`).join("")
+      ||`<tr><td colspan="8" style="padding:14px;color:var(--txt-3)">Nothing logged.</td></tr>`}
+    </tbody></table>
+    <div class="note">Costed from what you paid, not what you'd have sold it for — the loss is the cost,
+      the rest is margin you never had.</div>`;
+}
+
+/* ============================= commission ============================== */
+function commCfg(){const c=modCfg("commission");if(!c.rates)c.rates={};if(!c.base)c.base=0;return c}
+function tCommission(){
+  const c=commCfg();
+  W.setRate=(d,v)=>{c.rates[d]=parseFloat(v)||0;setModule("commission",true,c);refresh();queueSave()};
+  W.setBase=v=>{c.base=parseFloat(v)||0;setModule("commission",true,c);refresh();queueSave()};
+  const earned={};
+  SHIFT.sales.filter(s=>!s.ret).forEach(s=>{
+    const k=s.by||"—";earned[k]=earned[k]||{sales:0,comm:0};
+    earned[k].sales+=s.tot;
+    s.lines.forEach(l=>{
+      const d=byId(CFG.depts,l.deptId);
+      const rate=(d&&c.rates[d.id]!=null)?c.rates[d.id]:c.base;
+      earned[k].comm+=l.price*l.q*(1-(l.disc||0)/100)*rate/100;
+    });
+  });
+  $("cfgBody").innerHTML=`
+    <div class="sect">Rates</div>
+    <div class="frm"><label>Default rate on everything
+      <input class="n" value="${c.base}" oninput="__w.setBase(this.value)"></label></div>
+    <table class="tbl" style="margin-top:12px"><thead><tr><th style="width:50%">Department</th>
+      <th style="width:20%">Rate %</th><th>Uses default</th></tr></thead><tbody>
+    ${CFG.depts.filter(d=>!d.fuel).map(d=>`<tr>
+      <td style="padding-left:9px">${esc(d.n)}</td>
+      <td><input class="n" value="${c.rates[d.id]!=null?c.rates[d.id]:""}" placeholder="${c.base}"
+        oninput="__w.setRate('${d.id}',this.value)"></td>
+      <td style="padding-left:9px;color:var(--txt-3);font-size:12.5px">${
+        c.rates[d.id]!=null?"no":"yes"}</td></tr>`).join("")}
+    </tbody></table>
+    <div class="sect">Earned this shift</div>
+    ${Object.keys(earned).length?`<table class="tbl"><thead><tr><th style="width:34%">Person</th>
+      <th>Sales</th><th>Commission</th><th>Effective rate</th></tr></thead><tbody>
+      ${Object.entries(earned).sort((a,b)=>b[1].comm-a[1].comm).map(([n,v])=>`<tr>
+        <td style="padding-left:9px">${esc(n)}</td>
+        <td style="padding-left:9px" class="num">${money(v.sales)}</td>
+        <td style="padding-left:9px" class="num" style="color:var(--vfd)">${money(v.comm)}</td>
+        <td style="padding-left:9px" class="num">${v.sales?((v.comm/v.sales)*100).toFixed(1):"0.0"}%</td>
+      </tr>`).join("")}</tbody></table>`
+    :`<p style="color:var(--txt-3);font-size:13px;padding:14px 2px">No sales this shift yet.</p>`}
+    <div class="note">Worked out from the lines actually rung, so a department rate change applies from
+      that moment on rather than retroactively.</div>`;
+}
+
+/* ============================ bookings & jobs ========================== */
+function jobCfg(){
+  const c=modCfg("jobs");
+  if(!c.jobs)c.jobs=[];
+  if(!c.stages)c.stages=["Booked","In progress","Ready","Collected"];
+  if(!c.kind)c.kind="appointment";
+  return c;
+}
+function tJobs(){
+  const c=jobCfg();
+  W.addJob=()=>{
+    c.jobs.unshift({id:"J"+uid(),who:"",phone:"",what:"",stage:c.stages[0],
+      when:new Date().toISOString().slice(0,16),by:ME?.n||"",price:0,note:""});
+    setModule("jobs",true,c);refresh();queueSave();
+  };
+  W.setJob=(id,f,v)=>{const j=c.jobs.find(x=>x.id===id);
+    j[f]=f==="price"?(parseFloat(v)||0):v;queueSave();if(f==="stage")refresh()};
+  W.delJob=id=>{c.jobs=c.jobs.filter(x=>x.id!==id);setModule("jobs",true,c);refresh();queueSave()};
+  W.setKind=v=>{c.kind=v;
+    c.stages=v==="repair"?["Taken in","Diagnosed","In progress","Ready","Collected"]
+      :["Booked","Arrived","In progress","Done"];
+    setModule("jobs",true,c);refresh();queueSave()};
+  const byStage={};c.stages.forEach(s=>byStage[s]=c.jobs.filter(j=>j.stage===s));
+  $("cfgBody").innerHTML=`
+    <div class="frm">
+      <label>What are you tracking<select onchange="__w.setKind(this.value)">
+        <option value="appointment" ${c.kind==="appointment"?"selected":""}>Appointments</option>
+        <option value="repair" ${c.kind==="repair"?"selected":""}>Repairs and jobs</option>
+      </select></label>
+    </div>
+    <div class="stages">${c.stages.map(s=>`<div class="stagecol">
+      <div class="stagehd">${esc(s)}<em>${byStage[s].length}</em></div>
+      ${byStage[s].map(j=>`<div class="jobcard">
+        <b>${esc(j.who||"No name")}</b>
+        <span>${esc(j.what||"—")}</span>
+        <em>${esc((j.when||"").replace("T"," "))}${j.price?` · ${money(j.price)}`:""}</em>
+      </div>`).join("")||`<div class="stageempty">—</div>`}
+    </div>`).join("")}</div>
+    <button class="mini" onclick="__w.addJob()">Add ${c.kind==="repair"?"a job":"a booking"}</button>
+    <div class="sect">All ${c.kind==="repair"?"jobs":"bookings"}</div>
+    <table class="tbl"><thead><tr><th style="width:16%">Customer</th><th style="width:13%">Phone</th>
+      <th style="width:22%">${c.kind==="repair"?"Work":"For"}</th><th style="width:15%">When</th>
+      <th style="width:14%">Stage</th><th style="width:10%">Price</th><th></th></tr></thead><tbody>
+    ${c.jobs.map(j=>`<tr>
+      <td><input value="${esc(j.who)}" oninput="__w.setJob('${j.id}','who',this.value)"></td>
+      <td><input class="n" value="${esc(j.phone)}" oninput="__w.setJob('${j.id}','phone',this.value)"></td>
+      <td><input value="${esc(j.what)}" oninput="__w.setJob('${j.id}','what',this.value)"></td>
+      <td><input type="datetime-local" value="${esc(j.when)}" oninput="__w.setJob('${j.id}','when',this.value)"></td>
+      <td><select onchange="__w.setJob('${j.id}','stage',this.value)">${c.stages.map(s=>
+        `<option ${j.stage===s?"selected":""}>${esc(s)}</option>`).join("")}</select></td>
+      <td><input class="n" value="${money(j.price)}" oninput="__w.setJob('${j.id}','price',this.value)"></td>
+      <td><button class="del" onclick="__w.delJob('${j.id}')">×</button></td></tr>`).join("")
+      ||`<tr><td colspan="7" style="padding:14px;color:var(--txt-3)">Nothing booked.</td></tr>`}
+    </tbody></table>`;
+}
+
+/* ============================= tabs & tables =========================== */
+function svcCfg(){const c=modCfg("service");if(!c.open)c.open=[];if(!c.tables)c.tables=12;return c}
+function tService(){
+  const c=svcCfg();
+  W.setTables=v=>{c.tables=parseInt(v)||0;setModule("service",true,c);refresh();queueSave()};
+  W.closeTab=id=>{c.open=c.open.filter(t=>t.id!==id);setModule("service",true,c);refresh();queueSave()};
+  $("cfgBody").innerHTML=`
+    <p class="lede" style="margin:0 0 6px">Open tabs are held sales with a name or a table on them.
+      Start one from the register with <b>Hold</b>, bring it back with <b>Recall</b>.</p>
+    <div class="frm"><label>How many tables
+      <input class="n" value="${c.tables}" oninput="__w.setTables(this.value)"></label></div>
+    <div class="sect">Open now — ${HELD.length}</div>
+    ${HELD.length?`<table class="tbl"><thead><tr><th style="width:22%">Tab</th><th>Items</th>
+      <th>Running total</th><th>Opened</th><th>By</th></tr></thead><tbody>
+      ${HELD.map(h=>{
+        const n=h.lines.reduce((a,l)=>a+l.q,0),v=h.lines.reduce((a,l)=>a+l.price*l.q,0);
+        return `<tr><td style="padding-left:9px">${esc(h.label||("#"+h.n))}</td>
+        <td style="padding-left:9px" class="num">${n}</td>
+        <td style="padding-left:9px" class="num">${money(v)}</td>
+        <td style="padding-left:9px;color:var(--txt-2);font-size:12.5px">${h.at.toLocaleTimeString()}</td>
+        <td style="padding-left:9px;color:var(--txt-2);font-size:12.5px">${esc(h.by||"—")}</td></tr>`}).join("")}
+      </tbody></table>`
+    :`<p style="color:var(--txt-3);font-size:13px;padding:14px 2px">No tabs open.</p>`}
+    <div class="note">A tab lives on this terminal until it's settled. On a second register it won't
+      appear — one till per section is the usual arrangement until multi-terminal lands.</div>`;
+}
+
 /* ============================ CONFIGURATION CLIENT ============================
    Modelled on Commander's Config Client and Passport's Manager Workstation:
    every domain is its own form over its own table, and nothing here knows
    anything about the register's rendering.
    ========================================================================== */
 let TAB="pricebook";
-const CTABS=[["import","Import"],["invoice","Invoice intake"],["pricebook","Pricebook"],["depts","Departments"],
-  ["menus","Menus"],["mods","Modifiers"],["mops","Payment"],["restricts","Restrictions"],
-  ["promos","Promotions"],["people","People"],["reasons","Reason codes"],["site","Site & tax"],
-  ["look","Appearance"],["hardware","Hardware & payments"],["health","Health"],
-  ["account","Account & data"],["ai","Ask for changes"]];
+/* Modules the owner switched on get their own tab, named for what they are.
+   Everything else stays out of the way. */
+const BASE_TABS=[["import","Import"],["invoice","Invoice intake"],["pricebook","Pricebook"],
+  ["depts","Departments"],["menus","Menus"],["mods","Modifiers"],["mops","Payment"],
+  ["restricts","Restrictions"],["promos","Promotions"],["people","People"],
+  ["reasons","Reason codes"],["site","Site & tax"],["look","Appearance"],
+  ["hardware","Hardware & payments"],["health","Health"],["account","Account & data"],
+  ["ai","Ask for changes"]];
+function ctabs(){
+  const mods=Object.keys(MODULES).filter(modOn).map(k=>["mod_"+k,
+    k==="records"?(listsCfg().lists[0]?.n||MODULES[k].n):MODULES[k].n]);
+  const t=BASE_TABS.slice();
+  t.splice(3,0,...mods);
+  t.splice(t.length-1,0,["modules","Add features"]);
+  return t;
+}
 const W={};window.__w=W;
 
 function drawConfig(){
@@ -3849,13 +4839,44 @@ function drawConfig(){
     <h2>Configuration</h2>
     <p class="lede">Products, accounting buckets and screen layouts are separate objects. Rearranging a menu never
       touches a price, and changing a tax rate never touches a product.</p>
-    <div class="tabs" id="cfgTabs">${CTABS.map(([k,l])=>
+    <div class="tabs" id="cfgTabs">${ctabs().map(([k,l])=>
       `<button data-t="${k}" class="${TAB===k?"on":""}">${l}</button>`).join("")}</div>
     <div class="edwrap" id="cfgBody"></div></div>`;
   $("cfgTabs").querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{TAB=b.dataset.t;drawConfig()});
-  ({import:importView,invoice:invoiceView,pricebook:tPricebook,depts:tDepts,menus:tMenus,mods:tMods,mops:tMops,
-    restricts:tRestricts,promos:tPromos,people:tPeople,reasons:tReasons,site:tSite,
-    look:tLook,hardware:tHardware,health:tHealth,account:tAccount,ai:tAI})[TAB]();
+  const views={import:importView,invoice:invoiceView,pricebook:tPricebook,depts:tDepts,
+    menus:tMenus,mods:tMods,mops:tMops,restricts:tRestricts,promos:tPromos,people:tPeople,
+    reasons:tReasons,site:tSite,look:tLook,hardware:tHardware,health:tHealth,
+    account:tAccount,ai:tAI,modules:tModules,
+    mod_records:tRecords,mod_expiry:tExpiry,mod_staff:tStaff,
+    mod_customers:tCustomers,mod_tips:tTips,mod_giftcards:tGiftcards,mod_waste:tWaste,
+    mod_commission:tCommission,mod_jobs:tJobs,mod_service:tService};
+  (views[TAB]||tPricebook)();
+}
+
+/* Everything on offer, on or off, describable. Nothing here is generated — each
+   one is a built feature, so switching it on is safe and switching it off loses
+   nothing but the tab. */
+function tModules(){
+  W.togMod=id=>{setModule(id,!modOn(id));refresh();reload();queueSave();
+    toast(modOn(id)?`<b>${esc(MODULES[id].n)}</b> switched on.`:`${esc(MODULES[id].n)} switched off.`)};
+  $("cfgBody").innerHTML=`
+    <p class="lede" style="margin:0 0 4px">Switch on what your trade needs. Each one adds its own tab
+      and nothing else — turning one off later leaves its records intact in case you want it back.</p>
+    <div class="modgrid">${Object.entries(MODULES)
+      .map(([id,m])=>[id,m,modOn(id)?2:(m.fits.test((A.type||"")+" "+(A.desc||""))?1:0)])
+      .sort((a,b)=>b[2]-a[2])
+      .map(([id,m,rank])=>`
+      <button class="modcard ${modOn(id)?"on":""}" onclick="__w.togMod('${id}')">
+        <svg viewBox="0 0 24 24">${m.icon}</svg>
+        <b>${esc(m.n)}</b>
+        <span>${esc(m.what)}</span>
+        <em>${modOn(id)?"On":rank?"Suggested":"Off"}</em>
+      </button>`).join("")}</div>
+    ${CFG.trade?.length?`<div class="sect">What you told me at setup</div>
+      <div class="rpt">${CFG.trade.map(t=>
+        `<div class="rr"><span>${esc(t.q)}</span><b style="font-size:13px">${esc(t.a||"—")}</b></div>`).join("")}</div>`:""}
+    <div class="note">More are coming — customer contact capture, commission tracking, and
+      appointment booking are the next three. If your trade needs something that isn't here, say so.</div>`;
 }
 const refresh=()=>{drawConfig()};
 const reload=()=>{queueSave();renderTenders();drawMenus();drawGrid();drawCart()};

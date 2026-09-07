@@ -762,3 +762,59 @@ label.sam:hover{background:rgba(255,255,255,.03)}
   background-repeat:no-repeat;background-position:right 16px center}
 #setup select.bigsel:focus{outline:none;border-color:var(--ink-soft);box-shadow:0 0 0 3px rgba(18,22,24,.06)}
 #setup select.bigsel optgroup{font-weight:600;color:var(--ink-soft)}
+
+/* ---- trade questions in setup ---- */
+.tradeq{margin-top:30px;padding-top:24px;border-top:1px solid var(--paper-line)}
+.tradeq:first-child{border-top:none;padding-top:0;margin-top:26px}
+.tqq{font-size:17px;font-weight:500;line-height:1.4}
+.tqw{font-size:13px;color:var(--ink-soft);margin-top:11px;line-height:1.6}
+.modpick{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;margin-top:9px;
+  border:1px solid var(--paper-line);border-radius:var(--r);background:var(--paper-2);cursor:pointer;
+  transition:border-color .16s,background .16s}
+.modpick:hover{border-color:var(--ink-soft)}
+.modpick.on{border-color:var(--ink);background:#EDEEE9}
+.modpick input{width:auto;flex:none;margin-top:3px}
+.modpick b{display:block;font-size:15px;font-weight:600;margin-bottom:4px}
+.modpick em{display:block;font-style:normal;font-size:13px;color:var(--ink-soft);line-height:1.6}
+
+/* ---- module picker ---- */
+.modgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:11px;margin-top:16px}
+.modcard{text-align:left;border:1px solid var(--line);border-radius:var(--r2);padding:17px 18px;
+  background:rgba(255,255,255,.02);position:relative;transition:border-color .18s,background .18s,transform .14s}
+.modcard:hover{border-color:var(--line-2);transform:translateY(-1px)}
+.modcard.on{border-color:var(--vfd);background:rgba(92,224,168,.06)}
+.modcard svg{width:22px;height:22px;stroke:var(--txt-3);fill:none;stroke-width:1.6;
+  stroke-linecap:round;stroke-linejoin:round;margin-bottom:11px}
+.modcard.on svg{stroke:var(--vfd)}
+.modcard b{display:block;font-size:14.5px;font-weight:600;margin-bottom:5px}
+.modcard span{display:block;font-size:12.5px;color:var(--txt-2);line-height:1.6}
+.modcard em{position:absolute;top:16px;right:17px;font-style:normal;font-size:11px;
+  color:var(--txt-3);border:1px solid var(--line);border-radius:20px;padding:2px 9px}
+.modcard.on em{color:var(--vfd);border-color:rgba(92,224,168,.4)}
+
+/* ---- custom lists ---- */
+.listtabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.listtabs button{border:1px solid var(--line);border-radius:20px;padding:8px 15px;font-size:13px;
+  color:var(--txt-2);transition:all .15s}
+.listtabs button:hover{border-color:var(--line-2);color:var(--txt)}
+.listtabs button.on{background:rgba(92,224,168,.12);border-color:var(--vfd);color:var(--txt)}
+.listtabs button em{font-style:normal;margin-left:7px;font-family:"Azeret Mono",monospace;
+  font-size:11.5px;color:var(--txt-3)}
+.listtabs button.add{border-style:dashed}
+
+/* ---- expiry ---- */
+tr.expsoon td{background:rgba(224,178,85,.07)}
+tr.expgone td{background:rgba(210,102,76,.09)}
+
+/* ---- job pipeline ---- */
+.stages{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:9px;margin-top:16px}
+.stagecol{background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:var(--r2);padding:11px}
+.stagehd{display:flex;justify-content:space-between;font-size:11.5px;color:var(--txt-2);
+  padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:9px}
+.stagehd em{font-style:normal;font-family:"Azeret Mono",monospace;color:var(--txt-3)}
+.jobcard{background:rgba(255,255,255,.04);border-radius:var(--r);padding:9px 11px;margin-bottom:6px}
+.jobcard b{display:block;font-size:13px;margin-bottom:3px}
+.jobcard span{display:block;font-size:12px;color:var(--txt-2);line-height:1.5}
+.jobcard em{display:block;font-style:normal;font-size:11px;color:var(--txt-3);margin-top:4px;
+  font-family:"Azeret Mono",monospace}
+.stageempty{color:var(--txt-3);font-size:12px;text-align:center;padding:10px 0}

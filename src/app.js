@@ -17,7 +17,9 @@ const uid=()=>Math.random().toString(36).slice(2,8);
 const byId=(a,id)=>(a||[]).find(x=>x.id===id);
 const hhmm=d=>d.toTimeString().slice(0,5);
 
-const A={type:"",typeOther:"",name:"",desc:"",caps:[],loc:"",margin:"35",ending:"x9",dir:"nearest"};
+const A={type:"",typeOther:"",name:"",desc:"",caps:[],loc:"",margin:"35",ending:"x9",dir:"nearest",
+  priceMode:"margin",trade:{},mods:[]};
+let TRADE_Q=[],REC_MODS=[],TRADE_ASKED=false;
 let TAXINFO=null;
 const CAPS=[["age","Age-restricted products"],["weight","Items sold by weight"],
   ["foodservice","Prepared food with options"],["fuel","Fuel pumps"],["lottery","Lottery"],
@@ -56,7 +58,7 @@ const PERMS=[["void","Void a line or sale"],["discount","Apply a discount"],["re
   ["reports","Read reports"],["zreport","Close the shift"],["config","Change configuration"]];
 
 let CFG=null,CART=[],MENU=0,SEL=null,DISC=null,RETURN=false,HELD=[],FILTER="",TRAIN=false;
-let ME=null,VIEW="sale",FRESH=null,RETREF=null;
+let ME=null,VIEW="sale",FRESH=null,RETREF=null,SALE_TIP=0,SALE_CUST=null,PART_PAID=null;
 let SHIFT={opened:new Date(),sales:[],startCash:200,paidIn:0,paidOut:0,safeDrops:0,noSales:0,num:1,exceptions:[]};
 
 /* ========================= wizard ========================= */
@@ -100,18 +102,52 @@ const STEPS=[
   ok:()=>A.desc.trim().length>=12},
  {q:"Which of these apply to you?",s:"Each one turns on a module. What you leave off never loads and never reaches the cashier's screen.",
   render:()=>chipMulti(CAPS,A.caps,k=>{const i=A.caps.indexOf(k);i<0?A.caps.push(k):A.caps.splice(i,1);draw()}),ok:()=>true},
- {q:"How do you price?",s:"Give me a target margin and a price ending, and every cost that comes in off an invoice turns into a shelf price without anyone typing one.",
-  render:()=>`<div class="taxrow">
+ {q:"How do you price?",s:"If you mark up from cost, tell me the margin and invoice costs turn into shelf prices on their own. Plenty of trades don't price that way — a coffee that costs 40 cents doesn't sell for 80.",
+  render:()=>`${chipList2([["margin","I mark up from cost"],["value","I price by what it's worth"]],
+      A.priceMode||"margin",v=>{A.priceMode=v;draw()})}
+    ${A.priceMode!=="value"?`<div class="taxrow" style="margin-top:26px">
       <div><label for="f4">Target gross margin</label><input type="text" id="f4" class="num" placeholder="35" value="${esc(A.margin)}"></div>
       <div style="align-self:flex-end;color:var(--ink-soft);font-size:14px;padding-bottom:14px">
-        a $2.00 cost becomes <b id="egp">${money(charmPreview())}</b></div></div>
+        a $2.00 cost becomes <b id="egp">${money(charmPreview())}</b></div></div>`
+      :`<div class="hint" style="margin-top:22px">Prices stay however you set them. Costs are still
+        recorded from invoices, and margin is still reported — nothing gets repriced behind your back.</div>`}
     <div class="hint" style="margin-top:22px">Round prices to</div>
     ${chipList2([["x9","End in 9 cents"],["99","Always .99"],["95","Always .95"],["49-99",".49 or .99"],["none","Don't round"]],A.ending,v=>{A.ending=v;draw()})}`,
-  bind(){$("f4").oninput=e=>{A.margin=e.target.value;
-    $("goBtn").disabled=isNaN(parseFloat(A.margin))||parseFloat(A.margin)<0||parseFloat(A.margin)>94;
-    $("egp").textContent=money(charmPreview())}},
-  ok:()=>{const m=parseFloat(A.margin);return !isNaN(m)&&m>=0&&m<=94}}
+  bind(){
+    const f=$("f4");
+    if(f)f.oninput=e=>{A.margin=e.target.value;
+      $("goBtn").disabled=isNaN(parseFloat(A.margin))||parseFloat(A.margin)<0||parseFloat(A.margin)>94;
+      $("egp").textContent=money(charmPreview())};
+  },
+  ok:()=>{if(A.priceMode==="value")return true;
+    const m=parseFloat(A.margin);return !isNaN(m)&&m>=0&&m<=94}},
+
+ /* The last question isn't written by me — it's written for this trade. A
+    butcher and a phone shop need different things and shouldn't be asked the
+    same script. */
+ {q:"A few things about your trade",s:"These came from what you told me. They decide which parts of the register get built.",
+  render:()=>TRADE_Q.length
+    ? TRADE_Q.map((q,i)=>`<div class="tradeq">
+        <div class="tqq">${esc(q.q)}</div>
+        ${chipList3(i,q.opts||["Yes","No"],A.trade[i])}
+        ${q.why?`<div class="tqw">${esc(q.why)}</div>`:""}</div>`).join("")
+      +(REC_MODS.length?`<div class="tradeq">
+        <div class="tqq">Parts of the register I'd switch on for you</div>
+        ${REC_MODS.map(id=>`<label class="modpick ${A.mods.includes(id)?"on":""}">
+          <input type="checkbox" ${A.mods.includes(id)?"checked":""} onchange="__modtog('${id}')">
+          <span><b>${esc(MODULES[id].n)}</b><em>${esc(MODULES[id].what)}</em></span></label>`).join("")}
+        </div>`:"")
+    : `<div class="hint">Working out what to ask you…</div>`,
+  ok:()=>TRADE_Q.length===0||TRADE_Q.every((_,i)=>A.trade[i]!==undefined)}
 ];
+function chipList3(qi,opts,cur){
+  window.__tq=(i,v)=>{A.trade[i]=v;draw()};
+  return`<div class="chips" style="margin-top:10px">`+opts.map(o=>
+    `<button class="chip ${cur===o?"on":""}" onclick="__tq(${qi},'${esc(o)}')">
+      <span class="tick">\u2713</span>${esc(o)}</button>`).join("")+`</div>`;
+}
+window.__modtog=id=>{const i=A.mods.indexOf(id);i<0?A.mods.push(id):A.mods.splice(i,1);draw()};
+
 function chipList2(pairs,cur,cb){window.__pick2=cb;
   return`<div class="chips" style="margin-top:12px">`+pairs.map(([k,l])=>
     `<button class="chip ${cur===k?"on":""}" onclick="__pick2('${k}')"><span class="tick">\u2713</span>${l}</button>`).join("")+`</div>`}
@@ -131,7 +167,14 @@ function draw(){
     <div class="nav"><button class="go" id="goBtn" ${st.ok()?"":"disabled"}>${STEP===STEPS.length-1?"Build my site":"Next"}</button>
     ${STEP>0?`<button class="back" id="backBtn">Back</button>`:""}</div>`;
   st.bind&&st.bind();
-  $("goBtn").onclick=()=>{STEP===STEPS.length-1?build():(STEP++,draw())};
+  $("goBtn").onclick=()=>{
+    if(STEP===STEPS.length-1)return build();
+    STEP++;
+    /* The trade questions are written for this business, so they can't exist
+       until the earlier answers do. */
+    if(STEP===STEPS.length-1&&!TRADE_Q.length&&!TRADE_ASKED){TRADE_ASKED=true;askTrade()}
+    draw();
+  };
   $("backBtn")&&($("backBtn").onclick=()=>{STEP--;draw()});
 }
 draw();
@@ -162,10 +205,47 @@ async function callAI(prompt,opts={}){
   if(d.error)throw new Error(d.error.message||"API error");
   return parseLoose(d.content.filter(b=>b.type==="text").map(b=>b.text).join(""));
 }
+/* Ask the model what a fitter would ask this particular trade, and which of the
+   modules we actually have would earn their place. It picks from a fixed list —
+   it cannot invent a feature, only recognise a need for one that exists. */
+async function askTrade(){
+  try{
+    const r=await callAI(`You are setting up a point-of-sale system and want to ask the owner the two
+or three questions that actually matter for THEIR trade — not a generic script.
+
+${ctx()}
+Sells: ${A.desc}
+
+Available modules (you may only choose from these, by key):
+${Object.entries(MODULES).map(([k,m])=>`  ${k} — ${m.n}: ${m.what}`).join("\n")}
+
+Return ONLY valid JSON, no prose or fences:
+{"questions":[{"q":string,"opts":[string],"why":string}],"modules":[string]}
+
+- 2 or 3 questions, specific to this trade, that change how the register should be set up.
+  A butcher gets asked about cutting and batch dates. A phone shop gets asked about
+  trade-ins, warranties and commission. A café gets asked about sizes, milk options and
+  whether they cost their recipes. Do not ask things you already know from above.
+- "opts": 2 to 4 short answers. Keep them concrete.
+- "why": one short line on what the answer changes. Plain language, no jargon.
+- "modules": the keys worth switching on for this business. Empty array if none fit.
+  Do not invent keys.`,{max_tokens:900,kind:"trade-questions"});
+    TRADE_Q=(r.questions||[]).slice(0,3).filter(q=>q&&q.q);
+    REC_MODS=(r.modules||[]).filter(k=>MODULES[k]);
+    A.mods=[...REC_MODS];
+  }catch(e){
+    /* No questions is better than made-up questions. */
+    TRADE_Q=[];REC_MODS=Object.keys(MODULES).filter(k=>MODULES[k].fits.test(A.type+" "+A.desc));
+    A.mods=[...REC_MODS];
+  }
+  if(STEP===STEPS.length-1)draw();
+}
+
 function ctx(){return`Business type: ${A.type}${A.typeOther?` (${A.typeOther})`:""}
 Store name: ${A.name}
 Owner's description: ${A.desc}
-Modules enabled: ${A.caps.length?A.caps.join(", "):"none"}`}
+Modules enabled: ${A.caps.length?A.caps.join(", "):"none"}${
+  TRADE_Q.length?"\n"+TRADE_Q.map((q,i)=>`${q.q} ${A.trade[i]||"—"}`).join("\n"):""}`}
 function itemRules(){
   const r=["Real, specific product names and realistic US retail prices. No placeholders.",
     `"upc": a unique plausible 12-digit UPC string per item.`];
@@ -357,7 +437,10 @@ function compile(gen){
     tax:TAXINFO?{place:TAXINFO.place,state:TAXINFO.state,sources:TAXINFO.sources||[],
       verifyUrl:TAXINFO.verifyUrl||"",conflict:TAXINFO.conflict||null,sumNote:TAXINFO.sumNote||null,
       recent:TAXINFO.recent||null,confirmed:false,searched:true}:{confirmed:false},
-    pricing:{margin:parseFloat(A.margin)||35,ending:A.ending,dir:A.dir},
+    pricing:{margin:parseFloat(A.margin)||35,ending:A.ending,dir:A.dir,
+      mode:A.priceMode||"margin"},
+    modules:Object.fromEntries((A.mods||[]).map(k=>[k,{on:true,cfg:{}}])),
+    trade:TRADE_Q.map((q,i)=>({q:q.q,a:A.trade[i]||null})),
     taxRates,depts:[],plus:[],menus:[],mops:[],restricts,promos:[],
     groups:[],employees:[],reasons:[],modGroups:[],reminders:[]};
 
@@ -597,6 +680,8 @@ function wireSale(){
   toast("Tap a key, scan a barcode, or search to start a sale.");
 }
 function renderTenders(){
+  if(typeof modOn==="function"&&modOn("giftcards")&&!CFG.mops.some(m=>m.kind==="gift"))
+    CFG.mops.push({id:"MOP"+uid(),n:"Gift card",kind:"gift",drawer:false,change:false});
   $("tenders").innerHTML=CFG.mops.map(m=>
     `<button class="tender ${m.kind==="cash"?"cash":""}" data-m="${m.id}">${esc(m.n)}</button>`).join("");
 }
@@ -938,15 +1023,34 @@ function payIn(){ask({t:"Pay in",p:"Cash added to the drawer from outside a sale
   done:v=>{SHIFT.paidIn+=+v;toast(`Paid in <b>${money(+v)}</b>`)}})}
 function safeDrop(){ask({t:"Safe drop",p:"Cash moved from the drawer to the safe.",num:"100.00",
   done:v=>{SHIFT.safeDrops+=+v;toast(`Safe drop <b>${money(+v)}</b> recorded.`)}})}
-function hold(){if(!CART.length)return;
+function hold(){
+  if(!CART.length)return;
+  if(typeof modOn==="function"&&modOn("service"))return holdNamed();
   HELD.push({lines:CART,disc:DISC,at:new Date(),n:HELD.length+1,by:ME.n});
   CART=[];SEL=null;DISC=null;drawCart();renderSubops();toast(`Sale suspended. ${HELD.length} on hold.`)}
+function holdNamed(){
+  const el=veil(`<div class="card"><h3>Open a tab</h3>
+    <p>A table number or a name, so it can be found again.</p>
+    <input id="tbn" class="big" style="text-align:left;font-size:19px" placeholder="Table 6">
+    <div class="row"><button class="no" id="tbc">Cancel</button>
+      <button class="ok" id="tbo">Open it</button></div></div>`);
+  const inp=el.querySelector("#tbn");inp.focus();
+  const go=()=>{
+    const label=inp.value.trim()||("#"+(HELD.length+1));
+    HELD.push({lines:CART,disc:DISC,at:new Date(),n:HELD.length+1,by:ME.n,label});
+    CART=[];SEL=null;DISC=null;el.remove();drawCart();renderSubops();
+    toast(`Tab <b>${esc(label)}</b> opened. ${HELD.length} running.`);
+  };
+  el.querySelector("#tbc").onclick=()=>el.remove();
+  el.querySelector("#tbo").onclick=go;
+  inp.onkeydown=e=>{if(e.key==="Enter")go()};
+}
 function recall(){
   if(!HELD.length)return toast("Nothing on hold.");
   const el=veil(`<div class="card"><h3>Suspended sales</h3><p>Pick one to bring back to the register.</p>
     <div class="opts" style="flex-direction:column">${HELD.map((h,i)=>{
       const n=h.lines.reduce((s,c)=>s+c.q,0),v=h.lines.reduce((s,c)=>s+c.price*c.q,0);
-      return`<button data-i="${i}" style="width:100%">#${h.n} · ${n} item${n===1?"":"s"} · $${money(v)} · ${h.by} · ${h.at.toLocaleTimeString()}</button>`}).join("")}</div>
+      return`<button data-i="${i}" style="width:100%">${esc(h.label||("#"+h.n))} · ${n} item${n===1?"":"s"} · $${money(v)} · ${h.by} · ${h.at.toLocaleTimeString()}</button>`}).join("")}</div>
     <div class="row"><button class="no" id="hn">Cancel</button></div></div>`);
   el.querySelector("#hn").onclick=()=>el.remove();
   el.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{
@@ -955,8 +1059,26 @@ function recall(){
 }
 
 /* ========================= tender ========================= */
-function tender(mop){
+/* Modules that reach into the sale hook here. Each one checks whether it is
+   switched on first, so a shop that wants none of this sees none of it. */
+async function tender(mop){
   const t=calc();let due=Math.abs(t.tot);
+  if(!RETURN){
+    if(typeof modOn==="function"&&modOn("giftcards")&&mop.kind==="gift"){
+      const paid=await redeemGiftCard(due);
+      if(paid===null)return;
+      due=paid.remaining;
+      if(due<=0.005)return finish([{mop:mop.n,amt:paid.used,card:paid.code}],0);
+      PART_PAID=[{mop:mop.n,amt:paid.used,card:paid.code}];
+    }
+    if(typeof modOn==="function"&&modOn("customers")){
+      const c=custCfg();
+      if(c.ask==="ask"||(c.ask==="card"&&!mop.change))SALE_CUST=await askCustomer();
+    }
+    if(typeof modOn==="function"&&modOn("tips")&&!mop.change){
+      SALE_TIP=await askTip(due);due+=SALE_TIP;
+    }
+  }
   if(RETURN)return auth("refund","Refund",()=>reasonPrompt("refund","Reason for return",r=>doRefund(mop,due,r)));
   if(mop.ebtOnly){
     const el=CART.filter(c=>c.ebt).reduce((s,c)=>s+c.price*c.q,0);
@@ -1059,14 +1181,46 @@ function finishRefund(pays,reason){
   RETREF=null;
 }
 
+function redeemGiftCard(due){
+  const c=gcCfg();
+  return new Promise(res=>{
+    const el=veil(`<div class="card"><h3>Gift card</h3>
+      <p>Enter or scan the card number. ${money(due)} to pay.</p>
+      <input id="gcv" class="big num" placeholder="card number">
+      <div id="gcr" style="margin-top:12px"></div>
+      <div class="row"><button class="no" id="gcn">Cancel</button>
+        <button class="ok" id="gcy">Use it</button></div></div>`);
+    const inp=el.querySelector("#gcv"),out=el.querySelector("#gcr");
+    let card=null;
+    inp.oninput=()=>{
+      card=c.cards.find(x=>x.code===inp.value.trim());
+      out.innerHTML=card
+        ?`<div class="chg"><span>Balance</span><b>${money(card.bal)}</b></div>`
+        :inp.value.trim().length>5?`<p style="color:var(--void);font-size:13px">No card with that number.</p>`:"";
+    };
+    inp.focus();
+    el.querySelector("#gcn").onclick=()=>{el.remove();res(null)};
+    el.querySelector("#gcy").onclick=()=>{
+      if(!card||card.bal<=0.005)return;
+      const used=Math.min(card.bal,due);
+      card.bal=+(card.bal-used).toFixed(2);
+      setModule("giftcards",true,c);queueSave();
+      el.remove();res({used,remaining:+(due-used).toFixed(2),code:card.code});
+    };
+  });
+}
+
 function finish(pays,roundAdj,reason,cid){
+  if(PART_PAID){pays=PART_PAID.concat(pays);PART_PAID=null}
   const t=calc();
   const sale={n:SHIFT.num++,at:new Date(),by:ME.n,lines:JSON.parse(JSON.stringify(CART)),...t,pays,
     ret:RETURN,manualDisc:DISC,roundAdj:roundAdj||0,reason:reason?.n,train:TRAIN,
     against:RETREF?RETREF.n:null,
+    tip:SALE_TIP||0,customer:SALE_CUST||null,
     cid:cid||(Date.now().toString(36)+Math.random().toString(36).slice(2,8))};
   if(!TRAIN)SHIFT.sales.push(sale);
-  CART=[];SEL=null;DISC=null;const wasRet=RETURN;RETURN=false;RETREF=null;drawCart();
+  CART=[];SEL=null;DISC=null;SALE_TIP=0;SALE_CUST=null;
+  const wasRet=RETURN;RETURN=false;RETREF=null;drawCart();
   const paid=pays.map(p=>`${p.mop} ${money(Math.abs(p.amt))}`).join(" + ");
   const ch=pays.find(p=>p.change>0.001);
   /* Record first, then take the money. If anything fails between the two, the
@@ -1105,6 +1259,9 @@ function receipt(s){
     ${s.pays.map(p=>`<div class="rr"><span>${esc(p.mop)}${
       p.brand?` ${esc(p.brand)} ****${esc(p.last4||"")}`:""}${p.refund?" refund":""}</span><span>${money(Math.abs(p.amt))}</span></div>`
       +(p.change>0.001?`<div class="rr"><span>Change</span><span>${money(p.change)}</span></div>`:"")).join("")}
+    ${s.tip>0.005?`<div class="rr"><span>Tip</span><span>${money(s.tip)}</span></div>`:""}
+    ${s.customer?`<hr><div class="ctr">${esc(s.customer.n||s.customer.phone||"")}${
+      s.pointsEarned?` · ${s.pointsEarned} points`:""}</div>`:""}
     ${s.against?`<hr><div class="ctr">Refund against sale #${s.against}</div>`:""}
     ${s.reason?`<hr><div class="ctr">Reason: ${esc(s.reason)}</div>`:""}
     <hr><div class="ctr">Thank you</div></div>
