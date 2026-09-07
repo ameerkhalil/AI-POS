@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI POS — sign in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Azeret+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#1B2023;--panel:#242A2D;--line:#394145;--line2:#4A5357;--txt:#E6E9EA;--txt2:#98A2A6;--txt3:#6E787C;--vfd:#5CE0A8;--void:#D2664C}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:Archivo,system-ui,sans-serif;background:radial-gradient(90% 70% at 50% 20%,#252C30,#14181A 70%);
+  color:var(--txt);display:grid;place-items:center;padding:24px;-webkit-font-smoothing:antialiased}
+.box{width:100%;max-width:380px;animation:in .35s cubic-bezier(.2,.7,.3,1)}
+@keyframes in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.mark{display:flex;align-items:center;gap:10px;margin-bottom:26px}
+.mark .d{width:9px;height:9px;border-radius:50%;background:var(--vfd);box-shadow:0 0 10px rgba(92,224,168,.7)}
+.mark b{font-size:16px;font-weight:600;letter-spacing:-.01em}
+h1{font-size:25px;font-weight:600;letter-spacing:-.02em;margin-bottom:6px}
+p.sub{color:var(--txt2);font-size:14px;line-height:1.6;margin-bottom:22px}
+label{display:block;font-size:12.5px;color:var(--txt2);margin-bottom:6px;margin-top:13px}
+input{width:100%;background:rgba(0,0,0,.28);border:1px solid var(--line2);color:var(--txt);
+  padding:12px 13px;border-radius:5px;font:inherit;font-size:15px;transition:border-color .16s,box-shadow .16s}
+input:focus{outline:none;border-color:var(--vfd);box-shadow:0 0 0 3px rgba(92,224,168,.13)}
+button.go{width:100%;margin-top:20px;padding:13px;border:none;border-radius:5px;cursor:pointer;
+  background:linear-gradient(180deg,#6BE8B4,#5CE0A8);color:#0D1F18;font:inherit;font-size:15px;font-weight:600;
+  box-shadow:0 3px 16px rgba(92,224,168,.2);transition:filter .14s,transform .1s}
+button.go:hover{filter:brightness(1.07)}
+button.go:active{transform:translateY(1px)}
+button.go[disabled]{opacity:.5;cursor:not-allowed}
+.swap{margin-top:18px;font-size:13.5px;color:var(--txt2);text-align:center}
+.swap a{color:var(--vfd);cursor:pointer;text-decoration:none}
+.msg{margin-top:15px;font-size:13.5px;color:var(--void);line-height:1.5;min-height:19px}
+.tabs{display:flex;gap:3px;background:rgba(0,0,0,.25);padding:3px;border-radius:7px;margin-bottom:22px}
+.tabs button{flex:1;padding:9px;border:none;background:none;color:var(--txt2);font:inherit;font-size:14px;
+  border-radius:5px;cursor:pointer;transition:background .16s,color .16s}
+.tabs button.on{background:var(--panel);color:var(--txt)}
+</style></head>
+<body>
+<div class="box">
+  <div class="mark"><span class="d"></span><b>AI POS</b></div>
+  <div class="tabs"><button id="tIn" class="on">Sign in</button><button id="tUp">Create an account</button></div>
+  <h1 id="h">Welcome back</h1>
+  <p class="sub" id="sub">Your pricebook, staff and reports are where you left them.</p>
+  <form id="f">
+    <div id="nameWrap" style="display:none">
+      <label for="storeName">Store name</label>
+      <input id="storeName" placeholder="Palos Hills Food and Fuel" autocomplete="organization">
+    </div>
+    <label for="email">Email</label>
+    <input id="email" type="email" autocomplete="email" required>
+    <label for="password">Password</label>
+    <input id="password" type="password" autocomplete="current-password" required>
+    <button class="go" id="go" type="submit">Sign in</button>
+  </form>
+  <div class="msg" id="msg"></div>
+  <div class="swap" id="swap"></div>
+</div>
+<script>
+let mode="in";
+const $=id=>document.getElementById(id);
+function setMode(m){
+  mode=m;
+  $("tIn").classList.toggle("on",m==="in");
+  $("tUp").classList.toggle("on",m==="up");
+  $("h").textContent = m==="in" ? "Welcome back" : "Set up your terminal";
+  $("sub").textContent = m==="in"
+    ? "Your pricebook, staff and reports are where you left them."
+    : "One account per business. You can add more stores to it later.";
+  $("nameWrap").style.display = m==="up" ? "block" : "none";
+  $("go").textContent = m==="in" ? "Sign in" : "Create the account";
+  $("password").autocomplete = m==="in" ? "current-password" : "new-password";
+  $("msg").textContent="";
+}
+$("tIn").onclick=()=>setMode("in");
+$("tUp").onclick=()=>setMode("up");
+$("f").onsubmit=async e=>{
+  e.preventDefault();
+  $("go").disabled=true; $("msg").textContent="";
+  try{
+    const r=await fetch(mode==="in"?"/api/login":"/api/signup",{
+      method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",
+      body:JSON.stringify({email:$("email").value,password:$("password").value,storeName:$("storeName").value})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||"That didn't work.");
+    location.href="/app.html";
+  }catch(err){ $("msg").textContent=err.message; $("go").disabled=false; }
+};
+setMode("in");
+</script>
+</body></html>

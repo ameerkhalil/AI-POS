@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI POS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Azeret+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+__CSS__
+</style>
+</head>
+<body>
+
+<!-- ===== onboarding ===== -->
+<div id="setup"><div class="setup-inner" id="setupBody"></div></div>
+<div id="building"><div class="build-box" id="buildBody"></div></div>
+
+<!-- ===== sign in ===== -->
+<div id="lock">
+  <div class="lockbox">
+    <div class="locklogo" id="lockName">—</div>
+    <div class="locksub" id="lockSub"></div>
+    <div class="pindots" id="lockDots"><i></i><i></i><i></i><i></i></div>
+    <div class="lockpad" id="lockPad"></div>
+    <div class="lockmsg" id="lockMsg"></div>
+  </div>
+</div>
+
+<!-- ===== terminal ===== -->
+<div id="app">
+  <header class="topbar">
+    <div class="brandmark"><span class="dot"></span>
+      <b id="hdrName">—</b><span id="hdrMeta"></span></div>
+    <div class="topspace"></div>
+    <div class="tchip"><span class="sig"></span>Online</div>
+    <div class="tchip" id="hdrUser"></div>
+    <div class="tclock" id="hdrClock">--:--:--</div>
+    <button class="tbtn2" id="btnLock">Lock</button>
+  </header>
+
+  <nav class="rail" id="rail"></nav>
+
+  <!-- SALE -->
+  <section id="vSale">
+    <aside class="tape">
+      <div class="tape-head">
+        <div class="th-l"><b>Current sale</b><span id="tapeBy"></span></div>
+        <div id="tapePill"></div>
+      </div>
+      <div class="lines" id="lines"></div>
+      <div id="lineOps"></div>
+      <div class="totals">
+        <div class="trow"><span>Subtotal</span><span class="num" id="tSub">0.00</span></div>
+        <div class="trow disc" id="promoRow" style="display:none"><span>Automatic discounts</span><span class="num" id="tPromo">0.00</span></div>
+        <div class="trow disc" id="discRow" style="display:none"><span id="discLabel">Discount</span><span class="num" id="tDisc">0.00</span></div>
+        <div id="taxRows"></div>
+        <div class="grand"><span id="grandLabel">Total</span><span class="amt num" id="tTot">0.00</span></div>
+      </div>
+      <div class="tenders" id="tenders"></div>
+      <div class="subops" id="subops"></div>
+    </aside>
+    <main class="floor">
+      <div class="ftop">
+        <div class="srch">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input id="search" placeholder="Search the pricebook, or scan a barcode" autocomplete="off">
+        </div>
+      </div>
+      <nav class="menutabs" id="menutabs"></nav>
+      <div class="grid" id="grid"></div>
+      <div class="fkeys" id="fkeys"></div>
+      <div class="statusbar" id="statusbar"></div>
+    </main>
+  </section>
+
+  <!-- OFFICE / REPORTS / CONFIG -->
+  <section class="view" id="vOffice"></section>
+  <section class="view" id="vReports"></section>
+  <section class="view" id="vConfig"></section>
+</div>
+
+<script>
+__APP__
+__PRI__
+__THM__
+__IMP__
+__HW__
+__CFG__
+__OFFLINE__
+__PERSIST__
+initApp();
+</script>
+</body>
+</html>

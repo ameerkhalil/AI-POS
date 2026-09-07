@@ -1,0 +1,9 @@
+{
+  "name": "aipos-station-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Owns the receipt printer and cash drawer for one POS terminal",
+  "main": "agent.js",
+  "scripts": { "start": "node agent.js" },
+  "engines": { "node": ">=18" }
+}
