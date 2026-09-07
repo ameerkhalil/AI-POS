@@ -26,6 +26,8 @@ async function agent(path, body) {
   } finally { clearTimeout(t); }
 }
 async function findStation() {
+  /* The agent is per-terminal and often absent — on a phone, on a reviewer's
+     laptop, on any machine where nobody started it. Absent is a normal state. */
   try { STATION = await agent("/status"); } catch (e) { STATION = null; }
   paintStation();
   return STATION;

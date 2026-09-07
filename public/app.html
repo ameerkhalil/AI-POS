@@ -1209,6 +1209,20 @@ function boot(){
   signIn();
 }
 function signIn(){
+  /* Reaching here without a configuration is a bug elsewhere, but a blank
+     screen with four dots on it helps nobody diagnose it. */
+  if(!CFG||!CFG.site||!Array.isArray(CFG.employees)||!CFG.employees.length){
+    $("lock").classList.add("on");
+    $("lockName").textContent="Setup incomplete";
+    $("lockSub").textContent="";
+    $("lockPad").innerHTML="";
+    $("lockDots").innerHTML="";
+    $("lockMsg").className="lockmsg bad";
+    $("lockMsg").innerHTML=`This store has no usable configuration, so there's nobody to sign in.
+      <br><br><button class="tbtn2" onclick="localStorage.removeItem('pos_store');location.reload()"
+        style="margin-top:10px">Start over</button>`;
+    return;
+  }
   $("app").classList.remove("on");$("lock").classList.add("on");
   let pin="";
   const dots=()=>$("lockDots").querySelectorAll("i").forEach((d,i)=>d.classList.toggle("f",i<pin.length));
@@ -2916,7 +2930,7 @@ function health(){
   themeIssues().forEach(i=>f.push({sev:i.t==="warn"?"warn":"info",t:"Appearance",d:i.m,fix:null}));
   return f;
 }
-const BUILD="44f42cac78";
+const BUILD="ed16d18918";
 function tHealth(){
   const f=health();
   window.__fix=i=>{f[i].fix&&f[i].fix();reload();drawConfig()};
@@ -3365,6 +3379,8 @@ async function agent(path, body) {
   } finally { clearTimeout(t); }
 }
 async function findStation() {
+  /* The agent is per-terminal and often absent — on a phone, on a reviewer's
+     laptop, on any machine where nobody started it. Absent is a normal state. */
   try { STATION = await agent("/status"); } catch (e) { STATION = null; }
   paintStation();
   return STATION;
@@ -5093,13 +5109,14 @@ async function callAI(prompt, opts = {}) {
 
 let saveTimer = null;
 function queueSave() {
-  if (!STORE_ID || !CFG) return;
+  if (!STORE_ID || !savable()) return;
   setSaveState("pending");
   clearTimeout(saveTimer);
   saveTimer = setTimeout(saveNow, 900);
 }
+const savable = () => !!(CFG && CFG.site && Array.isArray(CFG.plus) && Array.isArray(CFG.depts));
 async function saveNow() {
-  if (!STORE_ID || !CFG) return;
+  if (!STORE_ID || !savable()) return;
   cacheConfig(CFG);                       // always keep a local copy for a cold start
   if (!ONLINE) { await kvPut("configDirty", true); setSaveState("offline"); return; }
   try {
@@ -5125,6 +5142,7 @@ function setSaveState(s) {
 }
 /* Nothing should be lost to a closed tab. */
 window.addEventListener("beforeunload", e => {
+  if (!savable()) return;
   if (SAVE_STATE === "pending" || SAVE_STATE === "saving") {
     navigator.sendBeacon?.("/api/config?store=" + STORE_ID,
       new Blob([JSON.stringify({ store: STORE_ID, config: CFG })], { type: "application/json" }));
@@ -5188,9 +5206,21 @@ async function initApp() {
   findStation();
   if (ONLINE) loadPayCfg();
 
-  let cfg = null;
-  if (me) { try { cfg = (await api("/api/config?store=" + STORE_ID)).config; } catch (e) {} }
-  if (!cfg) cfg = await cachedConfig();
+  /* A half-written or stale object will boot the terminal into a state where
+     nothing works and nothing says why. Check it looks like a configuration
+     before trusting it. */
+  const usable = c => !!(c && c.site && Array.isArray(c.plus) && Array.isArray(c.depts)
+    && Array.isArray(c.taxRates) && Array.isArray(c.mops));
+
+  let cfg = null, loadErr = null;
+  if (me) {
+    try { cfg = (await api("/api/config?store=" + STORE_ID)).config; }
+    catch (e) { loadErr = e.message; }
+  }
+  if (!usable(cfg)) cfg = await cachedConfig();
+  if (!usable(cfg)) {
+    if (cfg) { cfg = null; try { await kvPut("config:" + STORE_ID, null); } catch (e) {} }
+  }
 
   if (cfg) {
     CFG = cfg;
@@ -5206,6 +5236,18 @@ async function initApp() {
       `<h2>No connection, and nothing cached</h2>
        <div class="err">This terminal hasn't finished setup on this device yet, and setup needs the
          network. Once it's been set up once, it opens and takes sales offline.</div>`;
+  } else if (loadErr) {
+    document.getElementById("building").style.display = "flex";
+    document.getElementById("buildBody").innerHTML =
+      `<h2>Couldn't load this store</h2>
+       <div class="err">The server refused the request for this store's configuration.<br><br>
+         <span style="color:var(--ink-soft)">${loadErr}</span></div>
+       <div class="nav"><button class="go" id="lr">Start setup fresh</button></div>`;
+    document.getElementById("lr").onclick = () => {
+      document.getElementById("building").style.display = "none";
+      document.getElementById("setup").classList.remove("hide");
+      draw();
+    };
   } else {
     document.getElementById("setup").classList.remove("hide");
     draw();                        // first run for this store: the wizard

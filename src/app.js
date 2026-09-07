@@ -381,6 +381,20 @@ function boot(){
   signIn();
 }
 function signIn(){
+  /* Reaching here without a configuration is a bug elsewhere, but a blank
+     screen with four dots on it helps nobody diagnose it. */
+  if(!CFG||!CFG.site||!Array.isArray(CFG.employees)||!CFG.employees.length){
+    $("lock").classList.add("on");
+    $("lockName").textContent="Setup incomplete";
+    $("lockSub").textContent="";
+    $("lockPad").innerHTML="";
+    $("lockDots").innerHTML="";
+    $("lockMsg").className="lockmsg bad";
+    $("lockMsg").innerHTML=`This store has no usable configuration, so there's nobody to sign in.
+      <br><br><button class="tbtn2" onclick="localStorage.removeItem('pos_store');location.reload()"
+        style="margin-top:10px">Start over</button>`;
+    return;
+  }
   $("app").classList.remove("on");$("lock").classList.add("on");
   let pin="";
   const dots=()=>$("lockDots").querySelectorAll("i").forEach((d,i)=>d.classList.toggle("f",i<pin.length));
