@@ -9,6 +9,7 @@ imp=open(f"{SRC}/importer.js").read()
 hw=open(f"{SRC}/hardware.js").read()
 mod=open(f"{SRC}/modules.js").read()
 mod2=open(f"{SRC}/modules2.js").read()
+stu=open(f"{SRC}/studio.js").read()
 cfg=open(f"{SRC}/config.js").read()
 per=open("lib/persist.js").read()
 off=open("lib/offline.js").read()
@@ -68,7 +69,7 @@ css+='''
 
 shell=open("shell.html").read()
 html=(shell.replace("__CSS__",css).replace("__APP__",app).replace("__PRI__",pri)
-      .replace("__THM__",thm).replace("__IMP__",imp).replace("__HW__",hw).replace("__MOD__",mod).replace("__MOD2__",mod2).replace("__CFG__",cfg).replace("__OFFLINE__",off).replace("__PERSIST__",per)
+      .replace("__THM__",thm).replace("__IMP__",imp).replace("__HW__",hw).replace("__MOD__",mod).replace("__MOD2__",mod2).replace("__STUDIO__",stu).replace("__CFG__",cfg).replace("__OFFLINE__",off).replace("__PERSIST__",per)
       .replace(head_old,head_new).replace(lock_old,lock_new))
 os.makedirs("public",exist_ok=True)
 open("public/app.html","w").write(html)
@@ -98,6 +99,7 @@ checks = [
     ("undo stack",                lambda h: "function snapshot" in h),
     ("build stamped",             lambda h: 'const BUILD="' in h),
     ("module registry",           lambda h: "const MODULES = {" in h),
+    ("design studio",             lambda h: "function openStudio" in h and "launchPOS" in h),
 ]
 bad = [n for n, f in checks if not f(html)]
 if bad:

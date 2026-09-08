@@ -232,23 +232,6 @@ const STEPS=[
   ok:()=>A.staff.length&&A.staff.every(s=>s.n.trim()&&/^\d{4}$/.test(s.pin))
     &&new Set(A.staff.map(s=>s.pin)).size===A.staff.length},
 
- {q:"How should the register look?",s:"This is the shape of the screen your staff will use all day — how products are drawn, where the order sits, whether there's a side rail. Pick one and watch it change on the right.",
-  render:()=>fleetNote("layout")
-    +`<div class="stylepick">${LAYOUTS.map(l=>`
-      <button class="sp ${(A.layout||suggestLayout())===l.k?"on":""}" onclick="__lay('${l.k}')">
-        <b>${esc(l.n)}</b><em>${esc(l.why.split(".")[0])}.</em></button>`).join("")}</div>`,
-  ok:()=>true},
-
- {q:"And the colours",s:"Pick something that isn't every other till in town. It's stored on the store, so it follows you to any terminal you sign into.",
-  render:()=>`${chipList2([["dark","Dark — indoor counter"],["light","Light — bright room"],
-      ["contrast","High contrast — glare or low vision"]],A.mode||"dark",v=>{A.mode=v;draw()})}
-    <div class="swatchrow">${ACCENTS.map(([hex,n])=>
-      `<button class="ac ${(A.accent||suggestAccent())===hex?"on":""}" style="background:${hex}"
-        title="${esc(n)}" onclick="__acc('${hex}')"></button>`).join("")}</div>
-    <div class="hint" style="margin-top:24px">Everything here is editable later under Appearance,
-      along with key size, spacing, corner rounding and where the receipt sits.</div>`,
-  ok:()=>true},
-
  {q:"What goes on the receipt?",s:"Printed at the bottom of every one. Most shops put their return policy here, because it's the only place a customer will ever read it.",
   render:()=>`<div class="field"><input type="text" id="f6" placeholder="Thanks for shopping with us"
       value="${esc(A.footer)}"></div>
@@ -406,7 +389,10 @@ function drawSide(){
   const el=$("setupSide"); if(!el)return;
   /* On the layout step the panel stops summarising and starts showing. Reading
      "compact keys, search leads" is not the same as seeing it. */
-  if(STEPS[STEP]&&/register look|the colours/i.test(STEPS[STEP].q))return drawLayoutPreview(el);
+  const wide=STEPS[STEP]&&/register look|the colours/i.test(STEPS[STEP].q);
+  const grid=document.querySelector(".setup-grid");
+  if(grid)grid.classList.toggle("wide",!!wide);
+  if(wide)return drawLayoutPreview(el);
   const filled=[
     A.type&&{k:"Business",v:A.typeOther||A.type},
     A.name&&{k:"Store",v:A.name},
@@ -450,59 +436,134 @@ function drawLayoutPreview(el){
   const L=LAYOUTS.find(x=>x.k===(A.layout||suggestLayout()))||LAYOUTS[0];
   const accent=A.accent||suggestAccent();
   const mode=A.mode||"dark";
-  const skin=mode==="light"
-    ? {bg:"#EDEEEA",panel:"#F7F7F4",line:"#D2D5CF",txt:"#14181A",dim:"#6C7679",key:"#E4E6E0"}
+  const S=mode==="light"
+    ? {bg:"#EDEEEA",panel:"#F7F7F4",line:"#D2D5CF",txt:"#14181A",dim:"#6C7679",key:"#E2E4DE",keyTxt:"#14181A"}
     : mode==="contrast"
-    ? {bg:"#000",panel:"#0C0E0F",line:"#4E585C",txt:"#fff",dim:"#AEB6B9",key:"#1C2123"}
-    : {bg:"#1B2023",panel:"#242A2D",line:"#333B3E",txt:"#E6E9EA",dim:"#7C868A",key:"#394145"};
+    ? {bg:"#000",panel:"#0C0E0F",line:"#4E585C",txt:"#fff",dim:"#AEB6B9",key:"#1C2123",keyTxt:"#fff"}
+    : {bg:"#1B2023",panel:"#242A2D",line:"#333B3E",txt:"#E6E9EA",dim:"#7C868A",key:"#394145",keyTxt:"#fff"};
 
-  const cols=L.keyStyle==="list"?1:L.keyMin>200?2:L.keyMin>160?2:3;
-  const rows=L.keyStyle==="list"?5:2;
-  const kr=L.keyStyle==="pad"?Math.round(11*L.density):L.keyStyle==="list"?7:Math.round(16*L.density);
-  const keys=Array.from({length:cols*rows},()=>
-    `<div class="mk ${L.keyStyle}" style="background:${skin.key};height:${kr}px;
-      border-radius:${L.keyStyle==="list"?0:L.keyStyle==="pad"?9:4}px;
-      ${L.keyStyle==="card"?`border-top:3px solid ${accent}`:""}"></div>`).join("");
-  const tape=`<div class="mtape" style="background:${skin.panel};border-color:${skin.line}">
-      ${[1,2,3].map(()=>`<div class="mline"><i style="background:${skin.line}"></i>
-        <i style="background:${skin.line};width:18%"></i></div>`).join("")}
-      <div class="mtotal" style="color:${accent};border-color:${skin.line}">0.00</div>
-    </div>`;
-  const board=`<div class="mboard">
-      ${L.search?`<div class="msearch" style="background:${skin.panel};border-color:${skin.line}">
-        <span style="background:${skin.line}"></span></div>`:""}
-      ${L.depts==="rail"
-        ? `<div class="mrailrow">
-             <div class="mrail">${[1,2,3,4].map((_,i)=>
-               `<i style="background:${i===0?accent:skin.line}"></i>`).join("")}</div>
-             <div class="mkeys" style="grid-template-columns:repeat(${cols},1fr)">${keys}</div>
-           </div>`
-        : `<div class="mtabs">${[1,2,3,4].map((_,i)=>
-             `<i style="background:${i===0?accent:skin.line}"></i>`).join("")}</div>
-           <div class="mkeys" style="grid-template-columns:repeat(${cols},1fr)">${keys}</div>`}
-      ${L.fkeys?`<div class="mfk">${[1,2,3,4,5,6].map(()=>
-        `<i style="background:${skin.line}"></i>`).join("")}</div>`:""}
-    </div>`;
+  const D=sampleTrade();
+  const r=L.radius;
+  const shade=(hex,a)=>hex+a;
+
+  const key=(p,i)=>{
+    const col=D.colors[i%D.colors.length];
+    if(L.keyStyle==="list")return`<div class="pk list" style="border-color:${S.line};color:${S.txt}">
+      <span class="pkbar" style="background:${col}"></span>
+      <span class="pkn">${esc(p.n)}</span><span class="pkp">${p.p}</span></div>`;
+    if(L.keyStyle==="pad")return`<div class="pk pad" style="background:${col};border-radius:${r+8}px;color:#fff">
+      <span class="pkn">${esc(p.n)}</span><span class="pkp">${p.p}</span></div>`;
+    if(L.keyStyle==="card")return`<div class="pk card" style="background:${S.panel};
+      border-color:${S.line};border-radius:${r}px;color:${S.txt}">
+      <span class="pkcap" style="background:${col}"></span>
+      <span class="pkbody"><span class="pkn">${esc(p.n)}</span>
+        ${p.o?`<span class="pko" style="color:${accent}">${esc(p.o)}</span>`:""}</span>
+      <span class="pkfoot" style="border-color:${S.line}"><span class="pkp">${p.p}</span>
+        <span class="pkadd" style="color:${accent};border-color:${accent}66">Add</span></span></div>`;
+    return`<div class="pk tile" style="background:${col};border-radius:${r}px;color:#fff">
+      <span class="pkn">${esc(p.n)}</span><span class="pkp">${p.p}</span></div>`;
+  };
+
+  const tape=`<div class="ptape ${L.tapeStyle}" style="background:${
+      L.tapeStyle==="receipt"?S.panel:S.bg};border-color:${S.line}">
+    <div class="pth" style="color:${S.dim};border-color:${S.line}">Current sale</div>
+    <div class="ptlines">${D.sale.map(s=>`<div class="ptl" style="color:${S.txt};border-color:${S.line}">
+      <span>${esc(s.n)}</span><span class="num">${s.p}</span></div>`).join("")}</div>
+    <div class="pttot" style="border-color:${S.line}">
+      <span style="color:${S.dim}">Total</span>
+      <b style="color:${accent}">${D.total}</b></div>
+    <div class="ptpay"><span style="background:${accent}22;border-color:${accent}66;color:${accent}">Cash</span>
+      <span style="background:${S.key};border-color:${S.line};color:${S.dim}">Card</span></div>
+  </div>`;
+
+  const sections=`<div class="psec ${L.depts}" style="border-color:${S.line}">
+    ${D.depts.map((d,i)=>`<span style="color:${i===0?S.txt:S.dim};
+      ${L.depts==="rail"?`border-left:2px solid ${i===0?accent:"transparent"}`
+        :`border-bottom:2px solid ${i===0?accent:"transparent"}`}">${esc(d)}</span>`).join("")}
+  </div>`;
+
+  const board=`<div class="pboard">
+    ${L.search?`<div class="psearch" style="background:${S.panel};border-color:${S.line};color:${S.dim}">
+      Search the pricebook, or scan a barcode</div>`:""}
+    ${L.depts==="rail"
+      ? `<div class="prailrow">${sections}<div class="pkeys ${L.keyStyle}">${D.items.map(key).join("")}</div></div>`
+      : sections+`<div class="pkeys ${L.keyStyle}">${D.items.map(key).join("")}</div>`}
+    ${L.fkeys?`<div class="pfk" style="border-color:${S.line};color:${S.dim}">
+      ${["Price check","Void","Discount","No sale","Suspend","Return"].map(f=>
+        `<span style="border-color:${S.line}">${f}</span>`).join("")}</div>`:""}
+  </div>`;
 
   el.innerHTML=`
-    <div class="mockwrap" style="background:${skin.bg}">
-      <div class="mockbar" style="background:${mode==="light"?"#E2E4DF":"#141A1C"};border-color:${skin.line}">
-        <span style="background:${accent}"></span>
-        <b style="color:${skin.txt}">${esc(A.name||"Your store")}</b>
+    <div class="bigmock" style="background:${S.bg};border-color:${S.line}">
+      <div class="pbar" style="background:${mode==="light"?"#E2E4DF":"#141A1C"};border-color:${S.line}">
+        <span class="pdot" style="background:${accent}"></span>
+        <b style="color:${S.txt}">${esc(A.name||"Your store")}</b>
+        <em style="color:${S.dim}">Reg 1 · Store 001</em>
       </div>
-      ${L.nav==="top"?`<div class="mocknav" style="background:${skin.panel};border-color:${skin.line}">
-        ${[1,2,3,4].map((_,i)=>`<i style="background:${i===0?accent:skin.line}"></i>`).join("")}</div>`:""}
-      <div class="mockbody ${L.tape}">
-        ${L.tape==="bottom"?board+tape:(L.tape==="right"?board+tape:tape+board)}
+      ${L.nav==="top"?`<div class="pnav top" style="background:${S.panel};border-color:${S.line}">
+          ${["Sale","Office","Reports","Config"].map((n,i)=>
+            `<span style="color:${i===0?accent:S.dim};background:${i===0?accent+"1A":"transparent"}">${n}</span>`).join("")}
+        </div>`:""}
+      <div class="pbody ${L.tape} ${L.nav}">
+        ${L.nav==="rail"?`<div class="pnav rail" style="background:${
+          mode==="light"?"#E2E4DF":"#141A1C"};border-color:${S.line}">
+          ${["Sale","Office","Reports","Config"].map((n,i)=>
+            `<span style="color:${i===0?accent:S.dim};background:${i===0?accent+"1A":"transparent"}">${n}</span>`).join("")}
+        </div>`:""}
+        ${L.tape==="left"?tape+board:board+tape}
       </div>
     </div>
     <div class="mocklabel"><b>${esc(L.n)}</b>
       <span>Products as ${L.keyStyle==="list"?"dense rows":L.keyStyle==="pad"?"large pads"
         :L.keyStyle==="card"?"cards with room for options":"tiles"}
       · navigation ${L.nav==="top"?"across the top":"down the side"}
-      · order ${L.tape==="bottom"?"along the bottom":"on the "+L.tape}</span></div>
-    <div class="sidenote">This is your register, not a picture of one. Change any of it later under
-      Appearance without touching a price.</div>`;
+      · order ${L.tape==="bottom"?"along the bottom":"on the "+L.tape}</span></div>`;
+}
+
+/* Sample products for the preview, so the difference between the styles is
+   visible in something recognisable rather than in grey rectangles. */
+function sampleTrade(){
+  const t=(A.type+" "+A.desc).toLowerCase();
+  const P=["#3A5A52","#57493B","#3D4D66","#573D4D","#485435","#2F4F55"];
+  if(/pizz|restaurant|fast food|food truck/.test(t))return{
+    depts:["Pizza","Sides","Drinks","Desserts"],colors:P,
+    items:[{n:"Cheese 18\" Large",p:"18.99",o:"3 options"},{n:"Pepperoni 18\"",p:"21.99",o:"3 options"},
+      {n:"Garlic Knots",p:"6.49"},{n:"Buffalo Wings",p:"12.99",o:"2 options"},
+      {n:"Coke 20 oz",p:"2.49"},{n:"Cannoli",p:"4.50"}],
+    sale:[{n:"Cheese 18\" Large",p:"18.99"},{n:"Garlic Knots",p:"6.49"},{n:"Coke 20 oz",p:"2.49"}],
+    total:"29.44"};
+  if(/caf|coffee|bakery|juice/.test(t))return{
+    depts:["Espresso","Brewed","Pastry","Retail"],colors:P,
+    items:[{n:"Latte",p:"4.75",o:"Size, milk"},{n:"Cappuccino",p:"4.50",o:"Size, milk"},
+      {n:"Cold Brew",p:"5.25",o:"Size"},{n:"Croissant",p:"3.95"},
+      {n:"Drip Coffee",p:"2.95",o:"Size"},{n:"Blueberry Muffin",p:"3.50"}],
+    sale:[{n:"Latte · Large, oat",p:"5.75"},{n:"Croissant",p:"3.95"}],total:"10.42"};
+  if(/cloth|boutique|shoe|jewel|watch|handbag/.test(t))return{
+    depts:["New in","Tops","Bottoms","Accessories"],colors:P,
+    items:[{n:"Heavyweight Hoodie",p:"79.99",o:"S–XXL"},{n:"Boxy Tee",p:"39.99",o:"S–XL, 4 colours"},
+      {n:"Wide-Leg Trouser",p:"89.99",o:"26–34"},{n:"Leather Belt",p:"45.00",o:"3 sizes"},
+      {n:"Cotton Socks",p:"12.00"},{n:"Canvas Tote",p:"28.00"}],
+    sale:[{n:"Heavyweight Hoodie · L",p:"79.99"},{n:"Cotton Socks",p:"12.00"}],total:"99.36"};
+  if(/bar|pub|brewery|taproom/.test(t))return{
+    depts:["Draught","Bottles","Spirits","Wine","Food"],colors:P,
+    items:[{n:"House IPA Pint",p:"7.50"},{n:"Lager Pint",p:"6.50"},{n:"Well Whiskey",p:"8.00"},
+      {n:"House Red",p:"9.00"},{n:"Loaded Fries",p:"11.00"},{n:"Wings",p:"13.50"}],
+    sale:[{n:"House IPA Pint",p:"7.50"},{n:"2 × Lager Pint",p:"13.00"},{n:"Loaded Fries",p:"11.00"}],
+    total:"34.28"};
+  if(/grocer|market|butcher|produce|cheese/.test(t))return{
+    depts:["Produce","Dairy","Meat","Bakery","Pantry"],colors:P,
+    items:[{n:"Bananas per lb",p:"0.69"},{n:"Whole Milk 1 gal",p:"4.29"},
+      {n:"Ground Chuck per lb",p:"6.49"},{n:"Sourdough Loaf",p:"5.50"},
+      {n:"Large Eggs Dozen",p:"3.99"},{n:"Roma Tomatoes per lb",p:"2.29"}],
+    sale:[{n:"Whole Milk 1 gal",p:"4.29"},{n:"Large Eggs Dozen",p:"3.99"},{n:"1.4 lb Bananas",p:"0.97"}],
+    total:"9.42"};
+  return{
+    depts:["Beverages","Snacks","Tobacco","Grocery","Lottery"],colors:P,
+    items:[{n:"Fountain 32 oz",p:"1.79"},{n:"Coffee 16 oz",p:"1.99"},
+      {n:"Monster Ultra",p:"3.99"},{n:"Marlboro Red Box",p:"11.49",o:"21+"},
+      {n:"Lay's Classic",p:"2.29"},{n:"Snickers",p:"1.89"}],
+    sale:[{n:"Coffee 16 oz",p:"1.99"},{n:"Marlboro Red Box",p:"11.49"},{n:"Snickers",p:"1.89"}],
+    total:"16.75"};
 }
 
 draw();
@@ -675,9 +736,8 @@ function askHowToFill(gen,depts){
     if(how==="demo")return fillWithExamples(gen,depts);
     CFG=compile(gen);
     if(typeof saveNow==="function")saveNow();
-    if(typeof contributePattern==="function")contributePattern();
     OPEN_AFTER=how==="import"?"import":how==="invoice"?"invoice":null;
-    boot();
+    openStudio();
   });
 }
 let OPEN_AFTER=null;
@@ -717,7 +777,7 @@ ${itemRules()}`);
   if(!gen.depts.length){
     CFG=compile(gen);
     if(typeof saveNow==="function")saveNow();
-    return boot();
+    return openStudio();
   }
 
   const upcs=gen.depts.flatMap(d=>d.items.map(i=>i.upc)).filter(Boolean);
@@ -739,8 +799,7 @@ Return an empty array if none fit.`);
   /* Marked so they can be found and removed as a set later. */
   CFG.plus.forEach(p=>p.starter=true);
   if(typeof saveNow==="function")saveNow();
-  if(typeof contributePattern==="function")contributePattern();
-  setTimeout(boot,340);
+  setTimeout(openStudio,340);
 }
 
 function FALLBACK(){return{tagline:"Thanks for stopping in",addr:"",promos:[],depts:[

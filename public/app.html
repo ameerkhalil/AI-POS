@@ -1192,6 +1192,242 @@ body.tp-plain .grand .amt{font-size:40px}
 .mdadd select{width:100%;background:rgba(0,0,0,.26);border:1px solid var(--line-2);color:var(--txt);
   padding:11px;border-radius:var(--r);font-size:14px}
 
+/* ================= LARGE LAYOUT PREVIEW =================
+   The small abstract version told nobody anything. This is the register at
+   about a third size with real products in it, so the difference between six
+   styles is visible rather than described. */
+.setup-grid.wide{grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:40px;max-width:1420px}
+.setup-grid.wide .setup-inner{max-width:400px}
+.setup-grid.wide .stylepick .sp{padding:13px 15px}
+.setup-grid.wide .stylepick .sp b{font-size:15px}
+.setup-grid.wide .stylepick .sp em{font-size:12.5px}
+@media(max-width:1180px){
+  .setup-grid.wide{grid-template-columns:1fr}
+  .setup-grid.wide .setup-inner{max-width:620px}
+}
+
+.bigmock{border:1px solid;border-radius:12px;overflow:hidden;
+  box-shadow:0 26px 64px rgba(18,22,24,.3);animation:qin .3s var(--ease) both;
+  font-size:11px;line-height:1.4}
+.pbar{display:flex;align-items:center;gap:9px;padding:11px 14px;border-bottom:1px solid}
+.pdot{width:7px;height:7px;border-radius:50%;flex:none}
+.pbar b{font-size:12.5px;font-weight:600}
+.pbar em{font-style:normal;font-size:10.5px}
+.pnav{display:flex;gap:4px}
+.pnav.top{padding:7px 12px;border-bottom:1px solid}
+.pnav.top span{padding:5px 13px;border-radius:20px;font-size:11px}
+.pnav.rail{flex-direction:column;padding:9px 7px;border-right:1px solid;flex:none;width:66px}
+.pnav.rail span{padding:9px 6px;border-radius:6px;font-size:10px;text-align:center}
+.pbody{display:flex;min-height:290px}
+.pbody.bottom{flex-direction:column}
+.pbody.bottom .pnav.rail{flex-direction:row;width:auto;border-right:none;border-bottom:1px solid}
+
+.ptape{width:210px;flex:none;border-right:1px solid;display:flex;flex-direction:column;padding:0}
+.pbody.right .ptape{border-right:none;border-left:1px solid}
+.pbody.bottom .ptape{width:auto;border-left:none;border-top:1px solid;flex-direction:row;
+  align-items:center;gap:16px;padding:10px 14px}
+.pth{padding:10px 13px;border-bottom:1px solid;font-size:10.5px;font-weight:600}
+.pbody.bottom .pth,.pbody.bottom .ptlines{display:none}
+.ptlines{flex:1;padding:4px 0}
+.ptl{display:flex;justify-content:space-between;gap:10px;padding:7px 13px;font-size:11px}
+.ptape.receipt .ptl{border-bottom:1px dashed transparent}
+.ptape.list .ptl{border-bottom:1px solid}
+.ptape.plain .ptl{margin:0 8px;border-radius:5px}
+.pttot{display:flex;justify-content:space-between;align-items:baseline;padding:11px 13px;border-top:1px solid}
+.pbody.bottom .pttot{border-top:none;margin-left:auto;padding:0}
+.pttot b{font-size:22px;font-weight:500;font-family:"Azeret Mono",monospace;letter-spacing:-.02em}
+.ptpay{display:flex;gap:6px;padding:0 13px 13px}
+.pbody.bottom .ptpay{padding:0}
+.ptpay span{flex:1;text-align:center;padding:9px 4px;border:1px solid;border-radius:5px;font-size:11px}
+
+.pboard{flex:1;display:flex;flex-direction:column;min-width:0;padding:11px}
+.psearch{padding:9px 12px;border:1px solid;border-radius:5px;font-size:11px;margin-bottom:9px}
+.psec{display:flex;gap:3px;margin-bottom:9px}
+.psec span{padding:6px 10px;font-size:11px;white-space:nowrap}
+.psec.rail{flex-direction:column;width:96px;flex:none;margin:0 10px 0 0;gap:2px}
+.psec.rail span{text-align:left;padding:8px 10px}
+.prailrow{display:flex;flex:1;min-height:0}
+.pkeys{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;flex:1;align-content:start}
+.pkeys.list{grid-template-columns:1fr;gap:0}
+.pkeys.pad{grid-template-columns:1fr 1fr;gap:9px}
+.pkeys.card{grid-template-columns:1fr 1fr;gap:9px}
+.pk{padding:10px 11px;display:flex;flex-direction:column;justify-content:space-between;gap:7px;
+  min-height:56px}
+.pk .pkn{font-size:11.5px;font-weight:500;line-height:1.3}
+.pk .pkp{font-size:12px;font-family:"Azeret Mono",monospace;opacity:.9}
+.pk.list{flex-direction:row;align-items:center;gap:10px;min-height:0;padding:9px 6px;
+  border-bottom:1px solid}
+.pk.list .pkbar{width:3px;height:16px;border-radius:2px;flex:none}
+.pk.list .pkn{flex:1}
+.pk.pad{align-items:center;justify-content:center;text-align:center;min-height:74px;gap:5px}
+.pk.pad .pkn{font-size:12.5px;font-weight:600}
+.pk.pad .pkp{font-size:14px}
+.pk.card{padding:0;border:1px solid;overflow:hidden;gap:0;min-height:86px}
+.pk.card .pkcap{display:block;height:4px}
+.pk.card .pkbody{display:block;padding:10px 11px 8px;flex:1}
+.pk.card .pko{display:block;font-size:10px;margin-top:4px}
+.pk.card .pkfoot{display:flex;justify-content:space-between;align-items:center;padding:8px 11px;
+  border-top:1px solid}
+.pk.card .pkadd{font-size:9.5px;border:1px solid;border-radius:20px;padding:2px 8px}
+.pfk{display:flex;gap:5px;margin-top:9px;padding-top:9px;border-top:1px solid}
+.pfk span{flex:1;text-align:center;padding:7px 2px;border:1px solid;border-radius:4px;font-size:10px}
+
+/* ============================ DESIGN STUDIO ============================
+   The register, editable, before it opens for the first time. */
+#studio{position:fixed;inset:0;z-index:50;display:none;overflow-y:auto;
+  background:#EAEBE7;color:var(--ink)}
+#studio.on{display:block}
+.stwrap{max-width:1560px;margin:0 auto;padding:34px 34px 60px}
+.sthead{display:flex;gap:30px;align-items:flex-start;justify-content:space-between;
+  margin-bottom:26px;animation:qin .45s var(--ease) both}
+.sthead h1{font-size:33px;font-weight:600;letter-spacing:-.025em;margin-bottom:9px}
+.sthead p{font-size:14.5px;color:var(--ink-soft);line-height:1.65;max-width:64ch}
+.launch{display:inline-flex;align-items:center;gap:11px;flex:none;background:var(--ink);
+  color:#EDEEEA;border:none;border-radius:11px;padding:17px 28px;font:inherit;font-size:16px;
+  font-weight:600;cursor:pointer;box-shadow:0 6px 24px rgba(18,22,24,.22);
+  transition:transform .13s var(--ease),box-shadow .22s}
+.launch svg{width:18px;height:18px;transition:transform .22s var(--ease)}
+.launch:hover{box-shadow:0 10px 34px rgba(18,22,24,.3)}
+.launch:hover svg{transform:translateX(4px)}
+.launch:active{transform:translateY(1px)}
+
+.stbody{display:grid;grid-template-columns:270px minmax(0,1fr);gap:26px;align-items:start}
+.sttools{position:sticky;top:22px;background:rgba(255,255,255,.66);border:1px solid var(--paper-line);
+  border-radius:12px;padding:18px;animation:qin .45s var(--ease) .06s both}
+.stsec{font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);
+  margin:19px 0 9px}
+.stsec:first-child{margin-top:0}
+.stpresets{display:grid;gap:5px}
+.stpresets button,.stchips button{border:1px solid var(--paper-line);background:rgba(255,255,255,.7);
+  border-radius:8px;padding:9px 13px;font:inherit;font-size:13.5px;cursor:pointer;text-align:left;
+  transition:all .15s var(--ease)}
+.stpresets button:hover,.stchips button:hover{border-color:var(--ink-soft);background:#fff}
+.stpresets button.on,.stchips button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.stchips{display:flex;flex-wrap:wrap;gap:5px}
+.streset{width:100%;margin-top:8px;border:1px dashed var(--ink-soft);background:none;
+  color:var(--ink-soft);border-radius:8px;padding:9px;font:inherit;font-size:12.5px;cursor:pointer}
+.streset:hover{background:rgba(255,255,255,.6);color:var(--ink)}
+.strange{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--ink-soft);
+  padding:6px 0}
+.strange>span{width:72px;flex:none}
+.strange input{flex:1;accent-color:var(--ink)}
+.strange b{width:38px;text-align:right;font-family:"Azeret Mono",monospace;font-size:12px;color:var(--ink)}
+.stswatch{display:flex;gap:6px;flex-wrap:wrap}
+.stswatch i{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;
+  transition:transform .13s var(--ease),border-color .15s}
+.stswatch i:hover{transform:scale(1.13)}
+.stswatch i.on{border-color:var(--ink)}
+
+.stcanvas{animation:qin .45s var(--ease) .12s both}
+.stmock{border-radius:13px;overflow:hidden;box-shadow:0 26px 70px rgba(18,22,24,.26);
+  border:1px solid rgba(0,0,0,.18);transition:transform .7s cubic-bezier(.6,0,.2,1),opacity .7s}
+.stmock.zoom{transform:scale(1.9);opacity:0}
+.stbar{display:flex;align-items:center;gap:9px;padding:11px 15px}
+.sdot{width:7px;height:7px;border-radius:50%;flex:none}
+.stbar b{font-size:13px;font-weight:600}
+.stbar em{font-style:normal;font-size:11px;opacity:.6}
+.snav{display:flex;gap:5px;cursor:pointer}
+.snav.top{padding:8px 13px;border-bottom:1px solid rgba(128,128,128,.22)}
+.snav.top span{padding:6px 15px;border-radius:20px;font-size:11.5px;opacity:.65}
+.snav.rail{flex-direction:column;width:74px;flex:none;padding:10px 8px;
+  border-right:1px solid rgba(128,128,128,.22)}
+.snav.rail span{padding:10px 6px;border-radius:7px;font-size:10.5px;text-align:center;opacity:.6}
+.snav span.on{opacity:1;color:var(--a);background:color-mix(in srgb,var(--a) 12%,transparent)}
+.snav:hover{outline:2px dashed rgba(128,128,128,.4);outline-offset:-2px}
+.stinner{display:flex;min-height:400px}
+.stinner.bottom{flex-direction:column}
+.stinner.bottom .snav.rail{flex-direction:row;width:auto;border-right:none;
+  border-bottom:1px solid rgba(128,128,128,.22)}
+
+.stape{width:240px;flex:none;padding:0;display:flex;flex-direction:column;cursor:pointer;
+  border-right:1px solid rgba(128,128,128,.22)}
+.stinner.right .stape{border-right:none;border-left:1px solid rgba(128,128,128,.22)}
+.stinner.bottom .stape{width:auto;border-left:none;border-top:1px solid rgba(128,128,128,.22);
+  flex-direction:row;align-items:center;gap:18px;padding:12px 16px}
+.stape:hover{outline:2px dashed rgba(128,128,128,.4);outline-offset:-2px}
+.sth{padding:12px 15px;font-size:11.5px;font-weight:600;opacity:.6;
+  border-bottom:1px solid rgba(128,128,128,.22)}
+.stinner.bottom .sth{display:none}
+.stl{display:flex;justify-content:space-between;gap:12px;padding:9px 15px;font-size:12px}
+.stinner.bottom .stl{display:none}
+.stt{display:flex;justify-content:space-between;align-items:baseline;padding:13px 15px;
+  margin-top:auto;border-top:1px solid rgba(128,128,128,.22)}
+.stinner.bottom .stt{margin:0 0 0 auto;border:none;padding:0}
+.stt span{font-size:11.5px;opacity:.6}
+.stt b{font-size:25px;font-weight:500;font-family:"Azeret Mono",monospace;letter-spacing:-.02em}
+.stp{display:flex;gap:7px;padding:0 15px 15px}
+.stinner.bottom .stp{padding:0}
+.stp span{flex:1;text-align:center;padding:10px 4px;border:1px solid rgba(128,128,128,.3);
+  border-radius:6px;font-size:12px;opacity:.75}
+
+.sboard{flex:1;display:flex;flex-direction:column;min-width:0;padding:13px}
+.ssearch{padding:11px 14px;border:1px solid rgba(128,128,128,.28);border-radius:6px;font-size:12px;
+  opacity:.55;margin-bottom:11px;cursor:pointer}
+.ssearch:hover{outline:2px dashed rgba(128,128,128,.4);outline-offset:-2px}
+.ssec{display:flex;gap:4px;margin-bottom:11px;cursor:pointer;flex-wrap:wrap}
+.ssec span{padding:7px 12px;font-size:12px;opacity:.55;cursor:pointer;border-radius:5px}
+.ssec span.on{opacity:1;border-bottom:2px solid var(--a)}
+.ssec.rail{flex-direction:column;width:112px;flex:none;margin:0 12px 0 0;gap:3px;flex-wrap:nowrap}
+.ssec.rail span.on{border-bottom:none;border-left:2px solid var(--a)}
+.ssec:hover{outline:2px dashed rgba(128,128,128,.4);outline-offset:-2px}
+.srail{display:flex;flex:1;min-height:0}
+.skeys{display:grid;gap:8px;flex:1;align-content:start}
+.skeys.list{gap:0}
+.sk{position:relative;padding:11px 12px;display:flex;flex-direction:column;justify-content:space-between;
+  gap:7px;min-height:64px;cursor:grab;color:#fff;
+  transition:transform .13s var(--ease),box-shadow .16s,outline-color .15s;outline:2px solid transparent}
+.sk:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.3)}
+.sk.sel{outline-color:#fff;z-index:2}
+.sk.drag{opacity:.35}
+.sk.over{outline-color:var(--vfd);outline-style:dashed}
+.sk .sn{font-size:12.5px;font-weight:500;line-height:1.3;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+.sk .sp{font-size:12.5px;font-family:"Azeret Mono",monospace;opacity:.9}
+.sk.list{flex-direction:row;align-items:center;gap:11px;min-height:0;padding:10px 8px;color:inherit;
+  border-bottom:1px solid rgba(128,128,128,.22);background:transparent!important}
+.sk.list .sbar{width:3px;height:17px;border-radius:2px;flex:none}
+.sk.list .sn{flex:1;text-shadow:none}
+.sk.pad{align-items:center;justify-content:center;text-align:center;min-height:84px}
+.sk.pad .sn{font-size:14px;font-weight:600}
+.sk.pad .sp{font-size:16px}
+.sk.card{padding:0;gap:0;color:inherit;background:rgba(128,128,128,.1)!important;
+  border:1px solid rgba(128,128,128,.25);overflow:hidden}
+.sk.card .scap{display:block;height:5px}
+.sk.card .sbody{display:block;padding:12px 13px 9px;flex:1}
+.sk.card .sn{text-shadow:none}
+.sk.card .sfoot{display:flex;padding:10px 13px;border-top:1px solid rgba(128,128,128,.22)}
+.skt{position:absolute;top:6px;right:6px;display:flex;gap:3px}
+.skt button{width:23px;height:23px;border-radius:5px;background:rgba(0,0,0,.55);color:#fff;
+  border:none;font-size:12px;cursor:pointer;display:grid;place-items:center}
+.skt button:hover{background:rgba(0,0,0,.8)}
+.skc{position:absolute;left:0;right:0;bottom:0;display:flex;height:13px;overflow:hidden}
+.skc i{flex:1;cursor:pointer}
+.skc i.x{background:rgba(255,255,255,.22);color:#fff;font-size:9px;display:grid;place-items:center;
+  font-style:normal}
+.sfk{display:flex;gap:6px;margin-top:auto;padding-top:11px;
+  border-top:1px solid rgba(128,128,128,.22);cursor:pointer}
+.sfk span{flex:1;text-align:center;padding:8px 3px;border:1px solid rgba(128,128,128,.28);
+  border-radius:5px;font-size:11px;opacity:.6}
+.sfk:hover{outline:2px dashed rgba(128,128,128,.4);outline-offset:-2px}
+.sthint{margin-top:14px;font-size:13px;color:var(--ink-soft);line-height:1.6}
+
+#studio.launching{animation:studioOut .76s cubic-bezier(.6,0,.2,1) forwards}
+@keyframes studioOut{
+  0%{opacity:1}
+  55%{opacity:1}
+  100%{opacity:0}
+}
+#studio.launching .sthead,#studio.launching .sttools,#studio.launching .sthint{
+  animation:fadeUp .35s var(--ease) forwards}
+@keyframes fadeUp{to{opacity:0;transform:translateY(-14px)}}
+#app.arrive{animation:arrive .8s cubic-bezier(.2,.7,.3,1)}
+@keyframes arrive{from{opacity:0;transform:scale(.965)}to{opacity:1;transform:none}}
+
+@media(max-width:1080px){
+  .stbody{grid-template-columns:1fr}
+  .sttools{position:static}
+  .sthead{flex-direction:column;gap:18px}
+}
+
 .tchip.save{transition:color .2s,border-color .2s}
 .tchip.save.pending{color:var(--warn);border-color:rgba(224,178,85,.4)}
 .tchip.save.saving{color:var(--txt-2)}
@@ -1211,6 +1447,8 @@ body.tp-plain .grand .amt{font-size:40px}
   </div>
 </div>
 <div id="building"><div class="build-box" id="buildBody"></div></div>
+
+<div id="studio"></div>
 
 <!-- ===== sign in ===== -->
 <div id="lock">
@@ -1514,23 +1752,6 @@ const STEPS=[
   ok:()=>A.staff.length&&A.staff.every(s=>s.n.trim()&&/^\d{4}$/.test(s.pin))
     &&new Set(A.staff.map(s=>s.pin)).size===A.staff.length},
 
- {q:"How should the register look?",s:"This is the shape of the screen your staff will use all day — how products are drawn, where the order sits, whether there's a side rail. Pick one and watch it change on the right.",
-  render:()=>fleetNote("layout")
-    +`<div class="stylepick">${LAYOUTS.map(l=>`
-      <button class="sp ${(A.layout||suggestLayout())===l.k?"on":""}" onclick="__lay('${l.k}')">
-        <b>${esc(l.n)}</b><em>${esc(l.why.split(".")[0])}.</em></button>`).join("")}</div>`,
-  ok:()=>true},
-
- {q:"And the colours",s:"Pick something that isn't every other till in town. It's stored on the store, so it follows you to any terminal you sign into.",
-  render:()=>`${chipList2([["dark","Dark — indoor counter"],["light","Light — bright room"],
-      ["contrast","High contrast — glare or low vision"]],A.mode||"dark",v=>{A.mode=v;draw()})}
-    <div class="swatchrow">${ACCENTS.map(([hex,n])=>
-      `<button class="ac ${(A.accent||suggestAccent())===hex?"on":""}" style="background:${hex}"
-        title="${esc(n)}" onclick="__acc('${hex}')"></button>`).join("")}</div>
-    <div class="hint" style="margin-top:24px">Everything here is editable later under Appearance,
-      along with key size, spacing, corner rounding and where the receipt sits.</div>`,
-  ok:()=>true},
-
  {q:"What goes on the receipt?",s:"Printed at the bottom of every one. Most shops put their return policy here, because it's the only place a customer will ever read it.",
   render:()=>`<div class="field"><input type="text" id="f6" placeholder="Thanks for shopping with us"
       value="${esc(A.footer)}"></div>
@@ -1688,7 +1909,10 @@ function drawSide(){
   const el=$("setupSide"); if(!el)return;
   /* On the layout step the panel stops summarising and starts showing. Reading
      "compact keys, search leads" is not the same as seeing it. */
-  if(STEPS[STEP]&&/register look|the colours/i.test(STEPS[STEP].q))return drawLayoutPreview(el);
+  const wide=STEPS[STEP]&&/register look|the colours/i.test(STEPS[STEP].q);
+  const grid=document.querySelector(".setup-grid");
+  if(grid)grid.classList.toggle("wide",!!wide);
+  if(wide)return drawLayoutPreview(el);
   const filled=[
     A.type&&{k:"Business",v:A.typeOther||A.type},
     A.name&&{k:"Store",v:A.name},
@@ -1732,59 +1956,134 @@ function drawLayoutPreview(el){
   const L=LAYOUTS.find(x=>x.k===(A.layout||suggestLayout()))||LAYOUTS[0];
   const accent=A.accent||suggestAccent();
   const mode=A.mode||"dark";
-  const skin=mode==="light"
-    ? {bg:"#EDEEEA",panel:"#F7F7F4",line:"#D2D5CF",txt:"#14181A",dim:"#6C7679",key:"#E4E6E0"}
+  const S=mode==="light"
+    ? {bg:"#EDEEEA",panel:"#F7F7F4",line:"#D2D5CF",txt:"#14181A",dim:"#6C7679",key:"#E2E4DE",keyTxt:"#14181A"}
     : mode==="contrast"
-    ? {bg:"#000",panel:"#0C0E0F",line:"#4E585C",txt:"#fff",dim:"#AEB6B9",key:"#1C2123"}
-    : {bg:"#1B2023",panel:"#242A2D",line:"#333B3E",txt:"#E6E9EA",dim:"#7C868A",key:"#394145"};
+    ? {bg:"#000",panel:"#0C0E0F",line:"#4E585C",txt:"#fff",dim:"#AEB6B9",key:"#1C2123",keyTxt:"#fff"}
+    : {bg:"#1B2023",panel:"#242A2D",line:"#333B3E",txt:"#E6E9EA",dim:"#7C868A",key:"#394145",keyTxt:"#fff"};
 
-  const cols=L.keyStyle==="list"?1:L.keyMin>200?2:L.keyMin>160?2:3;
-  const rows=L.keyStyle==="list"?5:2;
-  const kr=L.keyStyle==="pad"?Math.round(11*L.density):L.keyStyle==="list"?7:Math.round(16*L.density);
-  const keys=Array.from({length:cols*rows},()=>
-    `<div class="mk ${L.keyStyle}" style="background:${skin.key};height:${kr}px;
-      border-radius:${L.keyStyle==="list"?0:L.keyStyle==="pad"?9:4}px;
-      ${L.keyStyle==="card"?`border-top:3px solid ${accent}`:""}"></div>`).join("");
-  const tape=`<div class="mtape" style="background:${skin.panel};border-color:${skin.line}">
-      ${[1,2,3].map(()=>`<div class="mline"><i style="background:${skin.line}"></i>
-        <i style="background:${skin.line};width:18%"></i></div>`).join("")}
-      <div class="mtotal" style="color:${accent};border-color:${skin.line}">0.00</div>
-    </div>`;
-  const board=`<div class="mboard">
-      ${L.search?`<div class="msearch" style="background:${skin.panel};border-color:${skin.line}">
-        <span style="background:${skin.line}"></span></div>`:""}
-      ${L.depts==="rail"
-        ? `<div class="mrailrow">
-             <div class="mrail">${[1,2,3,4].map((_,i)=>
-               `<i style="background:${i===0?accent:skin.line}"></i>`).join("")}</div>
-             <div class="mkeys" style="grid-template-columns:repeat(${cols},1fr)">${keys}</div>
-           </div>`
-        : `<div class="mtabs">${[1,2,3,4].map((_,i)=>
-             `<i style="background:${i===0?accent:skin.line}"></i>`).join("")}</div>
-           <div class="mkeys" style="grid-template-columns:repeat(${cols},1fr)">${keys}</div>`}
-      ${L.fkeys?`<div class="mfk">${[1,2,3,4,5,6].map(()=>
-        `<i style="background:${skin.line}"></i>`).join("")}</div>`:""}
-    </div>`;
+  const D=sampleTrade();
+  const r=L.radius;
+  const shade=(hex,a)=>hex+a;
+
+  const key=(p,i)=>{
+    const col=D.colors[i%D.colors.length];
+    if(L.keyStyle==="list")return`<div class="pk list" style="border-color:${S.line};color:${S.txt}">
+      <span class="pkbar" style="background:${col}"></span>
+      <span class="pkn">${esc(p.n)}</span><span class="pkp">${p.p}</span></div>`;
+    if(L.keyStyle==="pad")return`<div class="pk pad" style="background:${col};border-radius:${r+8}px;color:#fff">
+      <span class="pkn">${esc(p.n)}</span><span class="pkp">${p.p}</span></div>`;
+    if(L.keyStyle==="card")return`<div class="pk card" style="background:${S.panel};
+      border-color:${S.line};border-radius:${r}px;color:${S.txt}">
+      <span class="pkcap" style="background:${col}"></span>
+      <span class="pkbody"><span class="pkn">${esc(p.n)}</span>
+        ${p.o?`<span class="pko" style="color:${accent}">${esc(p.o)}</span>`:""}</span>
+      <span class="pkfoot" style="border-color:${S.line}"><span class="pkp">${p.p}</span>
+        <span class="pkadd" style="color:${accent};border-color:${accent}66">Add</span></span></div>`;
+    return`<div class="pk tile" style="background:${col};border-radius:${r}px;color:#fff">
+      <span class="pkn">${esc(p.n)}</span><span class="pkp">${p.p}</span></div>`;
+  };
+
+  const tape=`<div class="ptape ${L.tapeStyle}" style="background:${
+      L.tapeStyle==="receipt"?S.panel:S.bg};border-color:${S.line}">
+    <div class="pth" style="color:${S.dim};border-color:${S.line}">Current sale</div>
+    <div class="ptlines">${D.sale.map(s=>`<div class="ptl" style="color:${S.txt};border-color:${S.line}">
+      <span>${esc(s.n)}</span><span class="num">${s.p}</span></div>`).join("")}</div>
+    <div class="pttot" style="border-color:${S.line}">
+      <span style="color:${S.dim}">Total</span>
+      <b style="color:${accent}">${D.total}</b></div>
+    <div class="ptpay"><span style="background:${accent}22;border-color:${accent}66;color:${accent}">Cash</span>
+      <span style="background:${S.key};border-color:${S.line};color:${S.dim}">Card</span></div>
+  </div>`;
+
+  const sections=`<div class="psec ${L.depts}" style="border-color:${S.line}">
+    ${D.depts.map((d,i)=>`<span style="color:${i===0?S.txt:S.dim};
+      ${L.depts==="rail"?`border-left:2px solid ${i===0?accent:"transparent"}`
+        :`border-bottom:2px solid ${i===0?accent:"transparent"}`}">${esc(d)}</span>`).join("")}
+  </div>`;
+
+  const board=`<div class="pboard">
+    ${L.search?`<div class="psearch" style="background:${S.panel};border-color:${S.line};color:${S.dim}">
+      Search the pricebook, or scan a barcode</div>`:""}
+    ${L.depts==="rail"
+      ? `<div class="prailrow">${sections}<div class="pkeys ${L.keyStyle}">${D.items.map(key).join("")}</div></div>`
+      : sections+`<div class="pkeys ${L.keyStyle}">${D.items.map(key).join("")}</div>`}
+    ${L.fkeys?`<div class="pfk" style="border-color:${S.line};color:${S.dim}">
+      ${["Price check","Void","Discount","No sale","Suspend","Return"].map(f=>
+        `<span style="border-color:${S.line}">${f}</span>`).join("")}</div>`:""}
+  </div>`;
 
   el.innerHTML=`
-    <div class="mockwrap" style="background:${skin.bg}">
-      <div class="mockbar" style="background:${mode==="light"?"#E2E4DF":"#141A1C"};border-color:${skin.line}">
-        <span style="background:${accent}"></span>
-        <b style="color:${skin.txt}">${esc(A.name||"Your store")}</b>
+    <div class="bigmock" style="background:${S.bg};border-color:${S.line}">
+      <div class="pbar" style="background:${mode==="light"?"#E2E4DF":"#141A1C"};border-color:${S.line}">
+        <span class="pdot" style="background:${accent}"></span>
+        <b style="color:${S.txt}">${esc(A.name||"Your store")}</b>
+        <em style="color:${S.dim}">Reg 1 · Store 001</em>
       </div>
-      ${L.nav==="top"?`<div class="mocknav" style="background:${skin.panel};border-color:${skin.line}">
-        ${[1,2,3,4].map((_,i)=>`<i style="background:${i===0?accent:skin.line}"></i>`).join("")}</div>`:""}
-      <div class="mockbody ${L.tape}">
-        ${L.tape==="bottom"?board+tape:(L.tape==="right"?board+tape:tape+board)}
+      ${L.nav==="top"?`<div class="pnav top" style="background:${S.panel};border-color:${S.line}">
+          ${["Sale","Office","Reports","Config"].map((n,i)=>
+            `<span style="color:${i===0?accent:S.dim};background:${i===0?accent+"1A":"transparent"}">${n}</span>`).join("")}
+        </div>`:""}
+      <div class="pbody ${L.tape} ${L.nav}">
+        ${L.nav==="rail"?`<div class="pnav rail" style="background:${
+          mode==="light"?"#E2E4DF":"#141A1C"};border-color:${S.line}">
+          ${["Sale","Office","Reports","Config"].map((n,i)=>
+            `<span style="color:${i===0?accent:S.dim};background:${i===0?accent+"1A":"transparent"}">${n}</span>`).join("")}
+        </div>`:""}
+        ${L.tape==="left"?tape+board:board+tape}
       </div>
     </div>
     <div class="mocklabel"><b>${esc(L.n)}</b>
       <span>Products as ${L.keyStyle==="list"?"dense rows":L.keyStyle==="pad"?"large pads"
         :L.keyStyle==="card"?"cards with room for options":"tiles"}
       · navigation ${L.nav==="top"?"across the top":"down the side"}
-      · order ${L.tape==="bottom"?"along the bottom":"on the "+L.tape}</span></div>
-    <div class="sidenote">This is your register, not a picture of one. Change any of it later under
-      Appearance without touching a price.</div>`;
+      · order ${L.tape==="bottom"?"along the bottom":"on the "+L.tape}</span></div>`;
+}
+
+/* Sample products for the preview, so the difference between the styles is
+   visible in something recognisable rather than in grey rectangles. */
+function sampleTrade(){
+  const t=(A.type+" "+A.desc).toLowerCase();
+  const P=["#3A5A52","#57493B","#3D4D66","#573D4D","#485435","#2F4F55"];
+  if(/pizz|restaurant|fast food|food truck/.test(t))return{
+    depts:["Pizza","Sides","Drinks","Desserts"],colors:P,
+    items:[{n:"Cheese 18\" Large",p:"18.99",o:"3 options"},{n:"Pepperoni 18\"",p:"21.99",o:"3 options"},
+      {n:"Garlic Knots",p:"6.49"},{n:"Buffalo Wings",p:"12.99",o:"2 options"},
+      {n:"Coke 20 oz",p:"2.49"},{n:"Cannoli",p:"4.50"}],
+    sale:[{n:"Cheese 18\" Large",p:"18.99"},{n:"Garlic Knots",p:"6.49"},{n:"Coke 20 oz",p:"2.49"}],
+    total:"29.44"};
+  if(/caf|coffee|bakery|juice/.test(t))return{
+    depts:["Espresso","Brewed","Pastry","Retail"],colors:P,
+    items:[{n:"Latte",p:"4.75",o:"Size, milk"},{n:"Cappuccino",p:"4.50",o:"Size, milk"},
+      {n:"Cold Brew",p:"5.25",o:"Size"},{n:"Croissant",p:"3.95"},
+      {n:"Drip Coffee",p:"2.95",o:"Size"},{n:"Blueberry Muffin",p:"3.50"}],
+    sale:[{n:"Latte · Large, oat",p:"5.75"},{n:"Croissant",p:"3.95"}],total:"10.42"};
+  if(/cloth|boutique|shoe|jewel|watch|handbag/.test(t))return{
+    depts:["New in","Tops","Bottoms","Accessories"],colors:P,
+    items:[{n:"Heavyweight Hoodie",p:"79.99",o:"S–XXL"},{n:"Boxy Tee",p:"39.99",o:"S–XL, 4 colours"},
+      {n:"Wide-Leg Trouser",p:"89.99",o:"26–34"},{n:"Leather Belt",p:"45.00",o:"3 sizes"},
+      {n:"Cotton Socks",p:"12.00"},{n:"Canvas Tote",p:"28.00"}],
+    sale:[{n:"Heavyweight Hoodie · L",p:"79.99"},{n:"Cotton Socks",p:"12.00"}],total:"99.36"};
+  if(/bar|pub|brewery|taproom/.test(t))return{
+    depts:["Draught","Bottles","Spirits","Wine","Food"],colors:P,
+    items:[{n:"House IPA Pint",p:"7.50"},{n:"Lager Pint",p:"6.50"},{n:"Well Whiskey",p:"8.00"},
+      {n:"House Red",p:"9.00"},{n:"Loaded Fries",p:"11.00"},{n:"Wings",p:"13.50"}],
+    sale:[{n:"House IPA Pint",p:"7.50"},{n:"2 × Lager Pint",p:"13.00"},{n:"Loaded Fries",p:"11.00"}],
+    total:"34.28"};
+  if(/grocer|market|butcher|produce|cheese/.test(t))return{
+    depts:["Produce","Dairy","Meat","Bakery","Pantry"],colors:P,
+    items:[{n:"Bananas per lb",p:"0.69"},{n:"Whole Milk 1 gal",p:"4.29"},
+      {n:"Ground Chuck per lb",p:"6.49"},{n:"Sourdough Loaf",p:"5.50"},
+      {n:"Large Eggs Dozen",p:"3.99"},{n:"Roma Tomatoes per lb",p:"2.29"}],
+    sale:[{n:"Whole Milk 1 gal",p:"4.29"},{n:"Large Eggs Dozen",p:"3.99"},{n:"1.4 lb Bananas",p:"0.97"}],
+    total:"9.42"};
+  return{
+    depts:["Beverages","Snacks","Tobacco","Grocery","Lottery"],colors:P,
+    items:[{n:"Fountain 32 oz",p:"1.79"},{n:"Coffee 16 oz",p:"1.99"},
+      {n:"Monster Ultra",p:"3.99"},{n:"Marlboro Red Box",p:"11.49",o:"21+"},
+      {n:"Lay's Classic",p:"2.29"},{n:"Snickers",p:"1.89"}],
+    sale:[{n:"Coffee 16 oz",p:"1.99"},{n:"Marlboro Red Box",p:"11.49"},{n:"Snickers",p:"1.89"}],
+    total:"16.75"};
 }
 
 /* start is owned by initApp() in persist.js */
@@ -1947,9 +2246,8 @@ function askHowToFill(gen,depts){
     if(how==="demo")return fillWithExamples(gen,depts);
     CFG=compile(gen);
     if(typeof saveNow==="function")saveNow();
-    if(typeof contributePattern==="function")contributePattern();
     OPEN_AFTER=how==="import"?"import":how==="invoice"?"invoice":null;
-    boot();
+    openStudio();
   });
 }
 let OPEN_AFTER=null;
@@ -1989,7 +2287,7 @@ ${itemRules()}`);
   if(!gen.depts.length){
     CFG=compile(gen);
     if(typeof saveNow==="function")saveNow();
-    return boot();
+    return openStudio();
   }
 
   const upcs=gen.depts.flatMap(d=>d.items.map(i=>i.upc)).filter(Boolean);
@@ -2011,8 +2309,7 @@ Return an empty array if none fit.`);
   /* Marked so they can be found and removed as a set later. */
   CFG.plus.forEach(p=>p.starter=true);
   if(typeof saveNow==="function")saveNow();
-  if(typeof contributePattern==="function")contributePattern();
-  setTimeout(boot,340);
+  setTimeout(openStudio,340);
 }
 
 function FALLBACK(){return{tagline:"Thanks for stopping in",addr:"",promos:[],depts:[
@@ -4074,7 +4371,7 @@ function health(){
   themeIssues().forEach(i=>f.push({sev:i.t==="warn"?"warn":"info",t:"Appearance",d:i.m,fix:null}));
   return f;
 }
-const BUILD="d95cad1c4b";
+const BUILD="f81b2a284f";
 function tHealth(){
   const f=health();
   window.__fix=i=>{f[i].fix&&f[i].fix();reload();drawConfig()};
@@ -5756,6 +6053,270 @@ function tService(){
     :`<p style="color:var(--txt-3);font-size:13px;padding:14px 2px">No tabs open.</p>`}
     <div class="note">A tab lives on this terminal until it's settled. On a second register it won't
       appear — one till per section is the usual arrangement until multi-terminal lands.</div>`;
+}
+
+/* ===========================================================================
+   The design studio.
+
+   The last thing before the register opens. Not a list of layouts to pick from —
+   their actual register, with their actual products, that they rearrange by
+   dragging until it looks the way they want. Then they launch it.
+
+   Everything here writes straight into CFG. There is no separate "design" state
+   to sync, because the thing on screen is the configuration.
+   =========================================================================== */
+
+let STUDIO_MENU = 0, STUDIO_SEL = null;
+
+function openStudio() {
+  document.getElementById("setup").classList.add("hide");
+  document.getElementById("building").style.display = "none";
+  const el = document.getElementById("studio");
+  el.classList.add("on");
+  themeFromConfig();
+  drawStudio();
+}
+
+function studioL() {
+  return LAYOUTS.find(x => x.k === CFG.layout) || LAYOUTS[0];
+}
+/* Writes a single property of the arrangement and redraws. Layout stops being a
+   preset the moment one of these is touched — it becomes theirs. */
+function setL(prop, val) {
+  const L = { ...studioL() };
+  L[prop] = val;
+  CFG.layoutCustom = { ...(CFG.layoutCustom || {}), [prop]: val };
+  applyStudio();
+  drawStudio();
+}
+function effL() {
+  return { ...studioL(), ...(CFG.layoutCustom || {}) };
+}
+function applyStudio() {
+  const L = effL();
+  THEME.keyMin = L.keyMin; THEME.density = L.density; THEME.radius = L.radius;
+  THEME.fontScale = L.fs; THEME.showF = L.fkeys; THEME.searchLeads = L.search;
+  THEME.tape = L.tape; THEME.depts = L.depts; THEME.keyStyle = L.keyStyle; THEME.nav = L.nav;
+  THEME.mode = CFG.theme.mode; THEME.accent = CFG.theme.accent;
+  CFG.theme = { ...CFG.theme, keyMin: L.keyMin, density: L.density, radius: L.radius };
+  applyTheme();
+}
+
+function drawStudio() {
+  const L = effL();
+  const menus = CFG.menus.filter(m => !m.fuel);
+  const menu = menus[STUDIO_MENU] || menus[0];
+  const M = MODES[CFG.theme.mode] || MODES.dark;
+  const accent = CFG.theme.accent;
+
+  const cycle = (arr, cur) => arr[(arr.indexOf(cur) + 1) % arr.length];
+
+  window.__st = {
+    style: k => { CFG.layout = k; CFG.layoutCustom = null; applyStudio(); drawStudio(); },
+    tape: () => setL("tape", cycle(["left", "right", "bottom"], L.tape)),
+    nav: () => setL("nav", cycle(["rail", "top"], L.nav)),
+    depts: () => setL("depts", cycle(["tabs", "rail"], L.depts)),
+    keyStyle: k => setL("keyStyle", k),
+    search: () => setL("search", !L.search),
+    fkeys: () => setL("fkeys", !L.fkeys),
+    size: v => setL("keyMin", Math.round(+v)),
+    dense: v => setL("density", +v),
+    radius: v => setL("radius", +v),
+    mode: m => { CFG.theme.mode = m; applyStudio(); drawStudio(); },
+    accent: a => { CFG.theme.accent = a; applyStudio(); drawStudio(); },
+    menu: i => { STUDIO_MENU = i; STUDIO_SEL = null; drawStudio(); },
+    pick: i => { STUDIO_SEL = STUDIO_SEL === i ? null : i; drawStudio(); },
+    wider: i => { const k = menu.keys[i]; k.w = (k.w || 1) === 2 ? 1 : 2; drawStudio(); },
+    taller: i => { const k = menu.keys[i]; k.h = (k.h || 1) === 2 ? 1 : 2; drawStudio(); },
+    colour: (i, c) => { menu.keys[i].color = c || null; drawStudio(); },
+    drop: i => { menu.keys.splice(i, 1); STUDIO_SEL = null; drawStudio(); },
+    move: (from, to) => {
+      if (to < 0 || to >= menu.keys.length || from === to) return;
+      menu.keys.splice(to, 0, menu.keys.splice(from, 1)[0]);
+      STUDIO_SEL = to; drawStudio();
+    },
+    reset: () => { CFG.layoutCustom = null; applyStudio(); drawStudio();
+      toast("Back to the " + studioL().n + " arrangement."); },
+    launch: launchPOS
+  };
+
+  const KEYC = ["#3E464A", "#3A5A52", "#57493B", "#3D4D66", "#573D4D", "#485435", "#7A3B3B", "#2F4F55"];
+  const cols = L.keyStyle === "list" ? 1 : Math.max(2, Math.round(760 / L.keyMin));
+
+  const keyHtml = (k, i) => {
+    const p = byId(CFG.plus, k.pluId);
+    const d = p ? byId(CFG.depts, p.deptId) : null;
+    const col = k.color || d?.color || "#3E464A";
+    const sel = STUDIO_SEL === i;
+    const span = `${(k.w || 1) > 1 ? "grid-column:span 2;" : ""}${(k.h || 1) > 1 ? "grid-row:span 2;" : ""}`;
+    const label = k.label || p?.n || "(missing)";
+    const price = p ? money(p.price) : "—";
+    const body = L.keyStyle === "list"
+      ? `<span class="sbar" style="background:${col}"></span>
+         <span class="sn">${esc(label)}</span><span class="sp num">${price}</span>`
+      : L.keyStyle === "card"
+      ? `<span class="scap" style="background:${col}"></span>
+         <span class="sbody"><span class="sn">${esc(label)}</span></span>
+         <span class="sfoot"><span class="sp num">${price}</span></span>`
+      : `<span class="sn">${esc(label)}</span><span class="sp num">${price}</span>`;
+    const bg = L.keyStyle === "list" || L.keyStyle === "card" ? "" :
+      `background:linear-gradient(180deg,${col} 0%,${col}CC 120%);`;
+    return `<div class="sk ${L.keyStyle} ${sel ? "sel" : ""}" draggable="true" data-i="${i}"
+      style="${span}${bg}border-radius:${L.keyStyle === "list" ? 0 : L.radius + 2}px"
+      onclick="__st.pick(${i})">${body}
+      ${sel ? `<span class="skt">
+        <button onclick="event.stopPropagation();__st.wider(${i})" title="Width">${(k.w || 1) === 2 ? "◧" : "◫"}</button>
+        <button onclick="event.stopPropagation();__st.taller(${i})" title="Height">${(k.h || 1) === 2 ? "▤" : "▥"}</button>
+        <button onclick="event.stopPropagation();__st.drop(${i})" title="Remove">×</button></span>
+        <span class="skc">${KEYC.map(c => `<i style="background:${c}"
+          onclick="event.stopPropagation();__st.colour(${i},'${c}')"></i>`).join("")}
+          <i class="x" onclick="event.stopPropagation();__st.colour(${i},'')">↺</i></span>` : ""}</div>`;
+  };
+
+  const sections = `<div class="ssec ${L.depts}" onclick="__st.depts()" title="Click to move the sections">
+    ${menus.map((m, i) => `<span class="${i === STUDIO_MENU ? "on" : ""}"
+      onclick="event.stopPropagation();__st.menu(${i})"
+      style="${i === STUDIO_MENU ? `--a:${accent}` : ""}">${esc(m.n)}</span>`).join("")}</div>`;
+
+  const tape = `<div class="stape" onclick="__st.tape()" title="Click to move the order panel">
+    <div class="sth">Current sale</div>
+    <div class="stl"><span>${esc(CFG.plus[0]?.n || "First product")}</span>
+      <span class="num">${money(CFG.plus[0]?.price || 0)}</span></div>
+    <div class="stl"><span>${esc(CFG.plus[1]?.n || "Second product")}</span>
+      <span class="num">${money(CFG.plus[1]?.price || 0)}</span></div>
+    <div class="stt"><span>Total</span><b style="color:${accent}">${
+      money((CFG.plus[0]?.price || 0) + (CFG.plus[1]?.price || 0))}</b></div>
+    <div class="stp"><span style="border-color:${accent};color:${accent}">Cash</span>
+      <span>Card</span></div></div>`;
+
+  const board = `<div class="sboard">
+    ${L.search ? `<div class="ssearch" onclick="__st.search()"
+      title="Click to hide the search bar">Search the pricebook, or scan a barcode</div>` : ""}
+    ${L.depts === "rail"
+      ? `<div class="srail">${sections}<div class="skeys ${L.keyStyle}" id="skeys"
+           style="grid-template-columns:repeat(${cols},1fr)">${menu ? menu.keys.map(keyHtml).join("") : ""}</div></div>`
+      : sections + `<div class="skeys ${L.keyStyle}" id="skeys"
+           style="grid-template-columns:repeat(${cols},1fr)">${menu ? menu.keys.map(keyHtml).join("") : ""}</div>`}
+    ${L.fkeys ? `<div class="sfk" onclick="__st.fkeys()" title="Click to hide the function row">
+      ${["Price check", "Void", "Discount", "No sale", "Suspend", "Return"].map(f =>
+        `<span>${f}</span>`).join("")}</div>` : ""}
+  </div>`;
+
+  document.getElementById("studio").innerHTML = `
+    <div class="stwrap">
+      <header class="sthead">
+        <div>
+          <h1>Make it yours</h1>
+          <p>This is your register with your products in it. Drag keys to move them, click one to
+             resize or recolour it, click the order panel or the sections to move them. Nothing here
+             is permanent — all of it is editable later under Appearance.</p>
+        </div>
+        <button class="launch" onclick="__st.launch()">
+          <span>Launch the register</span>
+          <svg viewBox="0 0 20 20"><path d="M3 10h13M11 5l5 5-5 5" stroke="currentColor"
+            stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </header>
+
+      <div class="stbody">
+        <aside class="sttools">
+          <div class="stsec">Start from</div>
+          <div class="stpresets">${LAYOUTS.map(l => `
+            <button class="${CFG.layout === l.k && !CFG.layoutCustom ? "on" : ""}"
+              onclick="__st.style('${l.k}')">${esc(l.n)}</button>`).join("")}</div>
+          ${CFG.layoutCustom ? `<button class="streset" onclick="__st.reset()">
+            You've changed this from ${esc(studioL().n)} — reset</button>` : ""}
+
+          <div class="stsec">Products drawn as</div>
+          <div class="stchips">${[["tile", "Tiles"], ["pad", "Pads"], ["list", "Rows"], ["card", "Cards"]]
+            .map(([k, n]) => `<button class="${L.keyStyle === k ? "on" : ""}"
+              onclick="__st.keyStyle('${k}')">${n}</button>`).join("")}</div>
+
+          <div class="stsec">Arrangement</div>
+          <div class="stchips">
+            <button onclick="__st.tape()">Order: ${L.tape}</button>
+            <button onclick="__st.nav()">Menu: ${L.nav === "rail" ? "side" : "top"}</button>
+            <button onclick="__st.depts()">Sections: ${L.depts === "rail" ? "side" : "top"}</button>
+            <button class="${L.search ? "on" : ""}" onclick="__st.search()">Search bar</button>
+            <button class="${L.fkeys ? "on" : ""}" onclick="__st.fkeys()">Function row</button>
+          </div>
+
+          <div class="stsec">Sizing</div>
+          <label class="strange"><span>Key size</span>
+            <input type="range" min="120" max="280" value="${L.keyMin}"
+              oninput="__st.size(this.value)"><b>${L.keyMin}</b></label>
+          <label class="strange"><span>Spacing</span>
+            <input type="range" min="0.8" max="1.5" step="0.05" value="${L.density}"
+              oninput="__st.dense(this.value)"><b>${(+L.density).toFixed(2)}</b></label>
+          <label class="strange"><span>Rounding</span>
+            <input type="range" min="0" max="20" value="${L.radius}"
+              oninput="__st.radius(this.value)"><b>${L.radius}</b></label>
+
+          <div class="stsec">Colour</div>
+          <div class="stchips">${[["dark", "Dark"], ["light", "Light"], ["contrast", "Contrast"]]
+            .map(([k, n]) => `<button class="${CFG.theme.mode === k ? "on" : ""}"
+              onclick="__st.mode('${k}')">${n}</button>`).join("")}</div>
+          <div class="stswatch">${ACCENTS.map(([hex]) =>
+            `<i class="${CFG.theme.accent === hex ? "on" : ""}" style="background:${hex}"
+              onclick="__st.accent('${hex}')"></i>`).join("")}</div>
+        </aside>
+
+        <div class="stcanvas">
+          <div class="stmock" style="background:${M.bg};color:${M.txt}">
+            <div class="stbar" style="background:${CFG.theme.mode === "light" ? "#E2E4DF" : "#141A1C"}">
+              <span class="sdot" style="background:${accent}"></span>
+              <b>${esc(CFG.site.name)}</b><em>Reg 1 · Store 001</em>
+            </div>
+            ${L.nav === "top" ? `<div class="snav top" onclick="__st.nav()"
+              title="Click to move the menu">${["Sale", "Office", "Reports", "Config"].map((n, i) =>
+                `<span class="${i === 0 ? "on" : ""}" style="--a:${accent}">${n}</span>`).join("")}</div>` : ""}
+            <div class="stinner ${L.tape} ${L.nav}">
+              ${L.nav === "rail" ? `<div class="snav rail" onclick="__st.nav()"
+                title="Click to move the menu">${["Sale", "Office", "Reports", "Config"].map((n, i) =>
+                  `<span class="${i === 0 ? "on" : ""}" style="--a:${accent}">${n}</span>`).join("")}</div>` : ""}
+              ${L.tape === "left" ? tape + board : board + tape}
+            </div>
+          </div>
+          <div class="sthint">${STUDIO_SEL != null
+            ? "Drag this key to move it, or use the buttons on it to resize, recolour or remove."
+            : "Click any key to edit it. Click the order panel, the sections or the menu to move them."}</div>
+        </div>
+      </div>
+    </div>`;
+
+  /* Drag to rearrange, with the same plain HTML5 events the menu designer uses. */
+  const keys = document.getElementById("skeys");
+  if (keys) {
+    let from = null;
+    keys.querySelectorAll(".sk").forEach(k => {
+      k.addEventListener("dragstart", e => { from = +k.dataset.i; k.classList.add("drag");
+        e.dataTransfer.effectAllowed = "move"; });
+      k.addEventListener("dragend", () => { k.classList.remove("drag");
+        keys.querySelectorAll(".sk").forEach(x => x.classList.remove("over")); });
+      k.addEventListener("dragover", e => { e.preventDefault(); k.classList.add("over"); });
+      k.addEventListener("dragleave", () => k.classList.remove("over"));
+      k.addEventListener("drop", e => { e.preventDefault();
+        if (from != null) window.__st.move(from, +k.dataset.i); });
+    });
+  }
+}
+
+/* The handover. The mock scales up into the real thing rather than the screen
+   simply being replaced — it's the same register either side of it. */
+function launchPOS() {
+  const studio = document.getElementById("studio");
+  const mock = studio.querySelector(".stmock");
+  studio.classList.add("launching");
+  if (mock) mock.classList.add("zoom");
+  if (typeof saveNow === "function") saveNow();
+  if (typeof contributePattern === "function") contributePattern();
+  setTimeout(() => {
+    studio.classList.remove("on", "launching");
+    studio.innerHTML = "";
+    boot();
+    const app = document.getElementById("app");
+    if (app) { app.classList.add("arrive"); setTimeout(() => app.classList.remove("arrive"), 900); }
+  }, 760);
 }
 
 /* ============================ CONFIGURATION CLIENT ============================
