@@ -9,7 +9,7 @@
    to sync, because the thing on screen is the configuration.
    =========================================================================== */
 
-let STUDIO_MENU = 0, STUDIO_SEL = null;
+let STUDIO_MENU = 0, STUDIO_SEL = null, STUDIO_GUIDE = true;
 
 function openStudio() {
   document.getElementById("setup").classList.add("hide");
@@ -25,12 +25,33 @@ function studioL() {
 }
 /* Writes a single property of the arrangement and redraws. Layout stops being a
    preset the moment one of these is touched — it becomes theirs. */
+const SAY = {
+  tape: v => `Order panel moved ${v === "bottom" ? "to the bottom" : "to the " + v}`,
+  nav: v => `Main menu moved to the ${v === "rail" ? "side" : "top"}`,
+  depts: v => `Sections moved to the ${v === "rail" ? "side" : "top"}`,
+  keyStyle: v => `Products now drawn as ${({tile:"tiles",pad:"pads",list:"rows",card:"cards"})[v]}`,
+  search: v => v ? "Search bar shown" : "Search bar hidden",
+  fkeys: v => v ? "Function row shown" : "Function row hidden",
+  keyMin: v => `Keys ${v}px wide`,
+  density: v => `Spacing ${(+v).toFixed(2)}×`,
+  radius: v => `Corners ${v}px`
+};
 function setL(prop, val) {
-  const L = { ...studioL() };
-  L[prop] = val;
   CFG.layoutCustom = { ...(CFG.layoutCustom || {}), [prop]: val };
   applyStudio();
   drawStudio();
+  if (SAY[prop]) flash(SAY[prop](val));
+}
+/* One line, top of the canvas, saying what just happened. Without it every
+   click feels like nothing changed. */
+let FLASH_T = null;
+function flash(msg) {
+  const el = document.getElementById("stFlash");
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
+  clearTimeout(FLASH_T);
+  FLASH_T = setTimeout(() => el.classList.remove("show"), 2200);
 }
 function effL() {
   return { ...studioL(), ...(CFG.layoutCustom || {}) };
@@ -55,7 +76,8 @@ function drawStudio() {
   const cycle = (arr, cur) => arr[(arr.indexOf(cur) + 1) % arr.length];
 
   window.__st = {
-    style: k => { CFG.layout = k; CFG.layoutCustom = null; applyStudio(); drawStudio(); },
+    style: k => { CFG.layout = k; CFG.layoutCustom = null; applyStudio(); drawStudio();
+      flash(`Started from ${(LAYOUTS.find(x => x.k === k) || {}).n}`); },
     tape: () => setL("tape", cycle(["left", "right", "bottom"], L.tape)),
     nav: () => setL("nav", cycle(["rail", "top"], L.nav)),
     depts: () => setL("depts", cycle(["tabs", "rail"], L.depts)),
@@ -65,21 +87,29 @@ function drawStudio() {
     size: v => setL("keyMin", Math.round(+v)),
     dense: v => setL("density", +v),
     radius: v => setL("radius", +v),
-    mode: m => { CFG.theme.mode = m; applyStudio(); drawStudio(); },
-    accent: a => { CFG.theme.accent = a; applyStudio(); drawStudio(); },
+    mode: m => { CFG.theme.mode = m; applyStudio(); drawStudio();
+      flash(({dark:"Dark",light:"Light",contrast:"High contrast"})[m] + " mode"); },
+    accent: a => { CFG.theme.accent = a; applyStudio(); drawStudio();
+      flash("Accent colour changed"); },
     menu: i => { STUDIO_MENU = i; STUDIO_SEL = null; drawStudio(); },
     pick: i => { STUDIO_SEL = STUDIO_SEL === i ? null : i; drawStudio(); },
-    wider: i => { const k = menu.keys[i]; k.w = (k.w || 1) === 2 ? 1 : 2; drawStudio(); },
-    taller: i => { const k = menu.keys[i]; k.h = (k.h || 1) === 2 ? 1 : 2; drawStudio(); },
-    colour: (i, c) => { menu.keys[i].color = c || null; drawStudio(); },
-    drop: i => { menu.keys.splice(i, 1); STUDIO_SEL = null; drawStudio(); },
+    wider: i => { const k = menu.keys[i]; k.w = (k.w || 1) === 2 ? 1 : 2; drawStudio();
+      flash(k.w === 2 ? "Key made double width" : "Key back to single width"); },
+    taller: i => { const k = menu.keys[i]; k.h = (k.h || 1) === 2 ? 1 : 2; drawStudio();
+      flash(k.h === 2 ? "Key made double height" : "Key back to single height"); },
+    colour: (i, c) => { menu.keys[i].color = c || null; drawStudio();
+      flash(c ? "Key recoloured" : "Key back to its department colour"); },
+    drop: i => { const n = byId(CFG.plus, menu.keys[i].pluId)?.n || "Key";
+      menu.keys.splice(i, 1); STUDIO_SEL = null; drawStudio();
+      flash(`${n} taken off this menu — still in the pricebook`); },
     move: (from, to) => {
       if (to < 0 || to >= menu.keys.length || from === to) return;
       menu.keys.splice(to, 0, menu.keys.splice(from, 1)[0]);
-      STUDIO_SEL = to; drawStudio();
+      STUDIO_SEL = to; drawStudio(); flash("Key moved");
     },
     reset: () => { CFG.layoutCustom = null; applyStudio(); drawStudio();
       toast("Back to the " + studioL().n + " arrangement."); },
+    guide: () => { STUDIO_GUIDE = !STUDIO_GUIDE; drawStudio(); },
     launch: launchPOS
   };
 
@@ -116,12 +146,17 @@ function drawStudio() {
           <i class="x" onclick="event.stopPropagation();__st.colour(${i},'')">↺</i></span>` : ""}</div>`;
   };
 
-  const sections = `<div class="ssec ${L.depts}" onclick="__st.depts()" title="Click to move the sections">
+  const zone = (label, action) =>
+    `<span class="zt"><b>${label}</b><i>${action}</i></span>`;
+
+  const sections = `<div class="ssec ${L.depts} zone" onclick="__st.depts()">
+    ${zone("Sections", L.depts === "rail" ? "move to the top" : "move to the side")}
     ${menus.map((m, i) => `<span class="${i === STUDIO_MENU ? "on" : ""}"
       onclick="event.stopPropagation();__st.menu(${i})"
       style="${i === STUDIO_MENU ? `--a:${accent}` : ""}">${esc(m.n)}</span>`).join("")}</div>`;
 
-  const tape = `<div class="stape" onclick="__st.tape()" title="Click to move the order panel">
+  const tape = `<div class="stape zone" onclick="__st.tape()">
+    ${zone("Order panel", "move it " + (L.tape === "left" ? "right" : L.tape === "right" ? "to the bottom" : "left"))}
     <div class="sth">Current sale</div>
     <div class="stl"><span>${esc(CFG.plus[0]?.n || "First product")}</span>
       <span class="num">${money(CFG.plus[0]?.price || 0)}</span></div>
@@ -133,14 +168,15 @@ function drawStudio() {
       <span>Card</span></div></div>`;
 
   const board = `<div class="sboard">
-    ${L.search ? `<div class="ssearch" onclick="__st.search()"
-      title="Click to hide the search bar">Search the pricebook, or scan a barcode</div>` : ""}
+    ${L.search ? `<div class="ssearch zone" onclick="__st.search()">
+      ${zone("Search bar", "hide it")}Search the pricebook, or scan a barcode</div>` : ""}
     ${L.depts === "rail"
       ? `<div class="srail">${sections}<div class="skeys ${L.keyStyle}" id="skeys"
            style="grid-template-columns:repeat(${cols},1fr)">${menu ? menu.keys.map(keyHtml).join("") : ""}</div></div>`
       : sections + `<div class="skeys ${L.keyStyle}" id="skeys"
            style="grid-template-columns:repeat(${cols},1fr)">${menu ? menu.keys.map(keyHtml).join("") : ""}</div>`}
-    ${L.fkeys ? `<div class="sfk" onclick="__st.fkeys()" title="Click to hide the function row">
+    ${L.fkeys ? `<div class="sfk zone" onclick="__st.fkeys()">
+      ${zone("Function row", "hide it")}
       ${["Price check", "Void", "Discount", "No sale", "Suspend", "Return"].map(f =>
         `<span>${f}</span>`).join("")}</div>` : ""}
   </div>`;
@@ -205,24 +241,31 @@ function drawStudio() {
         </aside>
 
         <div class="stcanvas">
-          <div class="stmock" style="background:${M.bg};color:${M.txt}">
+          <div class="stcbar">
+            <button class="stguide ${STUDIO_GUIDE ? "on" : ""}" onclick="__st.guide()">
+              ${STUDIO_GUIDE ? "Hide" : "Show"} what I can change</button>
+            <div class="stflash" id="stFlash"></div>
+          </div>
+          <div class="stmock ${STUDIO_GUIDE ? "guide" : ""}" style="background:${M.bg};color:${M.txt}">
             <div class="stbar" style="background:${CFG.theme.mode === "light" ? "#E2E4DF" : "#141A1C"}">
               <span class="sdot" style="background:${accent}"></span>
               <b>${esc(CFG.site.name)}</b><em>Reg 1 · Store 001</em>
             </div>
-            ${L.nav === "top" ? `<div class="snav top" onclick="__st.nav()"
-              title="Click to move the menu">${["Sale", "Office", "Reports", "Config"].map((n, i) =>
+            ${L.nav === "top" ? `<div class="snav top zone" onclick="__st.nav()">
+              ${zone("Main menu", "move to the side")}
+              ${["Sale", "Office", "Reports", "Config"].map((n, i) =>
                 `<span class="${i === 0 ? "on" : ""}" style="--a:${accent}">${n}</span>`).join("")}</div>` : ""}
             <div class="stinner ${L.tape} ${L.nav}">
-              ${L.nav === "rail" ? `<div class="snav rail" onclick="__st.nav()"
-                title="Click to move the menu">${["Sale", "Office", "Reports", "Config"].map((n, i) =>
+              ${L.nav === "rail" ? `<div class="snav rail zone" onclick="__st.nav()">
+                ${zone("Main menu", "move to the top")}
+                ${["Sale", "Office", "Reports", "Config"].map((n, i) =>
                   `<span class="${i === 0 ? "on" : ""}" style="--a:${accent}">${n}</span>`).join("")}</div>` : ""}
               ${L.tape === "left" ? tape + board : board + tape}
             </div>
           </div>
           <div class="sthint">${STUDIO_SEL != null
-            ? "Drag this key to move it, or use the buttons on it to resize, recolour or remove."
-            : "Click any key to edit it. Click the order panel, the sections or the menu to move them."}</div>
+            ? "<b>This key is selected.</b> Drag it to move it. The buttons on it change its width and height, the strip along the bottom sets its colour, and × takes it off this menu."
+            : "<b>Click any part of the register to change it.</b> Keys can be dragged, resized and recoloured. The panels around them move with a click."}</div>
         </div>
       </div>
     </div>`;
@@ -244,20 +287,62 @@ function drawStudio() {
   }
 }
 
-/* The handover. The mock scales up into the real thing rather than the screen
-   simply being replaced — it's the same register either side of it. */
+/* The handover.
+
+   Four beats, roughly two and a half seconds. The controls clear out, the keys
+   fire off one by one, the register pulls toward the viewer and blows out to
+   white, then the real thing arrives behind the store's own name. It's the one
+   moment in this whole product worth being theatrical about — they've just spent
+   ten minutes answering questions and this is the payoff. */
 function launchPOS() {
   const studio = document.getElementById("studio");
   const mock = studio.querySelector(".stmock");
-  studio.classList.add("launching");
-  if (mock) mock.classList.add("zoom");
+  const wrap = studio.querySelector(".stwrap");
+  if (!mock) return boot();
+
+  /* Save before any of it, so a slow network can't make the animation lie. */
   if (typeof saveNow === "function") saveNow();
   if (typeof contributePattern === "function") contributePattern();
+
+  const accent = CFG.theme.accent;
+  const curtain = document.createElement("div");
+  curtain.className = "launchveil";
+  curtain.innerHTML = `
+    <div class="lv-flash" style="background:${accent}"></div>
+    <div class="lv-name">
+      <span class="lv-dot" style="background:${accent}"></span>
+      <b>${esc(CFG.site.name)}</b>
+      <em>Register 1 · opening</em>
+    </div>`;
+  document.body.appendChild(curtain);
+
+  studio.classList.add("launching");
+
+  /* Beat one: the tools clear, the keys go off in sequence like a board
+     powering up. */
+  mock.querySelectorAll(".sk").forEach((k, i) => {
+    k.style.animation = `keyfire .42s cubic-bezier(.3,1.6,.5,1) ${i * 42}ms both`;
+  });
+
+  /* Beat two: the register comes at you. */
+  setTimeout(() => mock.classList.add("rush"), 620);
+
+  /* Beat three: white out, and the name lands. */
+  setTimeout(() => curtain.classList.add("blown"), 1080);
+  setTimeout(() => curtain.classList.add("named"), 1240);
+
+  /* Beat four: the real register is built behind the curtain, then revealed. */
   setTimeout(() => {
     studio.classList.remove("on", "launching");
     studio.innerHTML = "";
     boot();
     const app = document.getElementById("app");
-    if (app) { app.classList.add("arrive"); setTimeout(() => app.classList.remove("arrive"), 900); }
-  }, 760);
+    if (app) {
+      app.classList.add("arrive");
+      setTimeout(() => app.classList.remove("arrive"), 1200);
+    }
+  }, 1600);
+
+  setTimeout(() => curtain.classList.add("lifting"), 1780);
+  setTimeout(() => curtain.remove(), 2600);
 }

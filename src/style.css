@@ -1417,3 +1417,82 @@ body.tp-plain .grand .amt{font-size:40px}
   .sttools{position:static}
   .sthead{flex-direction:column;gap:18px}
 }
+
+/* ---- studio: making it obvious what can be changed ---- */
+.stcbar{display:flex;align-items:center;gap:14px;margin-bottom:12px;min-height:34px}
+.stguide{border:1px solid var(--paper-line);background:rgba(255,255,255,.7);border-radius:20px;
+  padding:8px 16px;font:inherit;font-size:12.5px;color:var(--ink-soft);cursor:pointer;
+  transition:all .15s var(--ease);flex:none}
+.stguide:hover{border-color:var(--ink-soft);color:var(--ink)}
+.stguide.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.stflash{font-size:13px;color:var(--ink);opacity:0;transform:translateX(-8px);
+  transition:opacity .2s,transform .2s var(--ease);font-weight:500}
+.stflash.show{opacity:1;transform:none}
+
+/* a persistent tag on every clickable region, loud in guide mode */
+.zone{position:relative}
+.zt{position:absolute;top:5px;left:6px;z-index:4;display:flex;align-items:baseline;gap:6px;
+  background:rgba(20,24,26,.86);color:#fff;border-radius:5px;padding:3px 8px;
+  font-size:10px;line-height:1.4;white-space:nowrap;pointer-events:none;
+  opacity:0;transform:translateY(-3px);transition:opacity .16s,transform .16s var(--ease)}
+.stmock.guide .zt{opacity:.92;transform:none}
+.zone:hover .zt{opacity:1;transform:none}
+.zt b{font-weight:600}
+.zt i{font-style:normal;opacity:.62}
+.stmock.guide .zone{outline:1px dashed rgba(128,128,128,.45);outline-offset:-2px}
+.zone:hover{outline:2px dashed var(--vfd)!important;outline-offset:-2px;cursor:pointer}
+.stape.zone .zt,.snav.rail.zone .zt{top:5px;left:5px}
+
+/* ============================ THE LAUNCH ============================ */
+#studio.launching .sttools,#studio.launching .sthead,
+#studio.launching .stcbar,#studio.launching .sthint{
+  animation:toolsOut .4s cubic-bezier(.5,0,.75,0) forwards}
+@keyframes toolsOut{to{opacity:0;transform:translateY(-24px);filter:blur(4px)}}
+
+@keyframes keyfire{
+  0%{transform:none}
+  40%{transform:scale(1.14);filter:brightness(1.6)}
+  100%{transform:scale(.7);opacity:0;filter:brightness(2.4)}
+}
+.stmock{transition:transform .55s cubic-bezier(.55,0,.3,1),filter .55s,opacity .3s}
+.stmock.rush{transform:scale(2.4) translateY(-4%);filter:brightness(1.5) blur(2px);opacity:.9}
+
+.launchveil{position:fixed;inset:0;z-index:200;pointer-events:none;display:grid;place-items:center;
+  opacity:0;transition:opacity .3s}
+.launchveil .lv-flash{position:absolute;inset:0;opacity:0;transform:scale(.2);border-radius:50%;
+  filter:blur(40px)}
+.launchveil.blown{opacity:1}
+.launchveil.blown .lv-flash{animation:blowout .5s cubic-bezier(.3,0,.2,1) forwards}
+@keyframes blowout{
+  0%{opacity:.9;transform:scale(.2);border-radius:50%}
+  60%{opacity:1;transform:scale(3);border-radius:0}
+  100%{opacity:1;transform:scale(3.4);border-radius:0}
+}
+.lv-name{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:9px;
+  opacity:0;transform:translateY(14px) scale(.96)}
+.launchveil.named .lv-name{animation:nameIn .5s cubic-bezier(.2,.9,.3,1) forwards}
+@keyframes nameIn{to{opacity:1;transform:none}}
+.lv-dot{width:12px;height:12px;border-radius:50%;box-shadow:0 0 24px currentColor;
+  animation:beat 1.1s ease-in-out infinite}
+.lv-name b{font-size:clamp(26px,4.4vw,46px);font-weight:600;letter-spacing:-.03em;
+  color:#0D1416;text-align:center;padding:0 24px}
+.lv-name em{font-style:normal;font-size:13px;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(13,20,22,.55)}
+.launchveil.lifting{animation:veilUp .8s cubic-bezier(.5,0,.2,1) forwards}
+@keyframes veilUp{to{opacity:0;transform:scale(1.06)}}
+
+#app.arrive{animation:appIn .9s cubic-bezier(.2,.8,.3,1)}
+@keyframes appIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+#app.arrive .tape{animation:slideFrom .7s cubic-bezier(.2,.9,.3,1) .05s both}
+#app.arrive .rail{animation:slideRail .7s cubic-bezier(.2,.9,.3,1) both}
+#app.arrive .topbar{animation:dropIn .6s cubic-bezier(.2,.9,.3,1) both}
+#app.arrive .grid .key{animation:keyLand .5s cubic-bezier(.2,1.3,.4,1) both}
+@keyframes slideFrom{from{opacity:0;transform:translateX(-26px)}to{opacity:1;transform:none}}
+@keyframes slideRail{from{opacity:0;transform:translateX(-34px)}to{opacity:1;transform:none}}
+@keyframes dropIn{from{opacity:0;transform:translateY(-18px)}to{opacity:1;transform:none}}
+@keyframes keyLand{from{opacity:0;transform:scale(.86) translateY(14px)}to{opacity:1;transform:none}}
+
+@media(prefers-reduced-motion:reduce){
+  .stmock.rush,.launchveil,.launchveil .lv-flash,#app.arrive,#app.arrive *{animation:none!important;
+    transition:none!important;transform:none!important}
+}
