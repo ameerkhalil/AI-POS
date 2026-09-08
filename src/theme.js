@@ -45,6 +45,11 @@ function themeFromConfig(){
     THEME.searchLeads=L.search;
     THEME.tape=L.tape;
     THEME.depts=L.depts;
+    THEME.keyStyle=L.keyStyle;
+    THEME.nav=L.nav;
+    THEME.tapeStyle=L.tapeStyle;
+    if(CFG.theme?.radius==null)THEME.radius=L.radius;
+    if(CFG.theme?.fontScale==null)THEME.fontScale=L.fs;
   }
   applyTheme();
 }
@@ -79,6 +84,15 @@ function applyTheme(){
     sale.classList.add("tape-"+(THEME.tape||"left"));
     sale.classList.toggle("depts-rail",THEME.depts==="rail");
   }
+  /* The whole shell changes shape, not just the grid: navigation moves, the
+     receipt is drawn differently, spacing and edges change together. */
+  const b=document.body;
+  ["counter","kitchen","ledger","boutique","bar","kiosk"].forEach(k=>b.classList.remove("st-"+k));
+  if(CFG&&CFG.layout)b.classList.add("st-"+CFG.layout);
+  ["rail","top"].forEach(k=>b.classList.remove("nav-"+k));
+  b.classList.add("nav-"+(THEME.nav||"rail"));
+  ["receipt","list","plain"].forEach(k=>b.classList.remove("tp-"+k));
+  b.classList.add("tp-"+(THEME.tapeStyle||"receipt"));
   if(CFG&&VIEW==="sale")drawGrid();
 }
 function themeIssues(){
@@ -183,6 +197,8 @@ function tHealth(){
 /* ============================ APPEARANCE TAB ============================ */
 function tLook(){
   window.__th=(k,v)=>{
+    if(k==="style"){CFG.layout=v;themeFromConfig();saveTheme();drawConfig();
+      return toast(`Interface set to <b>${esc((LAYOUTS.find(x=>x.k===v)||{}).n||v)}</b>.`)}
     if(k==="keyMin")v=clamp(v,110,260);
     if(k==="radius")v=clamp(v,0,14);
     if(k==="density")v=clamp(v,.8,1.4);
@@ -194,6 +210,16 @@ function tLook(){
   const m=MODES[THEME.mode],c=contrast(THEME.accent,m.panel);
   const ACC=["#5CE0A8","#6BA8D8","#E0B255","#D2664C","#B78BE0","#7FD858","#E08AB0","#4FD6D6","#F2F2F0"];
   $("cfgBody").innerHTML=`
+    <div class="sect">Interface</div>
+    <div class="stylegrid">${LAYOUTS.map(l=>`
+      <button class="stylecard ${CFG.layout===l.k?"on":""}" onclick="__th('style','${l.k}')">
+        <span class="stylemock ${l.keyStyle} ${l.nav}">
+          <i class="sm-nav"></i><i class="sm-tape"></i>
+          <span class="sm-keys">${[1,2,3,4].map(()=>`<i></i>`).join("")}</span>
+        </span>
+        <b>${esc(l.n)}</b>
+        <em>${esc(l.why.split(".")[0])}.</em>
+      </button>`).join("")}</div>
     <div class="sect">Mode</div>
     <div class="opts" style="margin-top:0">${[["dark","Dark","for indoor counters"],
       ["light","Light","for bright forecourts"],["contrast","High contrast","for glare and low vision"]].map(([k,l,s])=>

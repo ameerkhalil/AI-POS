@@ -1044,3 +1044,93 @@ body.searchlead .srch input{font-size:15px;padding:12px 12px 12px 36px}
 .fleetnote svg{width:19px;height:19px;color:var(--ink-soft);flex:none;margin-top:1px}
 .fleetnote b{display:block;font-size:14px;font-weight:600;margin-bottom:4px}
 .fleetnote span{display:block;font-size:13.5px;color:var(--ink-soft);line-height:1.6}
+
+/* ======================= INTERFACE STYLES =======================
+   Same components, drawn four different ways. This is where a pizza shop and a
+   grocery stop looking like the same product. */
+
+/* --- keys as tiles (default) --- */
+.grid.ks-tile .key{flex-direction:column;justify-content:space-between}
+
+/* --- keys as dense rows: three times as many on screen --- */
+.grid.ks-list{grid-template-columns:1fr;gap:0;padding:0}
+.grid.ks-list .key{display:grid;grid-template-columns:3px 1fr auto auto;align-items:center;gap:12px;
+  min-height:0;padding:11px 16px;border:none;border-bottom:1px solid var(--line);border-radius:0;
+  background:transparent!important;box-shadow:none;color:var(--txt)}
+.grid.ks-list .key:hover{background:rgba(255,255,255,.045)!important;filter:none}
+.grid.ks-list .key:active{transform:none;background:rgba(92,224,168,.09)!important}
+.grid.ks-list .key .swatch{position:static;width:3px;height:24px;border-radius:2px}
+.grid.ks-list .key .kn{font-size:14px;margin:0;text-align:left}
+.grid.ks-list .key .kmeta{display:flex;gap:7px}
+.grid.ks-list .key .flag{margin:0;font-size:10.5px}
+.grid.ks-list .key .kp{margin:0;font-size:14.5px;min-width:74px;text-align:right;opacity:1}
+
+/* --- keys as pads: big, soft, price under the name --- */
+.grid.ks-pad .key{align-items:center;justify-content:center;text-align:center;gap:6px;
+  border-radius:calc(var(--r) * 2.2);padding:18px 14px}
+.grid.ks-pad .key .swatch{display:none}
+.grid.ks-pad .key .kn{font-size:16px;line-height:1.25;font-weight:600}
+.grid.ks-pad .key .kp{font-size:19px;margin:0;font-weight:500;opacity:.92}
+.grid.ks-pad .key .flag{margin-top:2px}
+
+/* --- keys as cards: room for options, an explicit action --- */
+.grid.ks-card .key{background:var(--panel)!important;border:1px solid var(--line);
+  padding:0;overflow:hidden;gap:0;box-shadow:0 2px 10px rgba(0,0,0,.2)}
+.grid.ks-card .key:hover{filter:none;border-color:var(--vfd);transform:translateY(-2px);
+  box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.grid.ks-card .key .kswatch{display:block;height:5px;width:100%}
+.grid.ks-card .key .kbody{display:block;padding:15px 16px 10px;flex:1}
+.grid.ks-card .key .kn{font-size:15px;line-height:1.35;color:var(--txt)}
+.grid.ks-card .key .flag{margin-top:6px}
+.grid.ks-card .key .kfoot{display:flex;justify-content:space-between;align-items:center;
+  padding:11px 16px;border-top:1px solid var(--line);background:rgba(0,0,0,.14)}
+.grid.ks-card .key .kp{margin:0;font-size:16px;color:var(--txt)}
+.grid.ks-card .key .kgo{font-size:11.5px;color:var(--vfd);border:1px solid rgba(92,224,168,.35);
+  border-radius:20px;padding:3px 11px}
+
+/* --- navigation across the top instead of down the side --- */
+body.nav-top #app.on{grid-template-columns:1fr;grid-template-rows:46px 52px 1fr}
+body.nav-top .topbar{grid-column:1}
+body.nav-top .rail{grid-column:1;flex-direction:row;padding:7px 12px;gap:6px;
+  border-right:none;border-bottom:1px solid #0E1113;align-items:center}
+body.nav-top .rbtn{flex-direction:row;gap:9px;padding:9px 16px;font-size:13px;border-radius:20px}
+body.nav-top .rbtn svg{width:17px;height:17px}
+body.nav-top .rbtn.on::before{display:none}
+body.nav-top .rbtn.on{background:rgba(92,224,168,.14)}
+body.nav-top .railfoot{margin-left:auto;margin-top:0}
+body.nav-top .view,body.nav-top #vSale{grid-column:1}
+
+/* --- the receipt drawn three ways --- */
+body.tp-list .tape{background:var(--bg)}
+body.tp-list .line{border-bottom:1px solid var(--line);padding:11px 16px}
+body.tp-list .tape-head{background:var(--panel)}
+body.tp-plain .tape{background:var(--bg)}
+body.tp-plain .lines{padding:8px 0}
+body.tp-plain .line{padding:12px 18px;border-radius:var(--r);margin:0 10px 5px}
+body.tp-plain .line:hover{background:rgba(255,255,255,.05)}
+body.tp-plain .totals{background:transparent;border-top:2px solid var(--line)}
+body.tp-plain .grand .amt{font-size:40px}
+
+/* --- style picker in Appearance --- */
+.stylegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:11px;margin-top:14px}
+.stylecard{border:1px solid var(--line);border-radius:var(--r2);padding:13px;text-align:left;
+  background:rgba(255,255,255,.02);transition:border-color .18s,transform .15s,background .18s}
+.stylecard:hover{border-color:var(--line-2);transform:translateY(-2px)}
+.stylecard.on{border-color:var(--vfd);background:rgba(92,224,168,.07)}
+.stylemock{display:block;height:72px;background:var(--bg);border:1px solid var(--line);
+  border-radius:5px;position:relative;overflow:hidden;margin-bottom:11px;padding:5px}
+.stylemock .sm-nav{position:absolute;left:0;top:0;bottom:0;width:13px;background:var(--panel)}
+.stylemock.top .sm-nav{left:0;right:0;bottom:auto;width:auto;height:11px}
+.stylemock .sm-tape{position:absolute;right:0;top:0;bottom:0;width:30%;background:var(--panel);
+  border-left:1px solid var(--line)}
+.stylemock .sm-keys{position:absolute;left:17px;right:32%;top:5px;bottom:5px;display:grid;gap:3px;
+  grid-template-columns:1fr 1fr}
+.stylemock.top .sm-keys{left:5px;top:15px}
+.stylemock.list .sm-keys{grid-template-columns:1fr;gap:2px}
+.stylemock.pad .sm-keys{grid-template-columns:1fr 1fr;gap:5px}
+.stylemock .sm-keys i{background:var(--up);border-radius:3px}
+.stylemock.list .sm-keys i{border-radius:0;height:7px}
+.stylemock.pad .sm-keys i{border-radius:7px}
+.stylemock.card .sm-keys i{border-radius:3px;border-top:3px solid var(--vfd)}
+.stylecard b{display:block;font-size:14px;font-weight:600;margin-bottom:4px}
+.stylecard em{display:block;font-style:normal;font-size:11.5px;color:var(--txt-2);line-height:1.5}

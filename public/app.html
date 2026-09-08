@@ -1055,6 +1055,96 @@ body.searchlead .srch input{font-size:15px;padding:12px 12px 12px 36px}
 .fleetnote b{display:block;font-size:14px;font-weight:600;margin-bottom:4px}
 .fleetnote span{display:block;font-size:13.5px;color:var(--ink-soft);line-height:1.6}
 
+/* ======================= INTERFACE STYLES =======================
+   Same components, drawn four different ways. This is where a pizza shop and a
+   grocery stop looking like the same product. */
+
+/* --- keys as tiles (default) --- */
+.grid.ks-tile .key{flex-direction:column;justify-content:space-between}
+
+/* --- keys as dense rows: three times as many on screen --- */
+.grid.ks-list{grid-template-columns:1fr;gap:0;padding:0}
+.grid.ks-list .key{display:grid;grid-template-columns:3px 1fr auto auto;align-items:center;gap:12px;
+  min-height:0;padding:11px 16px;border:none;border-bottom:1px solid var(--line);border-radius:0;
+  background:transparent!important;box-shadow:none;color:var(--txt)}
+.grid.ks-list .key:hover{background:rgba(255,255,255,.045)!important;filter:none}
+.grid.ks-list .key:active{transform:none;background:rgba(92,224,168,.09)!important}
+.grid.ks-list .key .swatch{position:static;width:3px;height:24px;border-radius:2px}
+.grid.ks-list .key .kn{font-size:14px;margin:0;text-align:left}
+.grid.ks-list .key .kmeta{display:flex;gap:7px}
+.grid.ks-list .key .flag{margin:0;font-size:10.5px}
+.grid.ks-list .key .kp{margin:0;font-size:14.5px;min-width:74px;text-align:right;opacity:1}
+
+/* --- keys as pads: big, soft, price under the name --- */
+.grid.ks-pad .key{align-items:center;justify-content:center;text-align:center;gap:6px;
+  border-radius:calc(var(--r) * 2.2);padding:18px 14px}
+.grid.ks-pad .key .swatch{display:none}
+.grid.ks-pad .key .kn{font-size:16px;line-height:1.25;font-weight:600}
+.grid.ks-pad .key .kp{font-size:19px;margin:0;font-weight:500;opacity:.92}
+.grid.ks-pad .key .flag{margin-top:2px}
+
+/* --- keys as cards: room for options, an explicit action --- */
+.grid.ks-card .key{background:var(--panel)!important;border:1px solid var(--line);
+  padding:0;overflow:hidden;gap:0;box-shadow:0 2px 10px rgba(0,0,0,.2)}
+.grid.ks-card .key:hover{filter:none;border-color:var(--vfd);transform:translateY(-2px);
+  box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.grid.ks-card .key .kswatch{display:block;height:5px;width:100%}
+.grid.ks-card .key .kbody{display:block;padding:15px 16px 10px;flex:1}
+.grid.ks-card .key .kn{font-size:15px;line-height:1.35;color:var(--txt)}
+.grid.ks-card .key .flag{margin-top:6px}
+.grid.ks-card .key .kfoot{display:flex;justify-content:space-between;align-items:center;
+  padding:11px 16px;border-top:1px solid var(--line);background:rgba(0,0,0,.14)}
+.grid.ks-card .key .kp{margin:0;font-size:16px;color:var(--txt)}
+.grid.ks-card .key .kgo{font-size:11.5px;color:var(--vfd);border:1px solid rgba(92,224,168,.35);
+  border-radius:20px;padding:3px 11px}
+
+/* --- navigation across the top instead of down the side --- */
+body.nav-top #app.on{grid-template-columns:1fr;grid-template-rows:46px 52px 1fr}
+body.nav-top .topbar{grid-column:1}
+body.nav-top .rail{grid-column:1;flex-direction:row;padding:7px 12px;gap:6px;
+  border-right:none;border-bottom:1px solid #0E1113;align-items:center}
+body.nav-top .rbtn{flex-direction:row;gap:9px;padding:9px 16px;font-size:13px;border-radius:20px}
+body.nav-top .rbtn svg{width:17px;height:17px}
+body.nav-top .rbtn.on::before{display:none}
+body.nav-top .rbtn.on{background:rgba(92,224,168,.14)}
+body.nav-top .railfoot{margin-left:auto;margin-top:0}
+body.nav-top .view,body.nav-top #vSale{grid-column:1}
+
+/* --- the receipt drawn three ways --- */
+body.tp-list .tape{background:var(--bg)}
+body.tp-list .line{border-bottom:1px solid var(--line);padding:11px 16px}
+body.tp-list .tape-head{background:var(--panel)}
+body.tp-plain .tape{background:var(--bg)}
+body.tp-plain .lines{padding:8px 0}
+body.tp-plain .line{padding:12px 18px;border-radius:var(--r);margin:0 10px 5px}
+body.tp-plain .line:hover{background:rgba(255,255,255,.05)}
+body.tp-plain .totals{background:transparent;border-top:2px solid var(--line)}
+body.tp-plain .grand .amt{font-size:40px}
+
+/* --- style picker in Appearance --- */
+.stylegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:11px;margin-top:14px}
+.stylecard{border:1px solid var(--line);border-radius:var(--r2);padding:13px;text-align:left;
+  background:rgba(255,255,255,.02);transition:border-color .18s,transform .15s,background .18s}
+.stylecard:hover{border-color:var(--line-2);transform:translateY(-2px)}
+.stylecard.on{border-color:var(--vfd);background:rgba(92,224,168,.07)}
+.stylemock{display:block;height:72px;background:var(--bg);border:1px solid var(--line);
+  border-radius:5px;position:relative;overflow:hidden;margin-bottom:11px;padding:5px}
+.stylemock .sm-nav{position:absolute;left:0;top:0;bottom:0;width:13px;background:var(--panel)}
+.stylemock.top .sm-nav{left:0;right:0;bottom:auto;width:auto;height:11px}
+.stylemock .sm-tape{position:absolute;right:0;top:0;bottom:0;width:30%;background:var(--panel);
+  border-left:1px solid var(--line)}
+.stylemock .sm-keys{position:absolute;left:17px;right:32%;top:5px;bottom:5px;display:grid;gap:3px;
+  grid-template-columns:1fr 1fr}
+.stylemock.top .sm-keys{left:5px;top:15px}
+.stylemock.list .sm-keys{grid-template-columns:1fr;gap:2px}
+.stylemock.pad .sm-keys{grid-template-columns:1fr 1fr;gap:5px}
+.stylemock .sm-keys i{background:var(--up);border-radius:3px}
+.stylemock.list .sm-keys i{border-radius:0;height:7px}
+.stylemock.pad .sm-keys i{border-radius:7px}
+.stylemock.card .sm-keys i{border-radius:3px;border-top:3px solid var(--vfd)}
+.stylecard b{display:block;font-size:14px;font-weight:600;margin-bottom:4px}
+.stylecard em{display:block;font-style:normal;font-size:11.5px;color:var(--txt-2);line-height:1.5}
+
 .tchip.save{transition:color .2s,border-color .2s}
 .tchip.save.pending{color:var(--warn);border-color:rgba(224,178,85,.4)}
 .tchip.save.saving{color:var(--txt-2)}
@@ -1221,31 +1311,40 @@ const TYPES=TYPE_GROUPS.flatMap(g=>g[1]);
 /* How the counter actually works differs more between trades than the product
    list does. A grocery scans and needs the search bar leading; a café taps and
    needs six big keys. Same code, different shape. */
+/* An interface style changes how the register is DRAWN, not just how big things
+   are. Keys render as tiles, rows, cards or pads. Navigation is a rail or a top
+   bar. The receipt is a till roll, a plain list, or a summary. A pizza shop and
+   a grocery should not be the same screen with different words on it. */
 const LAYOUTS=[
- {k:"scan",n:"Scan and go",keyMin:132,density:.92,search:true,fkeys:true,
-  tape:"left",depts:"tabs",
-  why:"Search leads and takes the cursor, keys are compact, departments run across the top. The receipt sits on the left where a cashier's eye already is. Built for a long pricebook and a queue."},
- {k:"keys",n:"Tap a menu",keyMin:196,density:1.15,search:false,fkeys:true,
-  tape:"left",depts:"tabs",
-  why:"Six big keys instead of thirty small ones, search tucked to one side. Built for a short menu you know by heart and an order taken while talking."},
- {k:"table",n:"Tabs and tables",keyMin:172,density:1.08,search:false,fkeys:true,
-  tape:"right",depts:"rail",
-  why:"Sections run down the left as a rail so a whole menu is reachable without paging, and the open tab sits on the right where the order is being read back."},
- {k:"showroom",n:"Considered purchases",keyMin:214,density:1.22,search:true,fkeys:false,
-  tape:"right",depts:"rail",
-  why:"Large keys with room for sizes and options, no function row cluttering the bottom. Built for one sale that takes a conversation, not forty that take seconds."},
- {k:"counter",n:"Small counter",keyMin:158,density:1,search:true,fkeys:true,
-  tape:"bottom",depts:"tabs",
-  why:"The receipt runs along the bottom instead of the side, so the keys get the full width. Built for a narrow counter or a tablet turned landscape."}
+ {k:"counter",n:"Counter",keyMin:150,density:1,search:true,fkeys:true,
+  tape:"left",depts:"tabs",keyStyle:"tile",nav:"rail",tapeStyle:"receipt",radius:4,fs:1,
+  why:"Compact tiles, sections across the top, receipt down the left. The general-purpose shape — convenience, hardware, anywhere with a broad pricebook and a scanner."},
+ {k:"kitchen",n:"Kitchen",keyMin:210,density:1.25,search:false,fkeys:true,
+  tape:"right",depts:"tabs",keyStyle:"pad",nav:"top",tapeStyle:"list",radius:14,fs:1.12,
+  why:"Large soft pads with the price under the name, navigation across the top, order on the right. Built for a short menu and someone calling an order across a hot line."},
+ {k:"ledger",n:"Ledger",keyMin:260,density:.82,search:true,fkeys:true,
+  tape:"left",depts:"rail",keyStyle:"list",nav:"rail",tapeStyle:"receipt",radius:2,fs:.94,
+  why:"Products as dense rows rather than tiles, sections down the side, sharp edges. Fits three times as many on screen — for a long pricebook you scan more than you tap."},
+ {k:"boutique",n:"Boutique",keyMin:230,density:1.3,search:true,fkeys:false,
+  tape:"right",depts:"rail",keyStyle:"card",nav:"rail",tapeStyle:"plain",radius:12,fs:1.05,
+  why:"Roomy cards with space for sizes and colours, no function row, generous whitespace. For one sale that takes a conversation rather than forty that take seconds."},
+ {k:"bar",n:"Bar",keyMin:176,density:1.1,search:false,fkeys:true,
+  tape:"right",depts:"rail",keyStyle:"tile",nav:"rail",tapeStyle:"list",radius:9,fs:1.04,
+  why:"Sections down the side so the whole menu is one tap away, tab on the right where it gets read back. Built for running tabs through a busy night."},
+ {k:"kiosk",n:"Kiosk",keyMin:250,density:1.45,search:false,fkeys:false,
+  tape:"bottom",depts:"tabs",keyStyle:"pad",nav:"top",tapeStyle:"plain",radius:18,fs:1.18,
+  why:"Very large targets, almost no chrome, receipt along the bottom. For a tablet on a narrow counter, or anywhere the customer can see the screen."}
 ];
 const ACCENTS=[["#5CE0A8","Green"],["#6BA8D8","Blue"],["#E0B255","Amber"],["#D2664C","Rust"],
   ["#B78BE0","Violet"],["#7FD858","Lime"],["#E08AB0","Pink"],["#4FD6D6","Teal"]];
 function suggestLayout(){
   const t=(A.type+" "+A.desc).toLowerCase();
-  if(/bar|pub|restaurant|brewery|taproom|pizz/.test(t))return "table";
-  if(/caf|coffee|bakery|juice|ice cream|food truck|deli/.test(t))return "keys";
-  if(/cloth|boutique|shoe|jewel|furniture|electronic|phone|watch|camera|bike/.test(t))return "showroom";
-  return "scan";
+  if(/bar|pub|brewery|taproom/.test(t))return "bar";
+  if(/pizz|restaurant|fast food|food truck|deli|juice|ice cream|caf|coffee|bakery/.test(t))return "kitchen";
+  if(/cloth|boutique|shoe|jewel|watch|handbag|furniture|camera|record|antique/.test(t))return "boutique";
+  if(/grocer|supermarket|market|convenience|liquor|pharmac|hardware|auto parts|feed/.test(t))return "ledger";
+  if(/kiosk|truck|stand/.test(t))return "kiosk";
+  return "counter";
 }
 function suggestAccent(){
   const t=(A.type+" "+A.desc).toLowerCase();
@@ -2194,6 +2293,8 @@ function drawGrid(){
     <svg viewBox="0 0 24 24">${ICONS.search}</svg><br>
     ${FILTER?`Nothing matches “${esc(FILTER)}”.<br>Ring it on the keypad, or add it under Config.`:"This menu has no keys yet.<br>Add some under Config → Menus."}</div>`;return}
   window.__k=i=>{const k=keys[i];k.pump?prepay(k):ring(byId(CFG.plus,k.pluId))};
+  const style=(typeof THEME!=="undefined"&&THEME.keyStyle)||"tile";
+  $("grid").className="grid ks-"+style;
   $("grid").innerHTML=keys.map((k,i)=>{
     const dly=`animation-delay:${Math.min(i*13,230)}ms`;
     if(k.pump)return`<button class="key pump" style="${dly}" onclick="__k(${i})">
@@ -2205,14 +2306,30 @@ function drawGrid(){
     if(p.weighed)f.push("per lb");
     if(p.ebt)f.push("EBT");
     if(p.deposit)f.push("+"+money(p.deposit)+" dep");
-    return`<button class="key ${bl?"blocked":""}" onclick="__k(${i})" style="${dly};${keyBg(col)}">
+    const price=money(p.price)+(p.weighed?" /lb":"");
+    const flags=`${f.length?`<span class="flag">${esc(f.join(" · "))}</span>`:""}${
+      p.modIds?.length?`<span class="flag mod">options</span>`:""}${
+      pr?`<span class="flag pr">${pr.qty} for ${money(pr.price)}</span>`:""}${
+      bl?`<span class="flag pr">blocked now</span>`:""}`;
+    const cls=`key ${bl?"blocked":""}`;
+
+    /* Four genuinely different renderings of the same product. */
+    if(style==="list")return`<button class="${cls}" onclick="__k(${i})" style="${dly}">
+      <span class="swatch" style="background:${col}"></span>
+      <span class="kn">${esc(p.n)}</span>
+      <span class="kmeta">${flags}</span>
+      <span class="kp num">${price}</span></button>`;
+    if(style==="pad")return`<button class="${cls}" onclick="__k(${i})" style="${dly};${keyBg(col)}">
+      <span class="kn">${esc(p.n)}</span>
+      <span class="kp num">${price}</span>${flags}</button>`;
+    if(style==="card")return`<button class="${cls}" onclick="__k(${i})" style="${dly}">
+      <span class="kswatch" style="background:${col}"></span>
+      <span class="kbody"><span class="kn">${esc(p.n)}</span>${flags}</span>
+      <span class="kfoot"><span class="kp num">${price}</span><span class="kgo">Add</span></span></button>`;
+    return`<button class="${cls}" onclick="__k(${i})" style="${dly};${keyBg(col)}">
       <span class="swatch" style="background:${col};filter:brightness(1.7)"></span>
       <span class="kn">${esc(p.n)}</span>
-      <span><span class="kp num">${money(p.price)}${p.weighed?" /lb":""}</span>
-      ${f.length?`<span class="flag">${esc(f.join(" · "))}</span>`:""}
-      ${p.modIds?.length?`<span class="flag mod">options</span>`:""}
-      ${pr?`<span class="flag pr">${pr.qty} for ${money(pr.price)}</span>`:""}
-      ${bl?`<span class="flag pr">blocked now</span>`:""}</span></button>`;
+      <span><span class="kp num">${price}</span>${flags}</span></button>`;
   }).join("");
 }
 
@@ -3775,6 +3892,11 @@ function themeFromConfig(){
     THEME.searchLeads=L.search;
     THEME.tape=L.tape;
     THEME.depts=L.depts;
+    THEME.keyStyle=L.keyStyle;
+    THEME.nav=L.nav;
+    THEME.tapeStyle=L.tapeStyle;
+    if(CFG.theme?.radius==null)THEME.radius=L.radius;
+    if(CFG.theme?.fontScale==null)THEME.fontScale=L.fs;
   }
   applyTheme();
 }
@@ -3809,6 +3931,15 @@ function applyTheme(){
     sale.classList.add("tape-"+(THEME.tape||"left"));
     sale.classList.toggle("depts-rail",THEME.depts==="rail");
   }
+  /* The whole shell changes shape, not just the grid: navigation moves, the
+     receipt is drawn differently, spacing and edges change together. */
+  const b=document.body;
+  ["counter","kitchen","ledger","boutique","bar","kiosk"].forEach(k=>b.classList.remove("st-"+k));
+  if(CFG&&CFG.layout)b.classList.add("st-"+CFG.layout);
+  ["rail","top"].forEach(k=>b.classList.remove("nav-"+k));
+  b.classList.add("nav-"+(THEME.nav||"rail"));
+  ["receipt","list","plain"].forEach(k=>b.classList.remove("tp-"+k));
+  b.classList.add("tp-"+(THEME.tapeStyle||"receipt"));
   if(CFG&&VIEW==="sale")drawGrid();
 }
 function themeIssues(){
@@ -3873,7 +4004,7 @@ function health(){
   themeIssues().forEach(i=>f.push({sev:i.t==="warn"?"warn":"info",t:"Appearance",d:i.m,fix:null}));
   return f;
 }
-const BUILD="575d2bb45a";
+const BUILD="844bd15667";
 function tHealth(){
   const f=health();
   window.__fix=i=>{f[i].fix&&f[i].fix();reload();drawConfig()};
@@ -3913,6 +4044,8 @@ function tHealth(){
 /* ============================ APPEARANCE TAB ============================ */
 function tLook(){
   window.__th=(k,v)=>{
+    if(k==="style"){CFG.layout=v;themeFromConfig();saveTheme();drawConfig();
+      return toast(`Interface set to <b>${esc((LAYOUTS.find(x=>x.k===v)||{}).n||v)}</b>.`)}
     if(k==="keyMin")v=clamp(v,110,260);
     if(k==="radius")v=clamp(v,0,14);
     if(k==="density")v=clamp(v,.8,1.4);
@@ -3924,6 +4057,16 @@ function tLook(){
   const m=MODES[THEME.mode],c=contrast(THEME.accent,m.panel);
   const ACC=["#5CE0A8","#6BA8D8","#E0B255","#D2664C","#B78BE0","#7FD858","#E08AB0","#4FD6D6","#F2F2F0"];
   $("cfgBody").innerHTML=`
+    <div class="sect">Interface</div>
+    <div class="stylegrid">${LAYOUTS.map(l=>`
+      <button class="stylecard ${CFG.layout===l.k?"on":""}" onclick="__th('style','${l.k}')">
+        <span class="stylemock ${l.keyStyle} ${l.nav}">
+          <i class="sm-nav"></i><i class="sm-tape"></i>
+          <span class="sm-keys">${[1,2,3,4].map(()=>`<i></i>`).join("")}</span>
+        </span>
+        <b>${esc(l.n)}</b>
+        <em>${esc(l.why.split(".")[0])}.</em>
+      </button>`).join("")}</div>
     <div class="sect">Mode</div>
     <div class="opts" style="margin-top:0">${[["dark","Dark","for indoor counters"],
       ["light","Light","for bright forecourts"],["contrast","High contrast","for glare and low vision"]].map(([k,l,s])=>

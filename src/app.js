@@ -76,31 +76,40 @@ const TYPES=TYPE_GROUPS.flatMap(g=>g[1]);
 /* How the counter actually works differs more between trades than the product
    list does. A grocery scans and needs the search bar leading; a café taps and
    needs six big keys. Same code, different shape. */
+/* An interface style changes how the register is DRAWN, not just how big things
+   are. Keys render as tiles, rows, cards or pads. Navigation is a rail or a top
+   bar. The receipt is a till roll, a plain list, or a summary. A pizza shop and
+   a grocery should not be the same screen with different words on it. */
 const LAYOUTS=[
- {k:"scan",n:"Scan and go",keyMin:132,density:.92,search:true,fkeys:true,
-  tape:"left",depts:"tabs",
-  why:"Search leads and takes the cursor, keys are compact, departments run across the top. The receipt sits on the left where a cashier's eye already is. Built for a long pricebook and a queue."},
- {k:"keys",n:"Tap a menu",keyMin:196,density:1.15,search:false,fkeys:true,
-  tape:"left",depts:"tabs",
-  why:"Six big keys instead of thirty small ones, search tucked to one side. Built for a short menu you know by heart and an order taken while talking."},
- {k:"table",n:"Tabs and tables",keyMin:172,density:1.08,search:false,fkeys:true,
-  tape:"right",depts:"rail",
-  why:"Sections run down the left as a rail so a whole menu is reachable without paging, and the open tab sits on the right where the order is being read back."},
- {k:"showroom",n:"Considered purchases",keyMin:214,density:1.22,search:true,fkeys:false,
-  tape:"right",depts:"rail",
-  why:"Large keys with room for sizes and options, no function row cluttering the bottom. Built for one sale that takes a conversation, not forty that take seconds."},
- {k:"counter",n:"Small counter",keyMin:158,density:1,search:true,fkeys:true,
-  tape:"bottom",depts:"tabs",
-  why:"The receipt runs along the bottom instead of the side, so the keys get the full width. Built for a narrow counter or a tablet turned landscape."}
+ {k:"counter",n:"Counter",keyMin:150,density:1,search:true,fkeys:true,
+  tape:"left",depts:"tabs",keyStyle:"tile",nav:"rail",tapeStyle:"receipt",radius:4,fs:1,
+  why:"Compact tiles, sections across the top, receipt down the left. The general-purpose shape — convenience, hardware, anywhere with a broad pricebook and a scanner."},
+ {k:"kitchen",n:"Kitchen",keyMin:210,density:1.25,search:false,fkeys:true,
+  tape:"right",depts:"tabs",keyStyle:"pad",nav:"top",tapeStyle:"list",radius:14,fs:1.12,
+  why:"Large soft pads with the price under the name, navigation across the top, order on the right. Built for a short menu and someone calling an order across a hot line."},
+ {k:"ledger",n:"Ledger",keyMin:260,density:.82,search:true,fkeys:true,
+  tape:"left",depts:"rail",keyStyle:"list",nav:"rail",tapeStyle:"receipt",radius:2,fs:.94,
+  why:"Products as dense rows rather than tiles, sections down the side, sharp edges. Fits three times as many on screen — for a long pricebook you scan more than you tap."},
+ {k:"boutique",n:"Boutique",keyMin:230,density:1.3,search:true,fkeys:false,
+  tape:"right",depts:"rail",keyStyle:"card",nav:"rail",tapeStyle:"plain",radius:12,fs:1.05,
+  why:"Roomy cards with space for sizes and colours, no function row, generous whitespace. For one sale that takes a conversation rather than forty that take seconds."},
+ {k:"bar",n:"Bar",keyMin:176,density:1.1,search:false,fkeys:true,
+  tape:"right",depts:"rail",keyStyle:"tile",nav:"rail",tapeStyle:"list",radius:9,fs:1.04,
+  why:"Sections down the side so the whole menu is one tap away, tab on the right where it gets read back. Built for running tabs through a busy night."},
+ {k:"kiosk",n:"Kiosk",keyMin:250,density:1.45,search:false,fkeys:false,
+  tape:"bottom",depts:"tabs",keyStyle:"pad",nav:"top",tapeStyle:"plain",radius:18,fs:1.18,
+  why:"Very large targets, almost no chrome, receipt along the bottom. For a tablet on a narrow counter, or anywhere the customer can see the screen."}
 ];
 const ACCENTS=[["#5CE0A8","Green"],["#6BA8D8","Blue"],["#E0B255","Amber"],["#D2664C","Rust"],
   ["#B78BE0","Violet"],["#7FD858","Lime"],["#E08AB0","Pink"],["#4FD6D6","Teal"]];
 function suggestLayout(){
   const t=(A.type+" "+A.desc).toLowerCase();
-  if(/bar|pub|restaurant|brewery|taproom|pizz/.test(t))return "table";
-  if(/caf|coffee|bakery|juice|ice cream|food truck|deli/.test(t))return "keys";
-  if(/cloth|boutique|shoe|jewel|furniture|electronic|phone|watch|camera|bike/.test(t))return "showroom";
-  return "scan";
+  if(/bar|pub|brewery|taproom/.test(t))return "bar";
+  if(/pizz|restaurant|fast food|food truck|deli|juice|ice cream|caf|coffee|bakery/.test(t))return "kitchen";
+  if(/cloth|boutique|shoe|jewel|watch|handbag|furniture|camera|record|antique/.test(t))return "boutique";
+  if(/grocer|supermarket|market|convenience|liquor|pharmac|hardware|auto parts|feed/.test(t))return "ledger";
+  if(/kiosk|truck|stand/.test(t))return "kiosk";
+  return "counter";
 }
 function suggestAccent(){
   const t=(A.type+" "+A.desc).toLowerCase();
@@ -1058,6 +1067,8 @@ function drawGrid(){
     <svg viewBox="0 0 24 24">${ICONS.search}</svg><br>
     ${FILTER?`Nothing matches “${esc(FILTER)}”.<br>Ring it on the keypad, or add it under Config.`:"This menu has no keys yet.<br>Add some under Config → Menus."}</div>`;return}
   window.__k=i=>{const k=keys[i];k.pump?prepay(k):ring(byId(CFG.plus,k.pluId))};
+  const style=(typeof THEME!=="undefined"&&THEME.keyStyle)||"tile";
+  $("grid").className="grid ks-"+style;
   $("grid").innerHTML=keys.map((k,i)=>{
     const dly=`animation-delay:${Math.min(i*13,230)}ms`;
     if(k.pump)return`<button class="key pump" style="${dly}" onclick="__k(${i})">
@@ -1069,14 +1080,30 @@ function drawGrid(){
     if(p.weighed)f.push("per lb");
     if(p.ebt)f.push("EBT");
     if(p.deposit)f.push("+"+money(p.deposit)+" dep");
-    return`<button class="key ${bl?"blocked":""}" onclick="__k(${i})" style="${dly};${keyBg(col)}">
+    const price=money(p.price)+(p.weighed?" /lb":"");
+    const flags=`${f.length?`<span class="flag">${esc(f.join(" · "))}</span>`:""}${
+      p.modIds?.length?`<span class="flag mod">options</span>`:""}${
+      pr?`<span class="flag pr">${pr.qty} for ${money(pr.price)}</span>`:""}${
+      bl?`<span class="flag pr">blocked now</span>`:""}`;
+    const cls=`key ${bl?"blocked":""}`;
+
+    /* Four genuinely different renderings of the same product. */
+    if(style==="list")return`<button class="${cls}" onclick="__k(${i})" style="${dly}">
+      <span class="swatch" style="background:${col}"></span>
+      <span class="kn">${esc(p.n)}</span>
+      <span class="kmeta">${flags}</span>
+      <span class="kp num">${price}</span></button>`;
+    if(style==="pad")return`<button class="${cls}" onclick="__k(${i})" style="${dly};${keyBg(col)}">
+      <span class="kn">${esc(p.n)}</span>
+      <span class="kp num">${price}</span>${flags}</button>`;
+    if(style==="card")return`<button class="${cls}" onclick="__k(${i})" style="${dly}">
+      <span class="kswatch" style="background:${col}"></span>
+      <span class="kbody"><span class="kn">${esc(p.n)}</span>${flags}</span>
+      <span class="kfoot"><span class="kp num">${price}</span><span class="kgo">Add</span></span></button>`;
+    return`<button class="${cls}" onclick="__k(${i})" style="${dly};${keyBg(col)}">
       <span class="swatch" style="background:${col};filter:brightness(1.7)"></span>
       <span class="kn">${esc(p.n)}</span>
-      <span><span class="kp num">${money(p.price)}${p.weighed?" /lb":""}</span>
-      ${f.length?`<span class="flag">${esc(f.join(" · "))}</span>`:""}
-      ${p.modIds?.length?`<span class="flag mod">options</span>`:""}
-      ${pr?`<span class="flag pr">${pr.qty} for ${money(pr.price)}</span>`:""}
-      ${bl?`<span class="flag pr">blocked now</span>`:""}</span></button>`;
+      <span><span class="kp num">${price}</span>${flags}</span></button>`;
   }).join("");
 }
 
