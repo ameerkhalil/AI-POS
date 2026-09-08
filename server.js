@@ -15,6 +15,7 @@ const path = require("path");
 const db = require("./lib/db");
 const P = require("./lib/privacy");
 const PAY = require("./lib/payments");
+const LEARN = require("./lib/learn");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -357,6 +358,44 @@ app.post("/api/ai", auth, async (req, res) => {
     res.status(502).json({ error: `Couldn't reach the model: ${e.message}` });
   }
 });
+
+/* ------------------------------- learning -------------------------------- */
+/* Structure in, structure out. A store contributes the shape of its setup and
+   gets the accumulated shape of everyone else's back. Opt out and it does
+   neither — no contribution, no suggestions. */
+app.post("/api/learn/contribute", auth, ownStore, (req, res) => {
+  const settings = PAY.getSettings(req.store.id);
+  if (settings.noLearn) return res.json({ ok: true, skipped: "opted out" });
+  const ok = LEARN.contribute(req.store.id, String(req.body.bizType || ""), req.body.config);
+  res.json({ ok });
+});
+
+app.get("/api/learn/suggest", auth, (req, res) => {
+  const type = String(req.query.type || "");
+  if (!type) return res.status(400).json({ error: "No business type given" });
+  const store = Number(req.query.store) || null;
+  if (store) {
+    const owns = db.prepare("SELECT 1 FROM stores WHERE id = ? AND account_id = ?")
+      .get(store, req.account.id);
+    if (!owns) return res.status(404).json({ error: "Store not found" });
+  }
+  res.json(LEARN.suggest(type, store));
+});
+
+app.get("/api/learn/optout", auth, ownStore, (req, res) => {
+  res.json({ optedOut: !!PAY.getSettings(req.store.id).noLearn });
+});
+
+app.post("/api/learn/optout", auth, ownStore, (req, res) => {
+  const cur = PAY.getSettings(req.store.id);
+  const off = !!req.body.optOut;
+  PAY.putSettings(req.store.id, { ...cur, noLearn: off || undefined });
+  if (off) db.prepare("DELETE FROM patterns WHERE store_id = ?").run(req.store.id);
+  P.audit(req.account.id, off ? "learning-optout" : "learning-optin", req.store.name, req);
+  res.json({ ok: true, optedOut: off });
+});
+
+app.get("/api/learn/stats", auth, (req, res) => res.json(LEARN.stats()));
 
 /* ------------------------------- payments -------------------------------- */
 /* Every route here is store-scoped like the rest. The Stripe secret lives in

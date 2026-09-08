@@ -20,7 +20,26 @@ const hhmm=d=>d.toTimeString().slice(0,5);
 const A={type:"",typeOther:"",name:"",desc:"",caps:[],loc:"",margin:"35",ending:"x9",dir:"nearest",
   priceMode:"margin",trade:{},mods:[],
   staff:[],layout:"",accent:"",mode:"dark",footer:"",policy:"",startCash:"200"};
-let TRADE_Q=[],REC_MODS=[],TRADE_ASKED=false;
+let TRADE_Q=[],REC_MODS=[],TRADE_ASKED=false,FLEET=null,FLEET_ASKED=false;
+
+/* What other stores of this trade already worked out. Structure only — the
+   server will not hand over anything else. */
+async function askFleet(){
+  if(FLEET_ASKED||!A.type)return; FLEET_ASKED=true;
+  try{
+    const r=await api("/api/learn/suggest?type="+encodeURIComponent(A.type)
+      +(typeof STORE_ID!=="undefined"&&STORE_ID?"&store="+STORE_ID:""));
+    FLEET=r&&r.ready?r:null;
+    if(FLEET){
+      /* Pre-fill from consensus, but only where the owner hasn't answered. */
+      if(!A.caps.length&&FLEET.caps?.length)A.caps=FLEET.caps.slice();
+      if(!A.layout&&FLEET.layout?.v)A.layout=FLEET.layout.v;
+      if(!A.mods.length&&FLEET.modules?.length)A.mods=FLEET.modules.map(m=>m.k);
+      if(FLEET.priceMode?.v&&FLEET.priceMode.share>.6)A.priceMode=FLEET.priceMode.v;
+      draw();
+    }
+  }catch(e){FLEET=null}
+}
 let TAXINFO=null;
 const CAPS=[["age","Age-restricted products"],["weight","Items sold by weight"],
   ["foodservice","Prepared food with options"],["fuel","Fuel pumps"],["lottery","Lottery"],
@@ -141,7 +160,8 @@ const STEPS=[
   bind(){$("f2").oninput=e=>{A.desc=e.target.value;$("goBtn").disabled=e.target.value.trim().length<12};$("f2").focus()},
   ok:()=>A.desc.trim().length>=12},
  {q:"Which of these apply to you?",s:"Each one turns on a module. What you leave off never loads and never reaches the cashier's screen.",
-  render:()=>chipMulti(CAPS,A.caps,k=>{const i=A.caps.indexOf(k);i<0?A.caps.push(k):A.caps.splice(i,1)}),ok:()=>true},
+  render:()=>fleetNote("caps")
+    +chipMulti(CAPS,A.caps,k=>{const i=A.caps.indexOf(k);i<0?A.caps.push(k):A.caps.splice(i,1)}),ok:()=>true},
  {q:"How do you price?",s:"If you mark up from cost, tell me the margin and invoice costs turn into shelf prices on their own. Plenty of trades don't price that way — a coffee that costs 40 cents doesn't sell for 80.",
   render:()=>`${chipList2([["margin","I mark up from cost"],["value","I price by what it's worth"]],
       A.priceMode||"margin",v=>{A.priceMode=v;draw()})}
@@ -198,7 +218,8 @@ const STEPS=[
     &&new Set(A.staff.map(s=>s.pin)).size===A.staff.length},
 
  {q:"How does your counter work?",s:"This sets how the register is laid out — how big the keys are, whether the search bar leads, and what the function row does. It's the difference between a shop that scans and a shop that taps.",
-  render:()=>`${chipList2(LAYOUTS.map(l=>[l.k,l.n]),A.layout||suggestLayout(),v=>{A.layout=v;draw()})}
+  render:()=>fleetNote("layout")
+    +`${chipList2(LAYOUTS.map(l=>[l.k,l.n]),A.layout||suggestLayout(),v=>{A.layout=v;draw()})}
     <div class="layoutwhy">${esc((LAYOUTS.find(l=>l.k===(A.layout||suggestLayout()))||LAYOUTS[0]).why)}</div>
     <div class="hint" style="margin-top:26px">And the look of it</div>
     ${chipList2([["dark","Dark — indoor counter"],["light","Light — bright forecourt"],
@@ -242,6 +263,29 @@ const STEPS=[
     : `<div class="hint">Working out what to ask you…</div>`,
   ok:()=>TRADE_Q.length===0||TRADE_Q.every((_,i)=>A.trade[i]!==undefined)}
 ];
+/* Says what the fleet did, in numbers, without pretending it's a rule. */
+function fleetNote(kind){
+  if(!FLEET||!FLEET.ready)return "";
+  const n=FLEET.contributors;
+  let body="";
+  if(kind==="caps"&&FLEET.caps?.length){
+    const labels=FLEET.caps.map(c=>(CAPS.find(x=>x[0]===c)||[,c])[1]);
+    body=`Most ${esc(A.type.toLowerCase())}s turn on ${esc(labels.join(", "))}. Already ticked below —
+      untick anything that isn't you.`;
+  } else if(kind==="layout"&&FLEET.layout?.v){
+    const L=LAYOUTS.find(x=>x.k===FLEET.layout.v);
+    body=`${Math.round(FLEET.layout.share*100)}% of them run <b>${esc(L?L.n:FLEET.layout.v)}</b>.`;
+  } else if(kind==="depts"&&FLEET.depts?.length){
+    body=`They usually run ${esc(FLEET.depts.slice(0,6).map(d=>d.n).join(", "))}.`;
+  }
+  if(!body)return "";
+  return `<div class="fleetnote">
+    <svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4" stroke="currentColor" stroke-width="1.7"
+      fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div><b>From ${n} other ${esc(A.type.toLowerCase())}${n===1?"":"s"} already running</b>
+      <span>${body}</span></div></div>`;
+}
+
 function chipList3(qi,opts,cur){
   window.__tq=(i,v,btn)=>{
     A.trade[i]=v;
@@ -326,6 +370,7 @@ function draw(){
        until the earlier answers do. */
     /* Asked as soon as we know the trade, so the answers are ready by the time
        the step is reached rather than the owner waiting on a spinner. */
+    if(A.type&&!FLEET_ASKED)askFleet();
     if(A.desc.trim().length>=12&&!TRADE_ASKED){TRADE_ASKED=true;askTrade()}
     draw();
   };
@@ -524,8 +569,15 @@ async function build(){
     +(note?`<div class="hint">${esc(note)}</div>`:"");
   paint();
   let shell=null,failed=null;
+  /* If enough of this trade already exists, start from what they settled on
+     rather than asking a model to imagine it. */
+  if(FLEET&&FLEET.depts&&FLEET.depts.length>=3){
+    shell={tagline:"",addr:"",
+      depts:FLEET.depts.slice(0,7).map(d=>({n:d.n,food:/grocer|food|produce|dairy|bakery/i.test(d.n)}))};
+    lines[0].t=`Starting from ${FLEET.contributors} other ${A.type.toLowerCase()}s`;
+  }
   try{
-    shell=await callAI(`You are setting up a point-of-sale system for a real small business. Return ONLY valid JSON, no prose or fences:
+    if(!shell)shell=await callAI(`You are setting up a point-of-sale system for a real small business. Return ONLY valid JSON, no prose or fences:
 {"tagline":string,"addr":string,"depts":[{"n":string,"food":boolean}]}
 
 ${ctx()}
@@ -595,6 +647,7 @@ function askHowToFill(gen,depts){
     if(how==="demo")return fillWithExamples(gen,depts);
     CFG=compile(gen);
     if(typeof saveNow==="function")saveNow();
+    if(typeof contributePattern==="function")contributePattern();
     OPEN_AFTER=how==="import"?"import":how==="invoice"?"invoice":null;
     boot();
   });
@@ -658,6 +711,7 @@ Return an empty array if none fit.`);
   /* Marked so they can be found and removed as a set later. */
   CFG.plus.forEach(p=>p.starter=true);
   if(typeof saveNow==="function")saveNow();
+  if(typeof contributePattern==="function")contributePattern();
   setTimeout(boot,340);
 }
 
@@ -694,7 +748,7 @@ function compile(gen){
   const restricts=[];
   const c={site:{name:A.name||"Your Store",tagline:gen.tagline||"",addr:gen.addr||"",
       store:"001",register:"1",loc:A.loc},
-    caps:[...A.caps],rounding:{nickel:false},
+    caps:[...A.caps],rounding:{nickel:false},bizType:A.type,
     layout:A.layout||suggestLayout(),
     theme:{mode:A.mode||"dark",accent:A.accent||suggestAccent()},
     receipt:{footer:A.footer||"",policy:A.policy||""},
