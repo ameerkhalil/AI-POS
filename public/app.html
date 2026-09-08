@@ -31,12 +31,11 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .hide{display:none!important}
 
 /* ============================ SETUP ============================ */
-#setup{height:100%;overflow-y:auto;display:flex;flex-direction:column;align-items:center;
-  padding:0 24px 80px;background:var(--paper);color:var(--ink)}
-.setup-inner{width:100%;max-width:640px}
-.rail-steps{display:flex;gap:5px;padding:36px 0 46px}
-.rail-steps i{height:3px;flex:1;background:var(--paper-line);border-radius:3px;transition:background .35s var(--ease)}
-.rail-steps i.on{background:var(--ink)}
+
+
+
+
+
 .qnum{font-size:13px;color:var(--ink-soft);margin-bottom:10px}
 #setup h1{font-size:34px;font-weight:600;line-height:1.14;letter-spacing:-.025em;max-width:16ch}
 .sub{margin-top:13px;color:var(--ink-soft);font-size:16px;line-height:1.6;max-width:58ch}
@@ -829,6 +828,124 @@ tr.expgone td{background:rgba(210,102,76,.09)}
   font-family:"Azeret Mono",monospace}
 .stageempty{color:var(--txt-3);font-size:12px;text-align:center;padding:10px 0}
 
+/* ============================ SETUP, REBUILT ============================
+   The first thing anyone sees. It was a white page with chips on it — correct
+   and completely lifeless. Now it's a room: warm ground, slow light behind it,
+   and their terminal assembling on the right as they answer. */
+#setup{position:relative;height:100%;overflow-y:auto;background:#EAEBE7;color:var(--ink)}
+.setup-bg{position:fixed;inset:-25%;z-index:0;filter:blur(80px);opacity:.55;pointer-events:none}
+.setup-bg i{position:absolute;border-radius:50%;display:block}
+.setup-bg i:nth-child(1){width:46vw;height:46vw;left:-6%;top:2%;
+  background:radial-gradient(circle,rgba(92,224,168,.45),transparent 66%);animation:sdrift1 30s ease-in-out infinite}
+.setup-bg i:nth-child(2){width:40vw;height:40vw;right:-4%;top:34%;
+  background:radial-gradient(circle,rgba(107,168,216,.38),transparent 66%);animation:sdrift2 36s ease-in-out infinite}
+.setup-bg i:nth-child(3){width:34vw;height:34vw;left:40%;bottom:-12%;
+  background:radial-gradient(circle,rgba(224,178,85,.3),transparent 66%);animation:sdrift3 42s ease-in-out infinite}
+@keyframes sdrift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(8vw,6vh) scale(1.15)}}
+@keyframes sdrift2{0%,100%{transform:translate(0,0) scale(1.1)}50%{transform:translate(-7vw,9vh) scale(.92)}}
+@keyframes sdrift3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(5vw,-7vh) scale(1.18)}}
+
+.setup-grid{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr) 340px;
+  gap:56px;max-width:1180px;margin:0 auto;padding:56px 40px 90px;align-items:start}
+.setup-inner{width:100%;max-width:620px}
+
+/* progress as numbered steps, not an anonymous bar */
+.steprail{display:flex;gap:8px;align-items:center;margin-bottom:40px}
+.steprail .sd{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;
+  font-size:12.5px;font-weight:500;color:var(--ink-soft);border:1.5px solid var(--paper-line);
+  background:rgba(255,255,255,.5);transition:all .3s var(--ease)}
+.steprail .sd.done{background:var(--ink);color:#EAEBE7;border-color:var(--ink)}
+.steprail .sd.now{border-color:var(--ink);color:var(--ink);
+  box-shadow:0 0 0 4px rgba(18,22,24,.07);transform:scale(1.12)}
+
+.qhead>*{animation:qin .45s var(--ease) both}
+.qhead .qnum{animation-delay:.02s;font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--ink-soft);margin-bottom:12px}
+.qhead h1{animation-delay:.06s;font-size:36px;font-weight:600;line-height:1.12;letter-spacing:-.03em;max-width:17ch}
+.qhead .sub{animation-delay:.1s;margin-top:14px;color:var(--ink-soft);font-size:16px;line-height:1.65;max-width:56ch}
+.qbody{animation:qin .45s var(--ease) .16s both}
+.nav{animation:qin .45s var(--ease) .22s both;margin-top:40px;display:flex;gap:14px;align-items:center}
+@keyframes qin{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+#setup .go{display:inline-flex;align-items:center;gap:10px;background:var(--ink);color:#EDEEEA;
+  padding:15px 26px;border-radius:9px;font-weight:500;font-size:15.5px;
+  box-shadow:0 4px 18px rgba(18,22,24,.18);
+  transition:transform .13s var(--ease),box-shadow .22s,opacity .2s}
+#setup .go svg{width:15px;height:15px;transition:transform .22s var(--ease)}
+#setup .go:hover{box-shadow:0 7px 26px rgba(18,22,24,.24)}
+#setup .go:hover svg{transform:translateX(3px)}
+#setup .go:active{transform:translateY(1px)}
+#setup .go[disabled]{opacity:.32;cursor:not-allowed;box-shadow:none}
+#setup .go[disabled]:hover svg{transform:none}
+#setup .back{color:var(--ink-soft);font-size:15px;padding:14px 4px;transition:color .16s}
+#setup .back:hover{color:var(--ink)}
+
+/* chips get some weight */
+#setup .chip{border:1px solid var(--paper-line);background:rgba(255,255,255,.65);
+  padding:12px 18px;border-radius:9px;font-size:15px;
+  transition:background .17s var(--ease),border-color .17s,transform .13s var(--ease),box-shadow .2s;
+  animation:qin .4s var(--ease) both}
+#setup .chip:hover{border-color:var(--ink-soft);background:#fff;transform:translateY(-1px);
+  box-shadow:0 3px 12px rgba(18,22,24,.07)}
+#setup .chip:active{transform:translateY(0)}
+#setup .chip.on{background:var(--ink);color:#EDEEEA;border-color:var(--ink);
+  box-shadow:0 4px 16px rgba(18,22,24,.2)}
+#setup .chips{gap:10px}
+#setup input[type=text],#setup textarea,#setup select.bigsel{background:rgba(255,255,255,.72)}
+#setup input[type=text]:focus,#setup textarea:focus{background:#fff}
+
+/* ---------------------------- the side panel --------------------------- */
+.setup-side{position:sticky;top:56px;animation:qin .5s var(--ease) .1s both}
+.sidecard{background:#1B2124;color:#E6E9EA;border-radius:14px;overflow:hidden;
+  box-shadow:0 24px 60px rgba(18,22,24,.28)}
+.sidetop{display:flex;align-items:center;gap:9px;padding:15px 17px;background:#141A1C;
+  border-bottom:1px solid #2B3235}
+.sidetop .dot{width:8px;height:8px;border-radius:50%;background:var(--vfd);flex:none;
+  box-shadow:0 0 10px rgba(92,224,168,.7);animation:beat2 2.6s ease-in-out infinite}
+.sidetop b{flex:1;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sidetop em{font-style:normal;font-size:11.5px;color:#6C7679}
+@keyframes beat2{0%,100%{opacity:1}50%{opacity:.45}}
+.sidebody{padding:16px 17px;min-height:150px}
+.sideline{display:flex;justify-content:space-between;gap:12px;padding:8px 0;font-size:13px;
+  border-bottom:1px solid #262D30;animation:qin .35s var(--ease) both}
+.sideline:last-of-type{border-bottom:none}
+.sideline span{color:#8A9498}
+.sideline b{font-weight:500;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%}
+.sidewait{color:#6C7679;font-size:13px;line-height:1.65;padding:14px 0}
+.sidechips{display:flex;flex-wrap:wrap;gap:5px;margin-top:13px}
+.sidechips span{font-size:11px;border:1px solid #333B3E;color:#8A9498;padding:4px 10px;border-radius:20px;
+  animation:qin .35s var(--ease) both}
+.sidechips.mods span{border-color:rgba(92,224,168,.35);color:var(--vfd)}
+.sidefoot{display:flex;justify-content:space-between;align-items:baseline;padding:14px 17px;
+  background:#101618;border-top:1px solid #2B3235}
+.sidefoot span{font-size:11.5px;color:#6C7679;letter-spacing:.03em}
+.sidefoot b{font-size:26px;color:var(--vfd);font-weight:500;letter-spacing:-.02em;
+  text-shadow:0 0 18px rgba(92,224,168,.3)}
+.sidenote{margin-top:15px;font-size:12.5px;color:var(--ink-soft);line-height:1.7}
+
+/* ---------------------------- build screen ----------------------------- */
+#building{background:#EAEBE7;color:var(--ink);position:relative}
+.build-box{position:relative;z-index:1}
+.build-box h2{font-size:26px;letter-spacing:-.02em;margin-bottom:24px}
+.tick-line{animation:qin .4s var(--ease) both;font-size:15.5px}
+.tick-line b{transition:color .3s}
+.tick-line.done b{color:var(--vfd);filter:brightness(.75)}
+.fillopts button{background:rgba(255,255,255,.7);animation:qin .45s var(--ease) both}
+.fillopts button:nth-child(1){animation-delay:.04s}
+.fillopts button:nth-child(2){animation-delay:.1s}
+.fillopts button:nth-child(3){animation-delay:.16s}
+.fillopts button:nth-child(4){animation-delay:.22s}
+.fillopts button:hover{background:#fff;box-shadow:0 6px 20px rgba(18,22,24,.08)}
+
+@media(max-width:1000px){
+  .setup-grid{grid-template-columns:1fr;gap:34px;padding:36px 24px 70px}
+  .setup-side{position:static;max-width:420px}
+  .qhead h1{font-size:29px}
+}
+@media(prefers-reduced-motion:reduce){
+  .setup-bg{display:none}
+}
+
 .tchip.save{transition:color .2s,border-color .2s}
 .tchip.save.pending{color:var(--warn);border-color:rgba(224,178,85,.4)}
 .tchip.save.saving{color:var(--txt-2)}
@@ -840,7 +957,13 @@ tr.expgone td{background:rgba(210,102,76,.09)}
 <body>
 
 <!-- ===== onboarding ===== -->
-<div id="setup"><div class="setup-inner" id="setupBody"></div></div>
+<div id="setup">
+  <div class="setup-bg"><i></i><i></i><i></i></div>
+  <div class="setup-grid">
+    <div class="setup-inner" id="setupBody"></div>
+    <aside class="setup-side" id="setupSide"></aside>
+  </div>
+</div>
 <div id="building"><div class="build-box" id="buildBody"></div></div>
 
 <!-- ===== sign in ===== -->
@@ -1087,14 +1210,28 @@ function chipMulti(p,on,cb){
   return`<div class="chips">`+p.map(([k,l])=>
     `<button class="chip ${on.includes(k)?"on":""}" onclick="__chip('${id}','${k}')"><span class="tick">✓</span>${esc(l)}</button>`).join("")+`</div>`}
 function draw(){
-  /* Repair anything the old collision wrote into the wrong field. */
+  /* Repair anything an earlier version wrote into the wrong field. */
   if(!["x9","99","95","49-99","none"].includes(A.ending))A.ending="x9";
   if(!["margin","value"].includes(A.priceMode))A.priceMode="margin";
   const st=STEPS[STEP];
-  $("setupBody").innerHTML=`<div class="rail-steps">${STEPS.map((_,i)=>`<i class="${i<=STEP?"on":""}"></i>`).join("")}</div>
-    <div class="qnum">Question ${STEP+1} of ${STEPS.length}</div><h1>${st.q}</h1><p class="sub">${st.s}</p>${st.render()}
-    <div class="nav"><button class="go" id="goBtn" ${st.ok()?"":"disabled"}>${STEP===STEPS.length-1?"Build my site":"Next"}</button>
-    ${STEP>0?`<button class="back" id="backBtn">Back</button>`:""}</div>`;
+  $("setupBody").innerHTML=`
+    <div class="steprail">${STEPS.map((s,i)=>
+      `<span class="sd ${i<STEP?"done":i===STEP?"now":""}" title="${esc(s.q)}">${
+        i<STEP?"\u2713":i+1}</span>`).join("")}</div>
+    <div class="qhead">
+      <div class="qnum">Question ${STEP+1} of ${STEPS.length}</div>
+      <h1>${st.q}</h1>
+      <p class="sub">${st.s}</p>
+    </div>
+    <div class="qbody">${st.render()}</div>
+    <div class="nav">
+      <button class="go" id="goBtn" ${st.ok()?"":"disabled"}>
+        ${STEP===STEPS.length-1?"Build my terminal":"Continue"}
+        <svg viewBox="0 0 16 16"><path d="M2 8h11M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8"
+          fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      ${STEP>0?`<button class="back" id="backBtn">Back</button>`:""}
+    </div>`;
+  drawSide();
   st.bind&&st.bind();
   $("goBtn").onclick=()=>{
     if(STEP===STEPS.length-1)return build();
@@ -1102,10 +1239,88 @@ function draw(){
     /* The trade questions are written for this business, so they can't exist
        until the earlier answers do. */
     if(STEP===STEPS.length-1&&!TRADE_Q.length&&!TRADE_ASKED){TRADE_ASKED=true;askTrade()}
-    draw();
+    /* The right-hand panel assembles their terminal as they answer. It's the
+   difference between filling in a form and watching something get built. */
+function drawSide(){
+  const el=$("setupSide"); if(!el)return;
+  const filled=[
+    A.type&&{k:"Business",v:A.typeOther||A.type},
+    A.name&&{k:"Store",v:A.name},
+    A.loc&&{k:"Where",v:A.loc},
+    A.caps.length&&{k:"Modules",v:A.caps.length+" on"},
+    A.priceMode==="value"?{k:"Pricing",v:"By value"}
+      :(A.margin&&{k:"Margin",v:A.margin+"%"})
+  ].filter(Boolean);
+
+  el.innerHTML=`
+    <div class="sidecard">
+      <div class="sidetop">
+        <span class="dot"></span>
+        <b>${esc(A.name||"Your store")}</b>
+        <em>Register 1</em>
+      </div>
+      <div class="sidebody">
+        ${filled.length?filled.map((f,i)=>`<div class="sideline" style="animation-delay:${i*60}ms">
+          <span>${esc(f.k)}</span><b>${esc(f.v)}</b></div>`).join("")
+          :`<div class="sidewait">Answer on the left and this fills in.</div>`}
+        ${A.caps.length?`<div class="sidechips">${A.caps.map(c=>{
+          const l=(CAPS.find(x=>x[0]===c)||[,c])[1];
+          return `<span>${esc(l)}</span>`}).join("")}</div>`:""}
+        ${A.mods&&A.mods.length?`<div class="sidechips mods">${A.mods.map(m=>
+          `<span>${esc(MODULES[m]?.n||m)}</span>`).join("")}</div>`:""}
+      </div>
+      <div class="sidefoot">
+        <span>Total</span>
+        <b class="num">${A.priceMode==="value"?"—":money(charmPreview())}</b>
+      </div>
+    </div>
+    <div class="sidenote">Nothing here is fixed. Every part of it is editable once the
+      terminal opens, and the wizard never has to be run twice.</div>`;
+}
+
+/* start is owned by initApp() in persist.js */
   };
   $("backBtn")&&($("backBtn").onclick=()=>{STEP--;draw()});
 }
+/* The right-hand panel assembles their terminal as they answer. It's the
+   difference between filling in a form and watching something get built. */
+function drawSide(){
+  const el=$("setupSide"); if(!el)return;
+  const filled=[
+    A.type&&{k:"Business",v:A.typeOther||A.type},
+    A.name&&{k:"Store",v:A.name},
+    A.loc&&{k:"Where",v:A.loc},
+    A.caps.length&&{k:"Modules",v:A.caps.length+" on"},
+    A.priceMode==="value"?{k:"Pricing",v:"By value"}
+      :(A.margin&&{k:"Margin",v:A.margin+"%"})
+  ].filter(Boolean);
+
+  el.innerHTML=`
+    <div class="sidecard">
+      <div class="sidetop">
+        <span class="dot"></span>
+        <b>${esc(A.name||"Your store")}</b>
+        <em>Register 1</em>
+      </div>
+      <div class="sidebody">
+        ${filled.length?filled.map((f,i)=>`<div class="sideline" style="animation-delay:${i*60}ms">
+          <span>${esc(f.k)}</span><b>${esc(f.v)}</b></div>`).join("")
+          :`<div class="sidewait">Answer on the left and this fills in.</div>`}
+        ${A.caps.length?`<div class="sidechips">${A.caps.map(c=>{
+          const l=(CAPS.find(x=>x[0]===c)||[,c])[1];
+          return `<span>${esc(l)}</span>`}).join("")}</div>`:""}
+        ${A.mods&&A.mods.length?`<div class="sidechips mods">${A.mods.map(m=>
+          `<span>${esc(MODULES[m]?.n||m)}</span>`).join("")}</div>`:""}
+      </div>
+      <div class="sidefoot">
+        <span>Total</span>
+        <b class="num">${A.priceMode==="value"?"—":money(charmPreview())}</b>
+      </div>
+    </div>
+    <div class="sidenote">Nothing here is fixed. Every part of it is editable once the
+      terminal opens, and the wizard never has to be run twice.</div>`;
+}
+
 /* start is owned by initApp() in persist.js */
 
 /* ========================= AI generation ========================= */
@@ -1157,7 +1372,46 @@ Return ONLY valid JSON, no prose or fences:
     TRADE_Q=[];REC_MODS=Object.keys(MODULES).filter(k=>MODULES[k].fits.test(A.type+" "+A.desc));
     A.mods=[...REC_MODS];
   }
-  if(STEP===STEPS.length-1)draw();
+  if(STEP===STEPS.length-1)/* The right-hand panel assembles their terminal as they answer. It's the
+   difference between filling in a form and watching something get built. */
+function drawSide(){
+  const el=$("setupSide"); if(!el)return;
+  const filled=[
+    A.type&&{k:"Business",v:A.typeOther||A.type},
+    A.name&&{k:"Store",v:A.name},
+    A.loc&&{k:"Where",v:A.loc},
+    A.caps.length&&{k:"Modules",v:A.caps.length+" on"},
+    A.priceMode==="value"?{k:"Pricing",v:"By value"}
+      :(A.margin&&{k:"Margin",v:A.margin+"%"})
+  ].filter(Boolean);
+
+  el.innerHTML=`
+    <div class="sidecard">
+      <div class="sidetop">
+        <span class="dot"></span>
+        <b>${esc(A.name||"Your store")}</b>
+        <em>Register 1</em>
+      </div>
+      <div class="sidebody">
+        ${filled.length?filled.map((f,i)=>`<div class="sideline" style="animation-delay:${i*60}ms">
+          <span>${esc(f.k)}</span><b>${esc(f.v)}</b></div>`).join("")
+          :`<div class="sidewait">Answer on the left and this fills in.</div>`}
+        ${A.caps.length?`<div class="sidechips">${A.caps.map(c=>{
+          const l=(CAPS.find(x=>x[0]===c)||[,c])[1];
+          return `<span>${esc(l)}</span>`}).join("")}</div>`:""}
+        ${A.mods&&A.mods.length?`<div class="sidechips mods">${A.mods.map(m=>
+          `<span>${esc(MODULES[m]?.n||m)}</span>`).join("")}</div>`:""}
+      </div>
+      <div class="sidefoot">
+        <span>Total</span>
+        <b class="num">${A.priceMode==="value"?"—":money(charmPreview())}</b>
+      </div>
+    </div>
+    <div class="sidenote">Nothing here is fixed. Every part of it is editable once the
+      terminal opens, and the wizard never has to be run twice.</div>`;
+}
+
+/* start is owned by initApp() in persist.js */
 }
 
 function ctx(){return`Business type: ${A.type}${A.typeOther?` (${A.typeOther})`:""}
@@ -3301,7 +3555,7 @@ function health(){
   themeIssues().forEach(i=>f.push({sev:i.t==="warn"?"warn":"info",t:"Appearance",d:i.m,fix:null}));
   return f;
 }
-const BUILD="c35dd821f3";
+const BUILD="df0e911d7b";
 function tHealth(){
   const f=health();
   window.__fix=i=>{f[i].fix&&f[i].fix();reload();drawConfig()};

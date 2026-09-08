@@ -174,14 +174,28 @@ function chipMulti(p,on,cb){
   return`<div class="chips">`+p.map(([k,l])=>
     `<button class="chip ${on.includes(k)?"on":""}" onclick="__chip('${id}','${k}')"><span class="tick">✓</span>${esc(l)}</button>`).join("")+`</div>`}
 function draw(){
-  /* Repair anything the old collision wrote into the wrong field. */
+  /* Repair anything an earlier version wrote into the wrong field. */
   if(!["x9","99","95","49-99","none"].includes(A.ending))A.ending="x9";
   if(!["margin","value"].includes(A.priceMode))A.priceMode="margin";
   const st=STEPS[STEP];
-  $("setupBody").innerHTML=`<div class="rail-steps">${STEPS.map((_,i)=>`<i class="${i<=STEP?"on":""}"></i>`).join("")}</div>
-    <div class="qnum">Question ${STEP+1} of ${STEPS.length}</div><h1>${st.q}</h1><p class="sub">${st.s}</p>${st.render()}
-    <div class="nav"><button class="go" id="goBtn" ${st.ok()?"":"disabled"}>${STEP===STEPS.length-1?"Build my site":"Next"}</button>
-    ${STEP>0?`<button class="back" id="backBtn">Back</button>`:""}</div>`;
+  $("setupBody").innerHTML=`
+    <div class="steprail">${STEPS.map((s,i)=>
+      `<span class="sd ${i<STEP?"done":i===STEP?"now":""}" title="${esc(s.q)}">${
+        i<STEP?"\u2713":i+1}</span>`).join("")}</div>
+    <div class="qhead">
+      <div class="qnum">Question ${STEP+1} of ${STEPS.length}</div>
+      <h1>${st.q}</h1>
+      <p class="sub">${st.s}</p>
+    </div>
+    <div class="qbody">${st.render()}</div>
+    <div class="nav">
+      <button class="go" id="goBtn" ${st.ok()?"":"disabled"}>
+        ${STEP===STEPS.length-1?"Build my terminal":"Continue"}
+        <svg viewBox="0 0 16 16"><path d="M2 8h11M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8"
+          fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      ${STEP>0?`<button class="back" id="backBtn">Back</button>`:""}
+    </div>`;
+  drawSide();
   st.bind&&st.bind();
   $("goBtn").onclick=()=>{
     if(STEP===STEPS.length-1)return build();
@@ -189,10 +203,88 @@ function draw(){
     /* The trade questions are written for this business, so they can't exist
        until the earlier answers do. */
     if(STEP===STEPS.length-1&&!TRADE_Q.length&&!TRADE_ASKED){TRADE_ASKED=true;askTrade()}
-    draw();
+    /* The right-hand panel assembles their terminal as they answer. It's the
+   difference between filling in a form and watching something get built. */
+function drawSide(){
+  const el=$("setupSide"); if(!el)return;
+  const filled=[
+    A.type&&{k:"Business",v:A.typeOther||A.type},
+    A.name&&{k:"Store",v:A.name},
+    A.loc&&{k:"Where",v:A.loc},
+    A.caps.length&&{k:"Modules",v:A.caps.length+" on"},
+    A.priceMode==="value"?{k:"Pricing",v:"By value"}
+      :(A.margin&&{k:"Margin",v:A.margin+"%"})
+  ].filter(Boolean);
+
+  el.innerHTML=`
+    <div class="sidecard">
+      <div class="sidetop">
+        <span class="dot"></span>
+        <b>${esc(A.name||"Your store")}</b>
+        <em>Register 1</em>
+      </div>
+      <div class="sidebody">
+        ${filled.length?filled.map((f,i)=>`<div class="sideline" style="animation-delay:${i*60}ms">
+          <span>${esc(f.k)}</span><b>${esc(f.v)}</b></div>`).join("")
+          :`<div class="sidewait">Answer on the left and this fills in.</div>`}
+        ${A.caps.length?`<div class="sidechips">${A.caps.map(c=>{
+          const l=(CAPS.find(x=>x[0]===c)||[,c])[1];
+          return `<span>${esc(l)}</span>`}).join("")}</div>`:""}
+        ${A.mods&&A.mods.length?`<div class="sidechips mods">${A.mods.map(m=>
+          `<span>${esc(MODULES[m]?.n||m)}</span>`).join("")}</div>`:""}
+      </div>
+      <div class="sidefoot">
+        <span>Total</span>
+        <b class="num">${A.priceMode==="value"?"—":money(charmPreview())}</b>
+      </div>
+    </div>
+    <div class="sidenote">Nothing here is fixed. Every part of it is editable once the
+      terminal opens, and the wizard never has to be run twice.</div>`;
+}
+
+draw();
   };
   $("backBtn")&&($("backBtn").onclick=()=>{STEP--;draw()});
 }
+/* The right-hand panel assembles their terminal as they answer. It's the
+   difference between filling in a form and watching something get built. */
+function drawSide(){
+  const el=$("setupSide"); if(!el)return;
+  const filled=[
+    A.type&&{k:"Business",v:A.typeOther||A.type},
+    A.name&&{k:"Store",v:A.name},
+    A.loc&&{k:"Where",v:A.loc},
+    A.caps.length&&{k:"Modules",v:A.caps.length+" on"},
+    A.priceMode==="value"?{k:"Pricing",v:"By value"}
+      :(A.margin&&{k:"Margin",v:A.margin+"%"})
+  ].filter(Boolean);
+
+  el.innerHTML=`
+    <div class="sidecard">
+      <div class="sidetop">
+        <span class="dot"></span>
+        <b>${esc(A.name||"Your store")}</b>
+        <em>Register 1</em>
+      </div>
+      <div class="sidebody">
+        ${filled.length?filled.map((f,i)=>`<div class="sideline" style="animation-delay:${i*60}ms">
+          <span>${esc(f.k)}</span><b>${esc(f.v)}</b></div>`).join("")
+          :`<div class="sidewait">Answer on the left and this fills in.</div>`}
+        ${A.caps.length?`<div class="sidechips">${A.caps.map(c=>{
+          const l=(CAPS.find(x=>x[0]===c)||[,c])[1];
+          return `<span>${esc(l)}</span>`}).join("")}</div>`:""}
+        ${A.mods&&A.mods.length?`<div class="sidechips mods">${A.mods.map(m=>
+          `<span>${esc(MODULES[m]?.n||m)}</span>`).join("")}</div>`:""}
+      </div>
+      <div class="sidefoot">
+        <span>Total</span>
+        <b class="num">${A.priceMode==="value"?"—":money(charmPreview())}</b>
+      </div>
+    </div>
+    <div class="sidenote">Nothing here is fixed. Every part of it is editable once the
+      terminal opens, and the wizard never has to be run twice.</div>`;
+}
+
 draw();
 
 /* ========================= AI generation ========================= */
@@ -254,7 +346,46 @@ Return ONLY valid JSON, no prose or fences:
     TRADE_Q=[];REC_MODS=Object.keys(MODULES).filter(k=>MODULES[k].fits.test(A.type+" "+A.desc));
     A.mods=[...REC_MODS];
   }
-  if(STEP===STEPS.length-1)draw();
+  if(STEP===STEPS.length-1)/* The right-hand panel assembles their terminal as they answer. It's the
+   difference between filling in a form and watching something get built. */
+function drawSide(){
+  const el=$("setupSide"); if(!el)return;
+  const filled=[
+    A.type&&{k:"Business",v:A.typeOther||A.type},
+    A.name&&{k:"Store",v:A.name},
+    A.loc&&{k:"Where",v:A.loc},
+    A.caps.length&&{k:"Modules",v:A.caps.length+" on"},
+    A.priceMode==="value"?{k:"Pricing",v:"By value"}
+      :(A.margin&&{k:"Margin",v:A.margin+"%"})
+  ].filter(Boolean);
+
+  el.innerHTML=`
+    <div class="sidecard">
+      <div class="sidetop">
+        <span class="dot"></span>
+        <b>${esc(A.name||"Your store")}</b>
+        <em>Register 1</em>
+      </div>
+      <div class="sidebody">
+        ${filled.length?filled.map((f,i)=>`<div class="sideline" style="animation-delay:${i*60}ms">
+          <span>${esc(f.k)}</span><b>${esc(f.v)}</b></div>`).join("")
+          :`<div class="sidewait">Answer on the left and this fills in.</div>`}
+        ${A.caps.length?`<div class="sidechips">${A.caps.map(c=>{
+          const l=(CAPS.find(x=>x[0]===c)||[,c])[1];
+          return `<span>${esc(l)}</span>`}).join("")}</div>`:""}
+        ${A.mods&&A.mods.length?`<div class="sidechips mods">${A.mods.map(m=>
+          `<span>${esc(MODULES[m]?.n||m)}</span>`).join("")}</div>`:""}
+      </div>
+      <div class="sidefoot">
+        <span>Total</span>
+        <b class="num">${A.priceMode==="value"?"—":money(charmPreview())}</b>
+      </div>
+    </div>
+    <div class="sidenote">Nothing here is fixed. Every part of it is editable once the
+      terminal opens, and the wizard never has to be run twice.</div>`;
+}
+
+draw();
 }
 
 function ctx(){return`Business type: ${A.type}${A.typeOther?` (${A.typeOther})`:""}
