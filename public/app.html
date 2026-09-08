@@ -987,6 +987,66 @@ body:not(.searchlead) .ftop .srch{max-width:280px}
 body:not(.searchlead) .ftop{justify-content:flex-end}
 body.searchlead .srch input{font-size:15px;padding:12px 12px 12px 36px}
 
+/* ======================= LAYOUT ARRANGEMENTS =======================
+   The receipt can sit either side or along the bottom, and sections can be tabs
+   or a rail. Between them a grocery register and a bar register stop looking
+   like the same screen with different words on it. */
+#vSale.tape-right{grid-template-columns:1fr 352px}
+#vSale.tape-right .tape{order:2;border-right:none;border-left:1px solid var(--line)}
+#vSale.tape-right .floor{order:1}
+#vSale.tape-bottom{grid-template-columns:1fr;grid-template-rows:1fr auto}
+#vSale.tape-bottom .tape{order:2;border-right:none;border-top:1px solid var(--line);max-height:44vh}
+#vSale.tape-bottom .floor{order:1}
+#vSale.tape-bottom .totals{display:grid;grid-template-columns:1fr auto;align-items:center;gap:18px}
+#vSale.tape-bottom .tenders{grid-template-columns:repeat(4,1fr)}
+
+/* sections as a rail rather than tabs */
+#vSale.depts-rail .floor{display:grid;grid-template-columns:150px 1fr;
+  grid-template-areas:"top top" "rail grid" "rail fk" "bar bar"}
+#vSale.depts-rail .ftop{grid-area:top}
+#vSale.depts-rail .menutabs{grid-area:rail;flex-direction:column;overflow-y:auto;overflow-x:hidden;
+  border-bottom:none;border-right:1px solid var(--line);padding:10px 8px;gap:3px;align-content:start}
+#vSale.depts-rail .mtab,#vSale.depts-rail .menutabs button{width:100%;text-align:left;
+  border-bottom:none;border-left:2px solid transparent;margin-bottom:0;border-radius:0 var(--r) var(--r) 0}
+#vSale.depts-rail .menutabs button.on{border-bottom:none;border-left-color:var(--vfd);
+  background:rgba(92,224,168,.08)}
+#vSale.depts-rail .grid{grid-area:grid}
+#vSale.depts-rail .fkeys{grid-area:fk}
+#vSale.depts-rail .statusbar{grid-area:bar}
+
+/* ---- the live layout preview in setup ---- */
+.mockwrap{border-radius:12px;overflow:hidden;box-shadow:0 20px 50px rgba(18,22,24,.24);
+  animation:qin .3s var(--ease) both}
+.mockbar{display:flex;align-items:center;gap:7px;padding:9px 11px;border-bottom:1px solid}
+.mockbar span{width:6px;height:6px;border-radius:50%;flex:none}
+.mockbar b{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mockbody{display:flex;gap:7px;padding:8px;min-height:184px}
+.mockbody.bottom{flex-direction:column}
+.mtape{width:37%;flex:none;border:1px solid;border-radius:6px;padding:8px;display:flex;
+  flex-direction:column;gap:6px}
+.mockbody.bottom .mtape{width:auto;flex-direction:row;align-items:center;gap:12px}
+.mline{display:flex;justify-content:space-between;gap:6px}
+.mline i{display:block;height:4px;border-radius:2px;width:52%;opacity:.65}
+.mockbody.bottom .mline{display:none}
+.mtotal{margin-top:auto;font-family:"Azeret Mono",monospace;font-size:15px;font-weight:500;
+  border-top:1px solid;padding-top:7px;text-align:right}
+.mockbody.bottom .mtotal{margin:0;border-top:none;padding:0;margin-left:auto;font-size:17px}
+.mboard{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
+.msearch{height:15px;border:1px solid;border-radius:4px;display:flex;align-items:center;padding:0 6px}
+.msearch span{height:3px;width:42%;border-radius:2px;opacity:.6}
+.mtabs{display:flex;gap:4px}
+.mtabs i{height:4px;flex:1;border-radius:2px}
+.mrailrow{display:flex;gap:6px;flex:1;min-height:0}
+.mrail{display:flex;flex-direction:column;gap:4px;width:26%;flex:none}
+.mrail i{height:8px;border-radius:2px}
+.mkeys{display:grid;gap:5px;flex:1;align-content:start}
+.mk{border-radius:4px}
+.mfk{display:flex;gap:3px;margin-top:auto}
+.mfk i{height:8px;flex:1;border-radius:2px;opacity:.5}
+.mocklabel{margin-top:13px}
+.mocklabel b{display:block;font-size:14.5px;font-weight:600;margin-bottom:4px}
+.mocklabel span{display:block;font-size:12.5px;color:var(--ink-soft);line-height:1.6}
+
 .tchip.save{transition:color .2s,border-color .2s}
 .tchip.save.pending{color:var(--warn);border-color:rgba(224,178,85,.4)}
 .tchip.save.saving{color:var(--txt-2)}
@@ -1135,14 +1195,21 @@ const TYPES=TYPE_GROUPS.flatMap(g=>g[1]);
    list does. A grocery scans and needs the search bar leading; a café taps and
    needs six big keys. Same code, different shape. */
 const LAYOUTS=[
- {k:"scan",n:"Mostly scanning",keyMin:132,density:.92,search:true,fkeys:true,
-  why:"Search leads and keys are compact, because most of what you sell has a barcode. Best for grocery, convenience and anywhere with a long pricebook."},
- {k:"keys",n:"Mostly tapping",keyMin:190,density:1.15,search:false,fkeys:true,
-  why:"Big keys, fewer of them, search tucked away. Best for a café, a bar or anywhere the menu is short and the queue is long."},
- {k:"table",n:"Table or tab service",keyMin:172,density:1.08,search:false,fkeys:true,
-  why:"Big keys plus tabs front and centre, so an order can be added to through the night and settled at the end."},
- {k:"showroom",n:"Fewer, bigger-ticket items",keyMin:210,density:1.2,search:true,fkeys:false,
-  why:"Room for variants and options on each key. Best for clothing, furniture, electronics — where one sale takes a conversation."}
+ {k:"scan",n:"Scan and go",keyMin:132,density:.92,search:true,fkeys:true,
+  tape:"left",depts:"tabs",
+  why:"Search leads and takes the cursor, keys are compact, departments run across the top. The receipt sits on the left where a cashier's eye already is. Built for a long pricebook and a queue."},
+ {k:"keys",n:"Tap a menu",keyMin:196,density:1.15,search:false,fkeys:true,
+  tape:"left",depts:"tabs",
+  why:"Six big keys instead of thirty small ones, search tucked to one side. Built for a short menu you know by heart and an order taken while talking."},
+ {k:"table",n:"Tabs and tables",keyMin:172,density:1.08,search:false,fkeys:true,
+  tape:"right",depts:"rail",
+  why:"Sections run down the left as a rail so a whole menu is reachable without paging, and the open tab sits on the right where the order is being read back."},
+ {k:"showroom",n:"Considered purchases",keyMin:214,density:1.22,search:true,fkeys:false,
+  tape:"right",depts:"rail",
+  why:"Large keys with room for sizes and options, no function row cluttering the bottom. Built for one sale that takes a conversation, not forty that take seconds."},
+ {k:"counter",n:"Small counter",keyMin:158,density:1,search:true,fkeys:true,
+  tape:"bottom",depts:"tabs",
+  why:"The receipt runs along the bottom instead of the side, so the keys get the full width. Built for a narrow counter or a tablet turned landscape."}
 ];
 const ACCENTS=[["#5CE0A8","Green"],["#6BA8D8","Blue"],["#E0B255","Amber"],["#D2664C","Rust"],
   ["#B78BE0","Violet"],["#7FD858","Lime"],["#E08AB0","Pink"],["#4FD6D6","Teal"]];
@@ -1394,7 +1461,9 @@ function draw(){
     STEP++;
     /* The trade questions are written for this business, so they can't exist
        until the earlier answers do. */
-    if(STEP===STEPS.length-1&&!TRADE_Q.length&&!TRADE_ASKED){TRADE_ASKED=true;askTrade()}
+    /* Asked as soon as we know the trade, so the answers are ready by the time
+       the step is reached rather than the owner waiting on a spinner. */
+    if(A.desc.trim().length>=12&&!TRADE_ASKED){TRADE_ASKED=true;askTrade()}
     draw();
   };
   $("backBtn")&&($("backBtn").onclick=()=>{STEP--;draw()});
@@ -1407,6 +1476,9 @@ function draw(){
    difference between filling in a form and watching something get built. */
 function drawSide(){
   const el=$("setupSide"); if(!el)return;
+  /* On the layout step the panel stops summarising and starts showing. Reading
+     "compact keys, search leads" is not the same as seeing it. */
+  if(STEPS[STEP]&&/counter work/i.test(STEPS[STEP].q))return drawLayoutPreview(el);
   const filled=[
     A.type&&{k:"Business",v:A.typeOther||A.type},
     A.name&&{k:"Store",v:A.name},
@@ -1440,6 +1512,61 @@ function drawSide(){
     </div>
     <div class="sidenote">Nothing here is fixed. Every part of it is editable once the
       terminal opens, and the wizard never has to be run twice.</div>`;
+}
+
+/* A working miniature of the register in the chosen arrangement. Same pieces as
+   the real thing — receipt, department strip, key grid, function row — just
+   small, so the difference between the five layouts is visible rather than
+   described. */
+function drawLayoutPreview(el){
+  const L=LAYOUTS.find(x=>x.k===(A.layout||suggestLayout()))||LAYOUTS[0];
+  const accent=A.accent||suggestAccent();
+  const mode=A.mode||"dark";
+  const skin=mode==="light"
+    ? {bg:"#EDEEEA",panel:"#F7F7F4",line:"#D2D5CF",txt:"#14181A",dim:"#6C7679",key:"#E4E6E0"}
+    : mode==="contrast"
+    ? {bg:"#000",panel:"#0C0E0F",line:"#4E585C",txt:"#fff",dim:"#AEB6B9",key:"#1C2123"}
+    : {bg:"#1B2023",panel:"#242A2D",line:"#333B3E",txt:"#E6E9EA",dim:"#7C868A",key:"#394145"};
+
+  const cols=L.keyMin>200?2:L.keyMin>170?2:L.keyMin>140?3:4;
+  const keys=Array.from({length:cols*2},(_,i)=>
+    `<div class="mk" style="background:${skin.key};height:${Math.round(16*L.density)}px"></div>`).join("");
+  const tape=`<div class="mtape" style="background:${skin.panel};border-color:${skin.line}">
+      ${[1,2,3].map(()=>`<div class="mline"><i style="background:${skin.line}"></i>
+        <i style="background:${skin.line};width:18%"></i></div>`).join("")}
+      <div class="mtotal" style="color:${accent};border-color:${skin.line}">0.00</div>
+    </div>`;
+  const board=`<div class="mboard">
+      ${L.search?`<div class="msearch" style="background:${skin.panel};border-color:${skin.line}">
+        <span style="background:${skin.line}"></span></div>`:""}
+      ${L.depts==="rail"
+        ? `<div class="mrailrow">
+             <div class="mrail">${[1,2,3,4].map((_,i)=>
+               `<i style="background:${i===0?accent:skin.line}"></i>`).join("")}</div>
+             <div class="mkeys" style="grid-template-columns:repeat(${cols},1fr)">${keys}</div>
+           </div>`
+        : `<div class="mtabs">${[1,2,3,4].map((_,i)=>
+             `<i style="background:${i===0?accent:skin.line}"></i>`).join("")}</div>
+           <div class="mkeys" style="grid-template-columns:repeat(${cols},1fr)">${keys}</div>`}
+      ${L.fkeys?`<div class="mfk">${[1,2,3,4,5,6].map(()=>
+        `<i style="background:${skin.line}"></i>`).join("")}</div>`:""}
+    </div>`;
+
+  el.innerHTML=`
+    <div class="mockwrap" style="background:${skin.bg}">
+      <div class="mockbar" style="background:${mode==="light"?"#E2E4DF":"#141A1C"};border-color:${skin.line}">
+        <span style="background:${accent}"></span>
+        <b style="color:${skin.txt}">${esc(A.name||"Your store")}</b>
+      </div>
+      <div class="mockbody ${L.tape}">
+        ${L.tape==="bottom"?board+tape:(L.tape==="right"?board+tape:tape+board)}
+      </div>
+    </div>
+    <div class="mocklabel"><b>${esc(L.n)}</b>
+      <span>${cols*2} keys visible · receipt ${L.tape==="bottom"?"along the bottom":"on the "+L.tape}
+      · sections ${L.depts==="rail"?"down the side":"across the top"}</span></div>
+    <div class="sidenote">This is your register, not a picture of one. Change any of it later under
+      Appearance without touching a price.</div>`;
 }
 
 /* start is owned by initApp() in persist.js */
@@ -1477,14 +1604,20 @@ ${Object.entries(MODULES).map(([k,m])=>`  ${k} — ${m.n}: ${m.what}`).join("\n"
 Return ONLY valid JSON, no prose or fences:
 {"questions":[{"q":string,"opts":[string],"why":string}],"modules":[string]}
 
-- 2 or 3 questions, specific to this trade, that change how the register should be set up.
-  A butcher gets asked about cutting and batch dates. A phone shop gets asked about
-  trade-ins, warranties and commission. A café gets asked about sizes, milk options and
-  whether they cost their recipes. Do not ask things you already know from above.
+- 4 or 5 questions, specific to this trade, that change how the register should be set up.
+  A café gets asked whether drinks come in sizes, whether milk alternatives cost extra, whether
+  they keep recipes and yields, whether there's a pastry case that gets marked down late, and
+  whether staff share tips. A convenience store gets asked about age-restricted lines, whether
+  they run lottery, whether the cooler gets date-checked, and whether they take EBT. A butcher
+  gets asked who breaks down the primals, whether cuts are logged, whether they sell by weight,
+  and how long trays stay out. Ask what a fitter who knew this trade would ask. Never ask
+  something already answered above.
 - "opts": 2 to 4 short answers. Keep them concrete.
-- "why": one short line on what the answer changes. Plain language, no jargon.
-- "modules": the keys worth switching on for this business. Empty array if none fit.
-  Do not invent keys.`,{max_tokens:900,kind:"trade-questions"});
+- "why": one short line on what the answer changes in the register. Plain language, no jargon.
+  Name the actual consequence — "turns on a size prompt when these are rung", not "improves setup".
+- "modules": the keys worth switching on for this business, with the reason tied to what they
+  actually sell. Empty array if none fit. Do not invent keys.`,
+      {max_tokens:1400,kind:"trade-questions"});
     TRADE_Q=(r.questions||[]).slice(0,3).filter(q=>q&&q.q);
     REC_MODS=(r.modules||[]).filter(k=>MODULES[k]);
     A.mods=[...REC_MODS];
@@ -3578,6 +3711,8 @@ function themeFromConfig(){
     if(CFG.theme?.density==null)THEME.density=L.density;
     THEME.showF=L.fkeys;
     THEME.searchLeads=L.search;
+    THEME.tape=L.tape;
+    THEME.depts=L.depts;
   }
   applyTheme();
 }
@@ -3604,6 +3739,14 @@ function applyTheme(){
   /* A scanning shop wants the search bar leading; a tapping shop wants it out
      of the way. Same markup, different emphasis. */
   document.body.classList.toggle("searchlead",THEME.searchLeads!==false);
+  /* Where the receipt sits and how sections are reached are the two things that
+     actually make one trade's register look unlike another's. */
+  const sale=$("vSale");
+  if(sale){
+    sale.classList.remove("tape-left","tape-right","tape-bottom");
+    sale.classList.add("tape-"+(THEME.tape||"left"));
+    sale.classList.toggle("depts-rail",THEME.depts==="rail");
+  }
   if(CFG&&VIEW==="sale")drawGrid();
 }
 function themeIssues(){
@@ -3668,7 +3811,7 @@ function health(){
   themeIssues().forEach(i=>f.push({sev:i.t==="warn"?"warn":"info",t:"Appearance",d:i.m,fix:null}));
   return f;
 }
-const BUILD="7e053e0c1f";
+const BUILD="b0c114006e";
 function tHealth(){
   const f=health();
   window.__fix=i=>{f[i].fix&&f[i].fix();reload();drawConfig()};
@@ -3736,10 +3879,15 @@ function tLook(){
 
     <div class="sect">Layout</div>
     <div class="frm">
-      <label>Receipt side
-        <select onchange="__th('tapeSide',this.value)">
-          <option value="left" ${THEME.tapeSide==="left"?"selected":""}>Left</option>
-          <option value="right" ${THEME.tapeSide==="right"?"selected":""}>Right</option></select></label>
+      <label>Receipt position
+        <select onchange="__th('tape',this.value)">
+          <option value="left" ${THEME.tape==="left"?"selected":""}>Left</option>
+          <option value="right" ${THEME.tape==="right"?"selected":""}>Right</option>
+          <option value="bottom" ${THEME.tape==="bottom"?"selected":""}>Along the bottom</option></select></label>
+      <label>Sections
+        <select onchange="__th('depts',this.value)">
+          <option value="tabs" ${THEME.depts!=="rail"?"selected":""}>Tabs across the top</option>
+          <option value="rail" ${THEME.depts==="rail"?"selected":""}>A rail down the side</option></select></label>
       <label>Key colour
         <select onchange="__th('keyStyle',this.value)">
           <option value="tint" ${THEME.keyStyle==="tint"?"selected":""}>Tinted by department</option>

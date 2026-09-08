@@ -58,14 +58,21 @@ const TYPES=TYPE_GROUPS.flatMap(g=>g[1]);
    list does. A grocery scans and needs the search bar leading; a café taps and
    needs six big keys. Same code, different shape. */
 const LAYOUTS=[
- {k:"scan",n:"Mostly scanning",keyMin:132,density:.92,search:true,fkeys:true,
-  why:"Search leads and keys are compact, because most of what you sell has a barcode. Best for grocery, convenience and anywhere with a long pricebook."},
- {k:"keys",n:"Mostly tapping",keyMin:190,density:1.15,search:false,fkeys:true,
-  why:"Big keys, fewer of them, search tucked away. Best for a café, a bar or anywhere the menu is short and the queue is long."},
- {k:"table",n:"Table or tab service",keyMin:172,density:1.08,search:false,fkeys:true,
-  why:"Big keys plus tabs front and centre, so an order can be added to through the night and settled at the end."},
- {k:"showroom",n:"Fewer, bigger-ticket items",keyMin:210,density:1.2,search:true,fkeys:false,
-  why:"Room for variants and options on each key. Best for clothing, furniture, electronics — where one sale takes a conversation."}
+ {k:"scan",n:"Scan and go",keyMin:132,density:.92,search:true,fkeys:true,
+  tape:"left",depts:"tabs",
+  why:"Search leads and takes the cursor, keys are compact, departments run across the top. The receipt sits on the left where a cashier's eye already is. Built for a long pricebook and a queue."},
+ {k:"keys",n:"Tap a menu",keyMin:196,density:1.15,search:false,fkeys:true,
+  tape:"left",depts:"tabs",
+  why:"Six big keys instead of thirty small ones, search tucked to one side. Built for a short menu you know by heart and an order taken while talking."},
+ {k:"table",n:"Tabs and tables",keyMin:172,density:1.08,search:false,fkeys:true,
+  tape:"right",depts:"rail",
+  why:"Sections run down the left as a rail so a whole menu is reachable without paging, and the open tab sits on the right where the order is being read back."},
+ {k:"showroom",n:"Considered purchases",keyMin:214,density:1.22,search:true,fkeys:false,
+  tape:"right",depts:"rail",
+  why:"Large keys with room for sizes and options, no function row cluttering the bottom. Built for one sale that takes a conversation, not forty that take seconds."},
+ {k:"counter",n:"Small counter",keyMin:158,density:1,search:true,fkeys:true,
+  tape:"bottom",depts:"tabs",
+  why:"The receipt runs along the bottom instead of the side, so the keys get the full width. Built for a narrow counter or a tablet turned landscape."}
 ];
 const ACCENTS=[["#5CE0A8","Green"],["#6BA8D8","Blue"],["#E0B255","Amber"],["#D2664C","Rust"],
   ["#B78BE0","Violet"],["#7FD858","Lime"],["#E08AB0","Pink"],["#4FD6D6","Teal"]];
@@ -317,7 +324,9 @@ function draw(){
     STEP++;
     /* The trade questions are written for this business, so they can't exist
        until the earlier answers do. */
-    if(STEP===STEPS.length-1&&!TRADE_Q.length&&!TRADE_ASKED){TRADE_ASKED=true;askTrade()}
+    /* Asked as soon as we know the trade, so the answers are ready by the time
+       the step is reached rather than the owner waiting on a spinner. */
+    if(A.desc.trim().length>=12&&!TRADE_ASKED){TRADE_ASKED=true;askTrade()}
     draw();
   };
   $("backBtn")&&($("backBtn").onclick=()=>{STEP--;draw()});
@@ -330,6 +339,9 @@ function draw(){
    difference between filling in a form and watching something get built. */
 function drawSide(){
   const el=$("setupSide"); if(!el)return;
+  /* On the layout step the panel stops summarising and starts showing. Reading
+     "compact keys, search leads" is not the same as seeing it. */
+  if(STEPS[STEP]&&/counter work/i.test(STEPS[STEP].q))return drawLayoutPreview(el);
   const filled=[
     A.type&&{k:"Business",v:A.typeOther||A.type},
     A.name&&{k:"Store",v:A.name},
@@ -363,6 +375,61 @@ function drawSide(){
     </div>
     <div class="sidenote">Nothing here is fixed. Every part of it is editable once the
       terminal opens, and the wizard never has to be run twice.</div>`;
+}
+
+/* A working miniature of the register in the chosen arrangement. Same pieces as
+   the real thing — receipt, department strip, key grid, function row — just
+   small, so the difference between the five layouts is visible rather than
+   described. */
+function drawLayoutPreview(el){
+  const L=LAYOUTS.find(x=>x.k===(A.layout||suggestLayout()))||LAYOUTS[0];
+  const accent=A.accent||suggestAccent();
+  const mode=A.mode||"dark";
+  const skin=mode==="light"
+    ? {bg:"#EDEEEA",panel:"#F7F7F4",line:"#D2D5CF",txt:"#14181A",dim:"#6C7679",key:"#E4E6E0"}
+    : mode==="contrast"
+    ? {bg:"#000",panel:"#0C0E0F",line:"#4E585C",txt:"#fff",dim:"#AEB6B9",key:"#1C2123"}
+    : {bg:"#1B2023",panel:"#242A2D",line:"#333B3E",txt:"#E6E9EA",dim:"#7C868A",key:"#394145"};
+
+  const cols=L.keyMin>200?2:L.keyMin>170?2:L.keyMin>140?3:4;
+  const keys=Array.from({length:cols*2},(_,i)=>
+    `<div class="mk" style="background:${skin.key};height:${Math.round(16*L.density)}px"></div>`).join("");
+  const tape=`<div class="mtape" style="background:${skin.panel};border-color:${skin.line}">
+      ${[1,2,3].map(()=>`<div class="mline"><i style="background:${skin.line}"></i>
+        <i style="background:${skin.line};width:18%"></i></div>`).join("")}
+      <div class="mtotal" style="color:${accent};border-color:${skin.line}">0.00</div>
+    </div>`;
+  const board=`<div class="mboard">
+      ${L.search?`<div class="msearch" style="background:${skin.panel};border-color:${skin.line}">
+        <span style="background:${skin.line}"></span></div>`:""}
+      ${L.depts==="rail"
+        ? `<div class="mrailrow">
+             <div class="mrail">${[1,2,3,4].map((_,i)=>
+               `<i style="background:${i===0?accent:skin.line}"></i>`).join("")}</div>
+             <div class="mkeys" style="grid-template-columns:repeat(${cols},1fr)">${keys}</div>
+           </div>`
+        : `<div class="mtabs">${[1,2,3,4].map((_,i)=>
+             `<i style="background:${i===0?accent:skin.line}"></i>`).join("")}</div>
+           <div class="mkeys" style="grid-template-columns:repeat(${cols},1fr)">${keys}</div>`}
+      ${L.fkeys?`<div class="mfk">${[1,2,3,4,5,6].map(()=>
+        `<i style="background:${skin.line}"></i>`).join("")}</div>`:""}
+    </div>`;
+
+  el.innerHTML=`
+    <div class="mockwrap" style="background:${skin.bg}">
+      <div class="mockbar" style="background:${mode==="light"?"#E2E4DF":"#141A1C"};border-color:${skin.line}">
+        <span style="background:${accent}"></span>
+        <b style="color:${skin.txt}">${esc(A.name||"Your store")}</b>
+      </div>
+      <div class="mockbody ${L.tape}">
+        ${L.tape==="bottom"?board+tape:(L.tape==="right"?board+tape:tape+board)}
+      </div>
+    </div>
+    <div class="mocklabel"><b>${esc(L.n)}</b>
+      <span>${cols*2} keys visible · receipt ${L.tape==="bottom"?"along the bottom":"on the "+L.tape}
+      · sections ${L.depts==="rail"?"down the side":"across the top"}</span></div>
+    <div class="sidenote">This is your register, not a picture of one. Change any of it later under
+      Appearance without touching a price.</div>`;
 }
 
 draw();
@@ -410,14 +477,20 @@ ${Object.entries(MODULES).map(([k,m])=>`  ${k} — ${m.n}: ${m.what}`).join("\n"
 Return ONLY valid JSON, no prose or fences:
 {"questions":[{"q":string,"opts":[string],"why":string}],"modules":[string]}
 
-- 2 or 3 questions, specific to this trade, that change how the register should be set up.
-  A butcher gets asked about cutting and batch dates. A phone shop gets asked about
-  trade-ins, warranties and commission. A café gets asked about sizes, milk options and
-  whether they cost their recipes. Do not ask things you already know from above.
+- 4 or 5 questions, specific to this trade, that change how the register should be set up.
+  A café gets asked whether drinks come in sizes, whether milk alternatives cost extra, whether
+  they keep recipes and yields, whether there's a pastry case that gets marked down late, and
+  whether staff share tips. A convenience store gets asked about age-restricted lines, whether
+  they run lottery, whether the cooler gets date-checked, and whether they take EBT. A butcher
+  gets asked who breaks down the primals, whether cuts are logged, whether they sell by weight,
+  and how long trays stay out. Ask what a fitter who knew this trade would ask. Never ask
+  something already answered above.
 - "opts": 2 to 4 short answers. Keep them concrete.
-- "why": one short line on what the answer changes. Plain language, no jargon.
-- "modules": the keys worth switching on for this business. Empty array if none fit.
-  Do not invent keys.`,{max_tokens:900,kind:"trade-questions"});
+- "why": one short line on what the answer changes in the register. Plain language, no jargon.
+  Name the actual consequence — "turns on a size prompt when these are rung", not "improves setup".
+- "modules": the keys worth switching on for this business, with the reason tied to what they
+  actually sell. Empty array if none fit. Do not invent keys.`,
+      {max_tokens:1400,kind:"trade-questions"});
     TRADE_Q=(r.questions||[]).slice(0,3).filter(q=>q&&q.q);
     REC_MODS=(r.modules||[]).filter(k=>MODULES[k]);
     A.mods=[...REC_MODS];

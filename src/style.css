@@ -976,3 +976,63 @@ tr.expgone td{background:rgba(210,102,76,.09)}
 body:not(.searchlead) .ftop .srch{max-width:280px}
 body:not(.searchlead) .ftop{justify-content:flex-end}
 body.searchlead .srch input{font-size:15px;padding:12px 12px 12px 36px}
+
+/* ======================= LAYOUT ARRANGEMENTS =======================
+   The receipt can sit either side or along the bottom, and sections can be tabs
+   or a rail. Between them a grocery register and a bar register stop looking
+   like the same screen with different words on it. */
+#vSale.tape-right{grid-template-columns:1fr 352px}
+#vSale.tape-right .tape{order:2;border-right:none;border-left:1px solid var(--line)}
+#vSale.tape-right .floor{order:1}
+#vSale.tape-bottom{grid-template-columns:1fr;grid-template-rows:1fr auto}
+#vSale.tape-bottom .tape{order:2;border-right:none;border-top:1px solid var(--line);max-height:44vh}
+#vSale.tape-bottom .floor{order:1}
+#vSale.tape-bottom .totals{display:grid;grid-template-columns:1fr auto;align-items:center;gap:18px}
+#vSale.tape-bottom .tenders{grid-template-columns:repeat(4,1fr)}
+
+/* sections as a rail rather than tabs */
+#vSale.depts-rail .floor{display:grid;grid-template-columns:150px 1fr;
+  grid-template-areas:"top top" "rail grid" "rail fk" "bar bar"}
+#vSale.depts-rail .ftop{grid-area:top}
+#vSale.depts-rail .menutabs{grid-area:rail;flex-direction:column;overflow-y:auto;overflow-x:hidden;
+  border-bottom:none;border-right:1px solid var(--line);padding:10px 8px;gap:3px;align-content:start}
+#vSale.depts-rail .mtab,#vSale.depts-rail .menutabs button{width:100%;text-align:left;
+  border-bottom:none;border-left:2px solid transparent;margin-bottom:0;border-radius:0 var(--r) var(--r) 0}
+#vSale.depts-rail .menutabs button.on{border-bottom:none;border-left-color:var(--vfd);
+  background:rgba(92,224,168,.08)}
+#vSale.depts-rail .grid{grid-area:grid}
+#vSale.depts-rail .fkeys{grid-area:fk}
+#vSale.depts-rail .statusbar{grid-area:bar}
+
+/* ---- the live layout preview in setup ---- */
+.mockwrap{border-radius:12px;overflow:hidden;box-shadow:0 20px 50px rgba(18,22,24,.24);
+  animation:qin .3s var(--ease) both}
+.mockbar{display:flex;align-items:center;gap:7px;padding:9px 11px;border-bottom:1px solid}
+.mockbar span{width:6px;height:6px;border-radius:50%;flex:none}
+.mockbar b{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mockbody{display:flex;gap:7px;padding:8px;min-height:184px}
+.mockbody.bottom{flex-direction:column}
+.mtape{width:37%;flex:none;border:1px solid;border-radius:6px;padding:8px;display:flex;
+  flex-direction:column;gap:6px}
+.mockbody.bottom .mtape{width:auto;flex-direction:row;align-items:center;gap:12px}
+.mline{display:flex;justify-content:space-between;gap:6px}
+.mline i{display:block;height:4px;border-radius:2px;width:52%;opacity:.65}
+.mockbody.bottom .mline{display:none}
+.mtotal{margin-top:auto;font-family:"Azeret Mono",monospace;font-size:15px;font-weight:500;
+  border-top:1px solid;padding-top:7px;text-align:right}
+.mockbody.bottom .mtotal{margin:0;border-top:none;padding:0;margin-left:auto;font-size:17px}
+.mboard{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
+.msearch{height:15px;border:1px solid;border-radius:4px;display:flex;align-items:center;padding:0 6px}
+.msearch span{height:3px;width:42%;border-radius:2px;opacity:.6}
+.mtabs{display:flex;gap:4px}
+.mtabs i{height:4px;flex:1;border-radius:2px}
+.mrailrow{display:flex;gap:6px;flex:1;min-height:0}
+.mrail{display:flex;flex-direction:column;gap:4px;width:26%;flex:none}
+.mrail i{height:8px;border-radius:2px}
+.mkeys{display:grid;gap:5px;flex:1;align-content:start}
+.mk{border-radius:4px}
+.mfk{display:flex;gap:3px;margin-top:auto}
+.mfk i{height:8px;flex:1;border-radius:2px;opacity:.5}
+.mocklabel{margin-top:13px}
+.mocklabel b{display:block;font-size:14.5px;font-weight:600;margin-bottom:4px}
+.mocklabel span{display:block;font-size:12.5px;color:var(--ink-soft);line-height:1.6}

@@ -43,6 +43,8 @@ function themeFromConfig(){
     if(CFG.theme?.density==null)THEME.density=L.density;
     THEME.showF=L.fkeys;
     THEME.searchLeads=L.search;
+    THEME.tape=L.tape;
+    THEME.depts=L.depts;
   }
   applyTheme();
 }
@@ -69,6 +71,14 @@ function applyTheme(){
   /* A scanning shop wants the search bar leading; a tapping shop wants it out
      of the way. Same markup, different emphasis. */
   document.body.classList.toggle("searchlead",THEME.searchLeads!==false);
+  /* Where the receipt sits and how sections are reached are the two things that
+     actually make one trade's register look unlike another's. */
+  const sale=$("vSale");
+  if(sale){
+    sale.classList.remove("tape-left","tape-right","tape-bottom");
+    sale.classList.add("tape-"+(THEME.tape||"left"));
+    sale.classList.toggle("depts-rail",THEME.depts==="rail");
+  }
   if(CFG&&VIEW==="sale")drawGrid();
 }
 function themeIssues(){
@@ -201,10 +211,15 @@ function tLook(){
 
     <div class="sect">Layout</div>
     <div class="frm">
-      <label>Receipt side
-        <select onchange="__th('tapeSide',this.value)">
-          <option value="left" ${THEME.tapeSide==="left"?"selected":""}>Left</option>
-          <option value="right" ${THEME.tapeSide==="right"?"selected":""}>Right</option></select></label>
+      <label>Receipt position
+        <select onchange="__th('tape',this.value)">
+          <option value="left" ${THEME.tape==="left"?"selected":""}>Left</option>
+          <option value="right" ${THEME.tape==="right"?"selected":""}>Right</option>
+          <option value="bottom" ${THEME.tape==="bottom"?"selected":""}>Along the bottom</option></select></label>
+      <label>Sections
+        <select onchange="__th('depts',this.value)">
+          <option value="tabs" ${THEME.depts!=="rail"?"selected":""}>Tabs across the top</option>
+          <option value="rail" ${THEME.depts==="rail"?"selected":""}>A rail down the side</option></select></label>
       <label>Key colour
         <select onchange="__th('keyStyle',this.value)">
           <option value="tint" ${THEME.keyStyle==="tint"?"selected":""}>Tinted by department</option>
