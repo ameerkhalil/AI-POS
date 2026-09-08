@@ -79,7 +79,9 @@ function receiptDoc(s, opts) {
   });
   if (s.against) L.push({ t: "rule" }, { t: "center", v: "Refund against sale #" + s.against });
   if (s.reason) L.push({ t: "rule" }, { t: "center", v: "Reason: " + s.reason });
-  L.push({ t: "rule" }, { t: "center", v: "Thank you" }, { t: "blank" });
+  L.push({ t: "rule" }, { t: "center", v: CFG.receipt?.footer || "Thank you" });
+  if (CFG.receipt?.policy) L.push({ t: "center", v: CFG.receipt.policy });
+  L.push({ t: "blank" });
   return { lines: L, kick: !!(opts && opts.kick) };
 }
 async function printReceipt(s, opts) {

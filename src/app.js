@@ -18,7 +18,8 @@ const byId=(a,id)=>(a||[]).find(x=>x.id===id);
 const hhmm=d=>d.toTimeString().slice(0,5);
 
 const A={type:"",typeOther:"",name:"",desc:"",caps:[],loc:"",margin:"35",ending:"x9",dir:"nearest",
-  priceMode:"margin",trade:{},mods:[]};
+  priceMode:"margin",trade:{},mods:[],
+  staff:[],layout:"",accent:"",mode:"dark",footer:"",policy:"",startCash:"200"};
 let TRADE_Q=[],REC_MODS=[],TRADE_ASKED=false;
 let TAXINFO=null;
 const CAPS=[["age","Age-restricted products"],["weight","Items sold by weight"],
@@ -52,6 +53,38 @@ const TYPE_GROUPS=[
  ["Something else",["Other retail","Other food service","Other service business"]]
 ];
 const TYPES=TYPE_GROUPS.flatMap(g=>g[1]);
+
+/* How the counter actually works differs more between trades than the product
+   list does. A grocery scans and needs the search bar leading; a café taps and
+   needs six big keys. Same code, different shape. */
+const LAYOUTS=[
+ {k:"scan",n:"Mostly scanning",keyMin:132,density:.92,search:true,fkeys:true,
+  why:"Search leads and keys are compact, because most of what you sell has a barcode. Best for grocery, convenience and anywhere with a long pricebook."},
+ {k:"keys",n:"Mostly tapping",keyMin:190,density:1.15,search:false,fkeys:true,
+  why:"Big keys, fewer of them, search tucked away. Best for a café, a bar or anywhere the menu is short and the queue is long."},
+ {k:"table",n:"Table or tab service",keyMin:172,density:1.08,search:false,fkeys:true,
+  why:"Big keys plus tabs front and centre, so an order can be added to through the night and settled at the end."},
+ {k:"showroom",n:"Fewer, bigger-ticket items",keyMin:210,density:1.2,search:true,fkeys:false,
+  why:"Room for variants and options on each key. Best for clothing, furniture, electronics — where one sale takes a conversation."}
+];
+const ACCENTS=[["#5CE0A8","Green"],["#6BA8D8","Blue"],["#E0B255","Amber"],["#D2664C","Rust"],
+  ["#B78BE0","Violet"],["#7FD858","Lime"],["#E08AB0","Pink"],["#4FD6D6","Teal"]];
+function suggestLayout(){
+  const t=(A.type+" "+A.desc).toLowerCase();
+  if(/bar|pub|restaurant|brewery|taproom|pizz/.test(t))return "table";
+  if(/caf|coffee|bakery|juice|ice cream|food truck|deli/.test(t))return "keys";
+  if(/cloth|boutique|shoe|jewel|furniture|electronic|phone|watch|camera|bike/.test(t))return "showroom";
+  return "scan";
+}
+function suggestAccent(){
+  const t=(A.type+" "+A.desc).toLowerCase();
+  if(/caf|coffee|bakery|butcher|deli/.test(t))return "#E0B255";
+  if(/cloth|boutique|jewel|salon|spa|nail/.test(t))return "#B78BE0";
+  if(/phone|electronic|computer|camera/.test(t))return "#6BA8D8";
+  if(/liquor|wine|bar|pub|brewery/.test(t))return "#D2664C";
+  return "#5CE0A8";
+}
+window.__acc=hex=>{A.accent=hex;draw()};
 const PALETTE=["#3E464A","#3A5A52","#57493B","#3D4D66","#573D4D","#485435","#4A3F5C","#2F4F55"];
 const PERMS=[["void","Void a line or sale"],["discount","Apply a discount"],["refund","Process a return"],
   ["payout","Pay in and pay out"],["nosale","Open the drawer with no sale"],["pricechange","Override a price"],
@@ -101,7 +134,7 @@ const STEPS=[
   bind(){$("f2").oninput=e=>{A.desc=e.target.value;$("goBtn").disabled=e.target.value.trim().length<12};$("f2").focus()},
   ok:()=>A.desc.trim().length>=12},
  {q:"Which of these apply to you?",s:"Each one turns on a module. What you leave off never loads and never reaches the cashier's screen.",
-  render:()=>chipMulti(CAPS,A.caps,k=>{const i=A.caps.indexOf(k);i<0?A.caps.push(k):A.caps.splice(i,1);draw()}),ok:()=>true},
+  render:()=>chipMulti(CAPS,A.caps,k=>{const i=A.caps.indexOf(k);i<0?A.caps.push(k):A.caps.splice(i,1)}),ok:()=>true},
  {q:"How do you price?",s:"If you mark up from cost, tell me the margin and invoice costs turn into shelf prices on their own. Plenty of trades don't price that way — a coffee that costs 40 cents doesn't sell for 80.",
   render:()=>`${chipList2([["margin","I mark up from cost"],["value","I price by what it's worth"]],
       A.priceMode||"margin",v=>{A.priceMode=v;draw()})}
@@ -122,6 +155,68 @@ const STEPS=[
   ok:()=>{if(A.priceMode==="value")return true;
     const m=parseFloat(A.margin);return !isNaN(m)&&m>=0&&m<=94}},
 
+ {q:"Who works the register?",s:"Everyone gets their own code, so every sale, void and drawer open is stamped with who did it. You can add more later — this is just to open with.",
+  render:()=>`<div class="stafflist" id="staffList">${(A.staff.length?A.staff:[{n:"",role:"Manager",pin:""}])
+      .map((s,i)=>`<div class="staffrow">
+        <input class="sn" placeholder="Name" value="${esc(s.n)}" data-i="${i}" data-f="n">
+        <select class="sr" data-i="${i}" data-f="role">
+          ${["Manager","Shift lead","Cashier"].map(r=>
+            `<option ${s.role===r?"selected":""}>${r}</option>`).join("")}
+        </select>
+        <input class="sp num" placeholder="PIN" maxlength="4" inputmode="numeric"
+          value="${esc(s.pin)}" data-i="${i}" data-f="pin">
+        ${A.staff.length>1?`<button class="sx" data-del="${i}">\u00d7</button>`:`<span class="sx"></span>`}
+      </div>`).join("")}</div>
+    <button class="addstaff" id="addStaff">+ Add someone</button>
+    <div class="hint">A manager can do everything. A shift lead can void and discount. A cashier can't
+      do either without someone approving it — which is the point of the codes.</div>`,
+  bind(){
+    if(!A.staff.length)A.staff=[{n:"",role:"Manager",pin:""}];
+    const wrap=$("staffList");
+    wrap.querySelectorAll("input,select").forEach(el=>{
+      const set=e=>{
+        const i=+el.dataset.i,f=el.dataset.f;
+        A.staff[i][f]=f==="pin"?e.target.value.replace(/\D/g,"").slice(0,4):e.target.value;
+        if(f==="pin")el.value=A.staff[i].pin;
+        softUpdate();
+      };
+      el.oninput=set;el.onchange=set;
+    });
+    wrap.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
+      A.staff.splice(+b.dataset.del,1);draw()});
+    $("addStaff").onclick=()=>{A.staff.push({n:"",role:"Cashier",pin:""});draw()};
+    const first=wrap.querySelector("input");if(first&&!first.value)first.focus();
+  },
+  ok:()=>A.staff.length&&A.staff.every(s=>s.n.trim()&&/^\d{4}$/.test(s.pin))
+    &&new Set(A.staff.map(s=>s.pin)).size===A.staff.length},
+
+ {q:"How does your counter work?",s:"This sets how the register is laid out — how big the keys are, whether the search bar leads, and what the function row does. It's the difference between a shop that scans and a shop that taps.",
+  render:()=>`${chipList2(LAYOUTS.map(l=>[l.k,l.n]),A.layout||suggestLayout(),v=>{A.layout=v;draw()})}
+    <div class="layoutwhy">${esc((LAYOUTS.find(l=>l.k===(A.layout||suggestLayout()))||LAYOUTS[0]).why)}</div>
+    <div class="hint" style="margin-top:26px">And the look of it</div>
+    ${chipList2([["dark","Dark — indoor counter"],["light","Light — bright forecourt"],
+      ["contrast","High contrast — glare or low vision"]],A.mode||"dark",v=>{A.mode=v;draw()})}
+    <div class="swatchrow">${ACCENTS.map(([hex,n])=>
+      `<button class="ac ${(A.accent||suggestAccent())===hex?"on":""}" style="background:${hex}"
+        title="${n}" onclick="__acc('${hex}')"></button>`).join("")}</div>`,
+  ok:()=>true},
+
+ {q:"What goes on the receipt?",s:"Printed at the bottom of every one. Most shops put their return policy here, because it's the only place a customer will ever read it.",
+  render:()=>`<div class="field"><input type="text" id="f6" placeholder="Thanks for shopping with us"
+      value="${esc(A.footer)}"></div>
+    <div class="field"><input type="text" id="f7" placeholder="Returns within 30 days with a receipt"
+      value="${esc(A.policy)}"></div>
+    <div class="taxrow"><div><label for="f8">Opening cash in the drawer</label>
+      <input type="text" id="f8" class="num" value="${esc(A.startCash)}"></div></div>
+    <div class="hint">Both are optional and editable later under Site &amp; tax.</div>`,
+  bind(){
+    $("f6").oninput=e=>{A.footer=e.target.value;softUpdate()};
+    $("f7").oninput=e=>{A.policy=e.target.value;softUpdate()};
+    $("f8").oninput=e=>{A.startCash=e.target.value.replace(/[^0-9.]/g,"")};
+    $("f6").focus();
+  },
+  ok:()=>true},
+
  /* The last question isn't written by me — it's written for this trade. A
     butcher and a phone shop need different things and shouldn't be asked the
     same script. */
@@ -134,25 +229,34 @@ const STEPS=[
       +(REC_MODS.length?`<div class="tradeq">
         <div class="tqq">Parts of the register I'd switch on for you</div>
         ${REC_MODS.map(id=>`<label class="modpick ${A.mods.includes(id)?"on":""}">
-          <input type="checkbox" ${A.mods.includes(id)?"checked":""} onchange="__modtog('${id}')">
+          <input type="checkbox" ${A.mods.includes(id)?"checked":""} onchange="__modtog('${id}',this)">
           <span><b>${esc(MODULES[id].n)}</b><em>${esc(MODULES[id].what)}</em></span></label>`).join("")}
         </div>`:"")
     : `<div class="hint">Working out what to ask you…</div>`,
   ok:()=>TRADE_Q.length===0||TRADE_Q.every((_,i)=>A.trade[i]!==undefined)}
 ];
 function chipList3(qi,opts,cur){
-  window.__tq=(i,v)=>{A.trade[i]=v;draw()};   /* keyed by index, so no collision */
+  window.__tq=(i,v,btn)=>{
+    A.trade[i]=v;
+    if(btn){const wrap=btn.parentElement;
+      if(wrap)[...wrap.children].forEach(b=>b.classList.toggle("on",b===btn))}
+    softUpdate();
+  };
   return`<div class="chips" style="margin-top:10px">`+opts.map(o=>
-    `<button class="chip ${cur===o?"on":""}" onclick="__tq(${qi},'${esc(o)}')">
+    `<button class="chip ${cur===o?"on":""}" onclick="__tq(${qi},'${esc(o)}',this)">
       <span class="tick">\u2713</span>${esc(o)}</button>`).join("")+`</div>`;
 }
-window.__modtog=id=>{const i=A.mods.indexOf(id);i<0?A.mods.push(id):A.mods.splice(i,1);draw()};
+window.__modtog=(id,el)=>{
+  const i=A.mods.indexOf(id);i<0?A.mods.push(id):A.mods.splice(i,1);
+  const row=el&&el.closest(".modpick"); if(row)row.classList.toggle("on");
+  softUpdate();
+};
 
 /* Each group gets its own handler. One shared global meant a second group on the
    same screen silently stole the first one's clicks. */
 let CHIP_N=0;
 const CHIP_CB={};
-window.__chip=(id,v)=>CHIP_CB[id]&&CHIP_CB[id](v);
+window.__chip=(id,v,btn)=>CHIP_CB[id]&&CHIP_CB[id](v,btn);
 function chipList2(pairs,cur,cb){
   const id="c"+(++CHIP_N);
   CHIP_CB[id]=cb;
@@ -169,10 +273,22 @@ function chipList(a,c,cb){
   const id="c"+(++CHIP_N);CHIP_CB[id]=cb;
   return`<div class="chips">`+a.map(v=>
     `<button class="chip ${c===v?"on":""}" onclick="__chip('${id}','${esc(v)}')"><span class="tick">✓</span>${esc(v)}</button>`).join("")+`</div>`}
+/* Multi-select updates the one chip that was clicked rather than re-rendering
+   the step. Redrawing replayed every chip's entrance animation, so picking six
+   things made the whole screen jump six times. */
 function chipMulti(p,on,cb){
-  const id="c"+(++CHIP_N);CHIP_CB[id]=cb;
+  const id="c"+(++CHIP_N);
+  CHIP_CB[id]=(v,btn)=>{cb(v);if(btn)btn.classList.toggle("on");softUpdate()};
   return`<div class="chips">`+p.map(([k,l])=>
-    `<button class="chip ${on.includes(k)?"on":""}" onclick="__chip('${id}','${k}')"><span class="tick">✓</span>${esc(l)}</button>`).join("")+`</div>`}
+    `<button class="chip ${on.includes(k)?"on":""}" onclick="__chip('${id}','${k}',this)"><span class="tick">✓</span>${esc(l)}</button>`).join("")+`</div>`}
+
+/* Everything a chip toggle needs to refresh, without touching the markup the
+   user is looking at. */
+function softUpdate(){
+  const st=STEPS[STEP];
+  const g=$("goBtn"); if(g)g.disabled=!st.ok();
+  try{drawSide()}catch(e){}
+}
 function draw(){
   /* Repair anything an earlier version wrote into the wrong field. */
   if(!["x9","99","95","49-99","none"].includes(A.ending))A.ending="x9";
@@ -506,6 +622,10 @@ function compile(gen){
   const c={site:{name:A.name||"Your Store",tagline:gen.tagline||"",addr:gen.addr||"",
       store:"001",register:"1",loc:A.loc},
     caps:[...A.caps],rounding:{nickel:false},
+    layout:A.layout||suggestLayout(),
+    theme:{mode:A.mode||"dark",accent:A.accent||suggestAccent()},
+    receipt:{footer:A.footer||"",policy:A.policy||""},
+    openingCash:parseFloat(A.startCash)||200,
     tax:TAXINFO?{place:TAXINFO.place,state:TAXINFO.state,sources:TAXINFO.sources||[],
       verifyUrl:TAXINFO.verifyUrl||"",conflict:TAXINFO.conflict||null,sumNote:TAXINFO.sumNote||null,
       recent:TAXINFO.recent||null,confirmed:false,searched:true}:{confirmed:false},
@@ -572,10 +692,10 @@ function compile(gen){
     {id:"G1",n:"Cashier",perms:["nosale"]},
     {id:"G2",n:"Shift lead",perms:["nosale","void","discount","refund","reports"]},
     {id:"G3",n:"Manager",perms:PERMS.map(p=>p[0])}];
-  c.employees=[
-    {id:"E1",n:"Ameer K.",pin:"1234",groupId:"G3"},
-    {id:"E2",n:"Dani R.",pin:"2222",groupId:"G2"},
-    {id:"E3",n:"Sam T.",pin:"1111",groupId:"G1"}];
+  const roleGroup={Manager:"G3","Shift lead":"G2",Cashier:"G1"};
+  c.employees=(A.staff&&A.staff.length?A.staff:[{n:"Manager",role:"Manager",pin:"1234"}])
+    .map((s,i)=>({id:"E"+(i+1),n:s.n.trim()||("Person "+(i+1)),pin:s.pin||String(1111*(i+1)).slice(0,4),
+      groupId:roleGroup[s.role]||"G1"}));
 
   // Reason codes on exceptions — the anti-shrink control.
   c.reasons=[
@@ -693,7 +813,7 @@ function startShell(){
   $("lock").classList.remove("on");$("app").classList.add("on");
   $("hdrName").textContent=CFG.site.name;
   $("hdrMeta").textContent=`Reg ${CFG.site.register} · Store ${CFG.site.store}`;
-  drawRail();applyTheme();clock();setInterval(clock,1000);
+  drawRail();themeFromConfig();clock();setInterval(clock,1000);
   $("btnLock").onclick=()=>{ME=null;signIn()};
   wireSale();
   if(typeof OPEN_AFTER!=="undefined"&&OPEN_AFTER){
@@ -749,6 +869,7 @@ function wireSale(){
     if(p){ring(p);$("search").value="";FILTER="";drawGrid()}}};
   $("tenders").onclick=e=>{const b=e.target.closest(".tender");if(b&&CART.length)tender(byId(CFG.mops,b.dataset.m))};
   renderTenders();renderSubops();renderFkeys();drawMenus();drawGrid();drawCart();wedge();
+  if(THEME.searchLeads!==false&&$("search"))setTimeout(()=>$("search").focus(),120);
   toast("Tap a key, scan a barcode, or search to start a sale.");
 }
 function renderTenders(){
@@ -1336,7 +1457,8 @@ function receipt(s){
       s.pointsEarned?` · ${s.pointsEarned} points`:""}</div>`:""}
     ${s.against?`<hr><div class="ctr">Refund against sale #${s.against}</div>`:""}
     ${s.reason?`<hr><div class="ctr">Reason: ${esc(s.reason)}</div>`:""}
-    <hr><div class="ctr">Thank you</div></div>
+    <hr><div class="ctr">${esc(CFG.receipt?.footer||"Thank you")}</div>
+    ${CFG.receipt?.policy?`<div class="ctr" style="color:#6E6F6A">${esc(CFG.receipt.policy)}</div>`:""}</div>
     <div class="row"><button class="no" id="rn">Close</button><button class="ok" id="rp">Print</button></div></div>`);
   el.querySelector("#rn").onclick=()=>el.remove();
   el.querySelector("#rp").onclick=async()=>{el.remove();

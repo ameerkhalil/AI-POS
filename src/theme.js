@@ -29,6 +29,28 @@ const mix=(hex,over,a)=>{const[r1,g1,b1]=hex2rgb(hex),[r2,g2,b2]=hex2rgb(over);
   return`rgb(${f(r1,r2)},${f(g1,g2)},${f(b1,b2)})`};
 const clamp=(v,lo,hi)=>Math.min(hi,Math.max(lo,+v||lo));
 
+/* The theme is per store, not per browser. A café that picked amber and big keys
+   gets amber and big keys on every terminal it signs into. */
+function themeFromConfig(){
+  if(!CFG)return;
+  if(CFG.theme){
+    if(CFG.theme.mode)THEME.mode=CFG.theme.mode;
+    if(CFG.theme.accent)THEME.accent=CFG.theme.accent;
+  }
+  const L=(typeof LAYOUTS!=="undefined"&&LAYOUTS.find(x=>x.k===CFG.layout))||null;
+  if(L){
+    if(CFG.theme?.keyMin==null)THEME.keyMin=L.keyMin;
+    if(CFG.theme?.density==null)THEME.density=L.density;
+    THEME.showF=L.fkeys;
+    THEME.searchLeads=L.search;
+  }
+  applyTheme();
+}
+function saveTheme(){
+  if(!CFG)return;
+  CFG.theme={mode:THEME.mode,accent:THEME.accent,keyMin:THEME.keyMin,density:THEME.density};
+  if(typeof queueSave==="function")queueSave();
+}
 function applyTheme(){
   const m=MODES[THEME.mode]||MODES.dark,r=document.documentElement.style;
   Object.entries({bg:m.bg,panel:m.panel,"panel-2":m.panel2,rail:m.rail,up:m.up,hi:m.hi,
@@ -44,6 +66,9 @@ function applyTheme(){
   document.body.classList.toggle("light",THEME.mode==="light");
   const s=$("vSale");if(s)s.classList.toggle("flip",THEME.tapeSide==="right");
   const f=$("fkeys");if(f)f.style.display=THEME.showF?"":"none";
+  /* A scanning shop wants the search bar leading; a tapping shop wants it out
+     of the way. Same markup, different emphasis. */
+  document.body.classList.toggle("searchlead",THEME.searchLeads!==false);
   if(CFG&&VIEW==="sale")drawGrid();
 }
 function themeIssues(){
@@ -152,9 +177,10 @@ function tLook(){
     if(k==="radius")v=clamp(v,0,14);
     if(k==="density")v=clamp(v,.8,1.4);
     if(k==="fontScale")v=clamp(v,.85,1.3);
-    THEME[k]=v;applyTheme();drawConfig();
+    THEME[k]=v;applyTheme();saveTheme();drawConfig();
   };
-  window.__reset=()=>{THEME={...THEME_DEFAULT};applyTheme();drawConfig();toast("Appearance restored to defaults.")};
+  window.__reset=()=>{THEME={...THEME_DEFAULT};applyTheme();saveTheme();drawConfig();
+    toast("Appearance restored to defaults.")};
   const m=MODES[THEME.mode],c=contrast(THEME.accent,m.panel);
   const ACC=["#5CE0A8","#6BA8D8","#E0B255","#D2664C","#B78BE0","#7FD858","#E08AB0","#4FD6D6","#F2F2F0"];
   $("cfgBody").innerHTML=`

@@ -883,8 +883,7 @@ tr.expgone td{background:rgba(210,102,76,.09)}
 /* chips get some weight */
 #setup .chip{border:1px solid var(--paper-line);background:rgba(255,255,255,.65);
   padding:12px 18px;border-radius:9px;font-size:15px;
-  transition:background .17s var(--ease),border-color .17s,transform .13s var(--ease),box-shadow .2s;
-  animation:qin .4s var(--ease) both}
+  transition:background .17s var(--ease),border-color .17s,transform .13s var(--ease),box-shadow .2s}
 #setup .chip:hover{border-color:var(--ink-soft);background:#fff;transform:translateY(-1px);
   box-shadow:0 3px 12px rgba(18,22,24,.07)}
 #setup .chip:active{transform:translateY(0)}
@@ -945,6 +944,48 @@ tr.expgone td{background:rgba(210,102,76,.09)}
 @media(prefers-reduced-motion:reduce){
   .setup-bg{display:none}
 }
+
+/* A checked chip must not change width, or a row of them reflows on each click. */
+#setup .chip{position:relative;padding-left:18px}
+#setup .chip .tick{width:0;opacity:0;margin-right:0;overflow:hidden;
+  transition:opacity .16s var(--ease)}
+#setup .chip.on{padding-left:18px}
+#setup .chip.on .tick{width:0;opacity:0;margin-right:0}
+#setup .chip.on::after{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--vfd);border-radius:9px 0 0 9px}
+
+/* ---- staff entry ---- */
+.stafflist{display:flex;flex-direction:column;gap:9px;margin-top:26px}
+.staffrow{display:grid;grid-template-columns:1fr 140px 92px 30px;gap:9px;align-items:center;
+  animation:qin .3s var(--ease) both}
+.staffrow input,.staffrow select{background:rgba(255,255,255,.72);border:1px solid var(--paper-line);
+  border-radius:8px;padding:13px 14px;font:inherit;font-size:15px;color:var(--ink);width:100%;
+  transition:border-color .18s,box-shadow .18s,background .18s}
+.staffrow input:focus,.staffrow select:focus{outline:none;background:#fff;border-color:var(--ink-soft);
+  box-shadow:0 0 0 3px rgba(18,22,24,.06)}
+.staffrow .sp{text-align:center;letter-spacing:.3em;font-family:"Azeret Mono",monospace}
+.staffrow .sx{border:none;background:none;color:var(--ink-soft);font-size:19px;cursor:pointer;
+  width:30px;height:30px;border-radius:50%;transition:background .15s,color .15s}
+.staffrow .sx:hover{background:rgba(200,80,60,.12);color:var(--void)}
+.addstaff{margin-top:12px;border:1px dashed var(--paper-line);background:none;color:var(--ink-soft);
+  border-radius:8px;padding:12px 18px;font:inherit;font-size:14.5px;cursor:pointer;
+  transition:border-color .16s,color .16s,background .16s}
+.addstaff:hover{border-color:var(--ink-soft);color:var(--ink);background:rgba(255,255,255,.5)}
+
+/* ---- layout choice ---- */
+.layoutwhy{margin-top:16px;padding:14px 17px;background:rgba(255,255,255,.55);
+  border-left:2px solid var(--ink);border-radius:0 8px 8px 0;font-size:14px;line-height:1.65;
+  color:var(--ink-soft);animation:qin .3s var(--ease) both}
+.swatchrow{display:flex;gap:9px;margin-top:22px;flex-wrap:wrap}
+.swatchrow .ac{width:38px;height:38px;border-radius:50%;border:2px solid transparent;cursor:pointer;
+  transition:transform .14s var(--ease),border-color .16s,box-shadow .18s}
+.swatchrow .ac:hover{transform:scale(1.12)}
+.swatchrow .ac.on{border-color:var(--ink);box-shadow:0 0 0 3px rgba(255,255,255,.8) inset}
+
+/* ---- a scanning shop leads with search; a tapping shop doesn't ---- */
+body:not(.searchlead) .ftop .srch{max-width:280px}
+body:not(.searchlead) .ftop{justify-content:flex-end}
+body.searchlead .srch input{font-size:15px;padding:12px 12px 12px 36px}
 
 .tchip.save{transition:color .2s,border-color .2s}
 .tchip.save.pending{color:var(--warn);border-color:rgba(224,178,85,.4)}
@@ -1054,7 +1095,8 @@ const byId=(a,id)=>(a||[]).find(x=>x.id===id);
 const hhmm=d=>d.toTimeString().slice(0,5);
 
 const A={type:"",typeOther:"",name:"",desc:"",caps:[],loc:"",margin:"35",ending:"x9",dir:"nearest",
-  priceMode:"margin",trade:{},mods:[]};
+  priceMode:"margin",trade:{},mods:[],
+  staff:[],layout:"",accent:"",mode:"dark",footer:"",policy:"",startCash:"200"};
 let TRADE_Q=[],REC_MODS=[],TRADE_ASKED=false;
 let TAXINFO=null;
 const CAPS=[["age","Age-restricted products"],["weight","Items sold by weight"],
@@ -1088,6 +1130,38 @@ const TYPE_GROUPS=[
  ["Something else",["Other retail","Other food service","Other service business"]]
 ];
 const TYPES=TYPE_GROUPS.flatMap(g=>g[1]);
+
+/* How the counter actually works differs more between trades than the product
+   list does. A grocery scans and needs the search bar leading; a café taps and
+   needs six big keys. Same code, different shape. */
+const LAYOUTS=[
+ {k:"scan",n:"Mostly scanning",keyMin:132,density:.92,search:true,fkeys:true,
+  why:"Search leads and keys are compact, because most of what you sell has a barcode. Best for grocery, convenience and anywhere with a long pricebook."},
+ {k:"keys",n:"Mostly tapping",keyMin:190,density:1.15,search:false,fkeys:true,
+  why:"Big keys, fewer of them, search tucked away. Best for a café, a bar or anywhere the menu is short and the queue is long."},
+ {k:"table",n:"Table or tab service",keyMin:172,density:1.08,search:false,fkeys:true,
+  why:"Big keys plus tabs front and centre, so an order can be added to through the night and settled at the end."},
+ {k:"showroom",n:"Fewer, bigger-ticket items",keyMin:210,density:1.2,search:true,fkeys:false,
+  why:"Room for variants and options on each key. Best for clothing, furniture, electronics — where one sale takes a conversation."}
+];
+const ACCENTS=[["#5CE0A8","Green"],["#6BA8D8","Blue"],["#E0B255","Amber"],["#D2664C","Rust"],
+  ["#B78BE0","Violet"],["#7FD858","Lime"],["#E08AB0","Pink"],["#4FD6D6","Teal"]];
+function suggestLayout(){
+  const t=(A.type+" "+A.desc).toLowerCase();
+  if(/bar|pub|restaurant|brewery|taproom|pizz/.test(t))return "table";
+  if(/caf|coffee|bakery|juice|ice cream|food truck|deli/.test(t))return "keys";
+  if(/cloth|boutique|shoe|jewel|furniture|electronic|phone|watch|camera|bike/.test(t))return "showroom";
+  return "scan";
+}
+function suggestAccent(){
+  const t=(A.type+" "+A.desc).toLowerCase();
+  if(/caf|coffee|bakery|butcher|deli/.test(t))return "#E0B255";
+  if(/cloth|boutique|jewel|salon|spa|nail/.test(t))return "#B78BE0";
+  if(/phone|electronic|computer|camera/.test(t))return "#6BA8D8";
+  if(/liquor|wine|bar|pub|brewery/.test(t))return "#D2664C";
+  return "#5CE0A8";
+}
+window.__acc=hex=>{A.accent=hex;draw()};
 const PALETTE=["#3E464A","#3A5A52","#57493B","#3D4D66","#573D4D","#485435","#4A3F5C","#2F4F55"];
 const PERMS=[["void","Void a line or sale"],["discount","Apply a discount"],["refund","Process a return"],
   ["payout","Pay in and pay out"],["nosale","Open the drawer with no sale"],["pricechange","Override a price"],
@@ -1137,7 +1211,7 @@ const STEPS=[
   bind(){$("f2").oninput=e=>{A.desc=e.target.value;$("goBtn").disabled=e.target.value.trim().length<12};$("f2").focus()},
   ok:()=>A.desc.trim().length>=12},
  {q:"Which of these apply to you?",s:"Each one turns on a module. What you leave off never loads and never reaches the cashier's screen.",
-  render:()=>chipMulti(CAPS,A.caps,k=>{const i=A.caps.indexOf(k);i<0?A.caps.push(k):A.caps.splice(i,1);draw()}),ok:()=>true},
+  render:()=>chipMulti(CAPS,A.caps,k=>{const i=A.caps.indexOf(k);i<0?A.caps.push(k):A.caps.splice(i,1)}),ok:()=>true},
  {q:"How do you price?",s:"If you mark up from cost, tell me the margin and invoice costs turn into shelf prices on their own. Plenty of trades don't price that way — a coffee that costs 40 cents doesn't sell for 80.",
   render:()=>`${chipList2([["margin","I mark up from cost"],["value","I price by what it's worth"]],
       A.priceMode||"margin",v=>{A.priceMode=v;draw()})}
@@ -1158,6 +1232,68 @@ const STEPS=[
   ok:()=>{if(A.priceMode==="value")return true;
     const m=parseFloat(A.margin);return !isNaN(m)&&m>=0&&m<=94}},
 
+ {q:"Who works the register?",s:"Everyone gets their own code, so every sale, void and drawer open is stamped with who did it. You can add more later — this is just to open with.",
+  render:()=>`<div class="stafflist" id="staffList">${(A.staff.length?A.staff:[{n:"",role:"Manager",pin:""}])
+      .map((s,i)=>`<div class="staffrow">
+        <input class="sn" placeholder="Name" value="${esc(s.n)}" data-i="${i}" data-f="n">
+        <select class="sr" data-i="${i}" data-f="role">
+          ${["Manager","Shift lead","Cashier"].map(r=>
+            `<option ${s.role===r?"selected":""}>${r}</option>`).join("")}
+        </select>
+        <input class="sp num" placeholder="PIN" maxlength="4" inputmode="numeric"
+          value="${esc(s.pin)}" data-i="${i}" data-f="pin">
+        ${A.staff.length>1?`<button class="sx" data-del="${i}">\u00d7</button>`:`<span class="sx"></span>`}
+      </div>`).join("")}</div>
+    <button class="addstaff" id="addStaff">+ Add someone</button>
+    <div class="hint">A manager can do everything. A shift lead can void and discount. A cashier can't
+      do either without someone approving it — which is the point of the codes.</div>`,
+  bind(){
+    if(!A.staff.length)A.staff=[{n:"",role:"Manager",pin:""}];
+    const wrap=$("staffList");
+    wrap.querySelectorAll("input,select").forEach(el=>{
+      const set=e=>{
+        const i=+el.dataset.i,f=el.dataset.f;
+        A.staff[i][f]=f==="pin"?e.target.value.replace(/\D/g,"").slice(0,4):e.target.value;
+        if(f==="pin")el.value=A.staff[i].pin;
+        softUpdate();
+      };
+      el.oninput=set;el.onchange=set;
+    });
+    wrap.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
+      A.staff.splice(+b.dataset.del,1);draw()});
+    $("addStaff").onclick=()=>{A.staff.push({n:"",role:"Cashier",pin:""});draw()};
+    const first=wrap.querySelector("input");if(first&&!first.value)first.focus();
+  },
+  ok:()=>A.staff.length&&A.staff.every(s=>s.n.trim()&&/^\d{4}$/.test(s.pin))
+    &&new Set(A.staff.map(s=>s.pin)).size===A.staff.length},
+
+ {q:"How does your counter work?",s:"This sets how the register is laid out — how big the keys are, whether the search bar leads, and what the function row does. It's the difference between a shop that scans and a shop that taps.",
+  render:()=>`${chipList2(LAYOUTS.map(l=>[l.k,l.n]),A.layout||suggestLayout(),v=>{A.layout=v;draw()})}
+    <div class="layoutwhy">${esc((LAYOUTS.find(l=>l.k===(A.layout||suggestLayout()))||LAYOUTS[0]).why)}</div>
+    <div class="hint" style="margin-top:26px">And the look of it</div>
+    ${chipList2([["dark","Dark — indoor counter"],["light","Light — bright forecourt"],
+      ["contrast","High contrast — glare or low vision"]],A.mode||"dark",v=>{A.mode=v;draw()})}
+    <div class="swatchrow">${ACCENTS.map(([hex,n])=>
+      `<button class="ac ${(A.accent||suggestAccent())===hex?"on":""}" style="background:${hex}"
+        title="${n}" onclick="__acc('${hex}')"></button>`).join("")}</div>`,
+  ok:()=>true},
+
+ {q:"What goes on the receipt?",s:"Printed at the bottom of every one. Most shops put their return policy here, because it's the only place a customer will ever read it.",
+  render:()=>`<div class="field"><input type="text" id="f6" placeholder="Thanks for shopping with us"
+      value="${esc(A.footer)}"></div>
+    <div class="field"><input type="text" id="f7" placeholder="Returns within 30 days with a receipt"
+      value="${esc(A.policy)}"></div>
+    <div class="taxrow"><div><label for="f8">Opening cash in the drawer</label>
+      <input type="text" id="f8" class="num" value="${esc(A.startCash)}"></div></div>
+    <div class="hint">Both are optional and editable later under Site &amp; tax.</div>`,
+  bind(){
+    $("f6").oninput=e=>{A.footer=e.target.value;softUpdate()};
+    $("f7").oninput=e=>{A.policy=e.target.value;softUpdate()};
+    $("f8").oninput=e=>{A.startCash=e.target.value.replace(/[^0-9.]/g,"")};
+    $("f6").focus();
+  },
+  ok:()=>true},
+
  /* The last question isn't written by me — it's written for this trade. A
     butcher and a phone shop need different things and shouldn't be asked the
     same script. */
@@ -1170,25 +1306,34 @@ const STEPS=[
       +(REC_MODS.length?`<div class="tradeq">
         <div class="tqq">Parts of the register I'd switch on for you</div>
         ${REC_MODS.map(id=>`<label class="modpick ${A.mods.includes(id)?"on":""}">
-          <input type="checkbox" ${A.mods.includes(id)?"checked":""} onchange="__modtog('${id}')">
+          <input type="checkbox" ${A.mods.includes(id)?"checked":""} onchange="__modtog('${id}',this)">
           <span><b>${esc(MODULES[id].n)}</b><em>${esc(MODULES[id].what)}</em></span></label>`).join("")}
         </div>`:"")
     : `<div class="hint">Working out what to ask you…</div>`,
   ok:()=>TRADE_Q.length===0||TRADE_Q.every((_,i)=>A.trade[i]!==undefined)}
 ];
 function chipList3(qi,opts,cur){
-  window.__tq=(i,v)=>{A.trade[i]=v;draw()};   /* keyed by index, so no collision */
+  window.__tq=(i,v,btn)=>{
+    A.trade[i]=v;
+    if(btn){const wrap=btn.parentElement;
+      if(wrap)[...wrap.children].forEach(b=>b.classList.toggle("on",b===btn))}
+    softUpdate();
+  };
   return`<div class="chips" style="margin-top:10px">`+opts.map(o=>
-    `<button class="chip ${cur===o?"on":""}" onclick="__tq(${qi},'${esc(o)}')">
+    `<button class="chip ${cur===o?"on":""}" onclick="__tq(${qi},'${esc(o)}',this)">
       <span class="tick">\u2713</span>${esc(o)}</button>`).join("")+`</div>`;
 }
-window.__modtog=id=>{const i=A.mods.indexOf(id);i<0?A.mods.push(id):A.mods.splice(i,1);draw()};
+window.__modtog=(id,el)=>{
+  const i=A.mods.indexOf(id);i<0?A.mods.push(id):A.mods.splice(i,1);
+  const row=el&&el.closest(".modpick"); if(row)row.classList.toggle("on");
+  softUpdate();
+};
 
 /* Each group gets its own handler. One shared global meant a second group on the
    same screen silently stole the first one's clicks. */
 let CHIP_N=0;
 const CHIP_CB={};
-window.__chip=(id,v)=>CHIP_CB[id]&&CHIP_CB[id](v);
+window.__chip=(id,v,btn)=>CHIP_CB[id]&&CHIP_CB[id](v,btn);
 function chipList2(pairs,cur,cb){
   const id="c"+(++CHIP_N);
   CHIP_CB[id]=cb;
@@ -1205,10 +1350,22 @@ function chipList(a,c,cb){
   const id="c"+(++CHIP_N);CHIP_CB[id]=cb;
   return`<div class="chips">`+a.map(v=>
     `<button class="chip ${c===v?"on":""}" onclick="__chip('${id}','${esc(v)}')"><span class="tick">✓</span>${esc(v)}</button>`).join("")+`</div>`}
+/* Multi-select updates the one chip that was clicked rather than re-rendering
+   the step. Redrawing replayed every chip's entrance animation, so picking six
+   things made the whole screen jump six times. */
 function chipMulti(p,on,cb){
-  const id="c"+(++CHIP_N);CHIP_CB[id]=cb;
+  const id="c"+(++CHIP_N);
+  CHIP_CB[id]=(v,btn)=>{cb(v);if(btn)btn.classList.toggle("on");softUpdate()};
   return`<div class="chips">`+p.map(([k,l])=>
-    `<button class="chip ${on.includes(k)?"on":""}" onclick="__chip('${id}','${k}')"><span class="tick">✓</span>${esc(l)}</button>`).join("")+`</div>`}
+    `<button class="chip ${on.includes(k)?"on":""}" onclick="__chip('${id}','${k}',this)"><span class="tick">✓</span>${esc(l)}</button>`).join("")+`</div>`}
+
+/* Everything a chip toggle needs to refresh, without touching the markup the
+   user is looking at. */
+function softUpdate(){
+  const st=STEPS[STEP];
+  const g=$("goBtn"); if(g)g.disabled=!st.ok();
+  try{drawSide()}catch(e){}
+}
 function draw(){
   /* Repair anything an earlier version wrote into the wrong field. */
   if(!["x9","99","95","49-99","none"].includes(A.ending))A.ending="x9";
@@ -1532,6 +1689,10 @@ function compile(gen){
   const c={site:{name:A.name||"Your Store",tagline:gen.tagline||"",addr:gen.addr||"",
       store:"001",register:"1",loc:A.loc},
     caps:[...A.caps],rounding:{nickel:false},
+    layout:A.layout||suggestLayout(),
+    theme:{mode:A.mode||"dark",accent:A.accent||suggestAccent()},
+    receipt:{footer:A.footer||"",policy:A.policy||""},
+    openingCash:parseFloat(A.startCash)||200,
     tax:TAXINFO?{place:TAXINFO.place,state:TAXINFO.state,sources:TAXINFO.sources||[],
       verifyUrl:TAXINFO.verifyUrl||"",conflict:TAXINFO.conflict||null,sumNote:TAXINFO.sumNote||null,
       recent:TAXINFO.recent||null,confirmed:false,searched:true}:{confirmed:false},
@@ -1598,10 +1759,10 @@ function compile(gen){
     {id:"G1",n:"Cashier",perms:["nosale"]},
     {id:"G2",n:"Shift lead",perms:["nosale","void","discount","refund","reports"]},
     {id:"G3",n:"Manager",perms:PERMS.map(p=>p[0])}];
-  c.employees=[
-    {id:"E1",n:"Ameer K.",pin:"1234",groupId:"G3"},
-    {id:"E2",n:"Dani R.",pin:"2222",groupId:"G2"},
-    {id:"E3",n:"Sam T.",pin:"1111",groupId:"G1"}];
+  const roleGroup={Manager:"G3","Shift lead":"G2",Cashier:"G1"};
+  c.employees=(A.staff&&A.staff.length?A.staff:[{n:"Manager",role:"Manager",pin:"1234"}])
+    .map((s,i)=>({id:"E"+(i+1),n:s.n.trim()||("Person "+(i+1)),pin:s.pin||String(1111*(i+1)).slice(0,4),
+      groupId:roleGroup[s.role]||"G1"}));
 
   // Reason codes on exceptions — the anti-shrink control.
   c.reasons=[
@@ -1719,7 +1880,7 @@ function startShell(){
   $("lock").classList.remove("on");$("app").classList.add("on");
   $("hdrName").textContent=CFG.site.name;
   $("hdrMeta").textContent=`Reg ${CFG.site.register} · Store ${CFG.site.store}`;
-  drawRail();applyTheme();clock();setInterval(clock,1000);
+  drawRail();themeFromConfig();clock();setInterval(clock,1000);
   $("btnLock").onclick=()=>{ME=null;signIn()};
   $("btnAcct").onclick=accountMenu;
   wireSale();
@@ -1776,6 +1937,7 @@ function wireSale(){
     if(p){ring(p);$("search").value="";FILTER="";drawGrid()}}};
   $("tenders").onclick=e=>{const b=e.target.closest(".tender");if(b&&CART.length)tender(byId(CFG.mops,b.dataset.m))};
   renderTenders();renderSubops();renderFkeys();drawMenus();drawGrid();drawCart();wedge();
+  if(THEME.searchLeads!==false&&$("search"))setTimeout(()=>$("search").focus(),120);
   toast("Tap a key, scan a barcode, or search to start a sale.");
 }
 function renderTenders(){
@@ -2363,7 +2525,8 @@ function receipt(s){
       s.pointsEarned?` · ${s.pointsEarned} points`:""}</div>`:""}
     ${s.against?`<hr><div class="ctr">Refund against sale #${s.against}</div>`:""}
     ${s.reason?`<hr><div class="ctr">Reason: ${esc(s.reason)}</div>`:""}
-    <hr><div class="ctr">Thank you</div></div>
+    <hr><div class="ctr">${esc(CFG.receipt?.footer||"Thank you")}</div>
+    ${CFG.receipt?.policy?`<div class="ctr" style="color:#6E6F6A">${esc(CFG.receipt.policy)}</div>`:""}</div>
     <div class="row"><button class="no" id="rn">Close</button><button class="ok" id="rp">Print</button></div></div>`);
   el.querySelector("#rn").onclick=()=>el.remove();
   el.querySelector("#rp").onclick=async()=>{el.remove();
@@ -3401,6 +3564,28 @@ const mix=(hex,over,a)=>{const[r1,g1,b1]=hex2rgb(hex),[r2,g2,b2]=hex2rgb(over);
   return`rgb(${f(r1,r2)},${f(g1,g2)},${f(b1,b2)})`};
 const clamp=(v,lo,hi)=>Math.min(hi,Math.max(lo,+v||lo));
 
+/* The theme is per store, not per browser. A café that picked amber and big keys
+   gets amber and big keys on every terminal it signs into. */
+function themeFromConfig(){
+  if(!CFG)return;
+  if(CFG.theme){
+    if(CFG.theme.mode)THEME.mode=CFG.theme.mode;
+    if(CFG.theme.accent)THEME.accent=CFG.theme.accent;
+  }
+  const L=(typeof LAYOUTS!=="undefined"&&LAYOUTS.find(x=>x.k===CFG.layout))||null;
+  if(L){
+    if(CFG.theme?.keyMin==null)THEME.keyMin=L.keyMin;
+    if(CFG.theme?.density==null)THEME.density=L.density;
+    THEME.showF=L.fkeys;
+    THEME.searchLeads=L.search;
+  }
+  applyTheme();
+}
+function saveTheme(){
+  if(!CFG)return;
+  CFG.theme={mode:THEME.mode,accent:THEME.accent,keyMin:THEME.keyMin,density:THEME.density};
+  if(typeof queueSave==="function")queueSave();
+}
 function applyTheme(){
   const m=MODES[THEME.mode]||MODES.dark,r=document.documentElement.style;
   Object.entries({bg:m.bg,panel:m.panel,"panel-2":m.panel2,rail:m.rail,up:m.up,hi:m.hi,
@@ -3416,6 +3601,9 @@ function applyTheme(){
   document.body.classList.toggle("light",THEME.mode==="light");
   const s=$("vSale");if(s)s.classList.toggle("flip",THEME.tapeSide==="right");
   const f=$("fkeys");if(f)f.style.display=THEME.showF?"":"none";
+  /* A scanning shop wants the search bar leading; a tapping shop wants it out
+     of the way. Same markup, different emphasis. */
+  document.body.classList.toggle("searchlead",THEME.searchLeads!==false);
   if(CFG&&VIEW==="sale")drawGrid();
 }
 function themeIssues(){
@@ -3480,7 +3668,7 @@ function health(){
   themeIssues().forEach(i=>f.push({sev:i.t==="warn"?"warn":"info",t:"Appearance",d:i.m,fix:null}));
   return f;
 }
-const BUILD="b24b1a6f48";
+const BUILD="7e053e0c1f";
 function tHealth(){
   const f=health();
   window.__fix=i=>{f[i].fix&&f[i].fix();reload();drawConfig()};
@@ -3524,9 +3712,10 @@ function tLook(){
     if(k==="radius")v=clamp(v,0,14);
     if(k==="density")v=clamp(v,.8,1.4);
     if(k==="fontScale")v=clamp(v,.85,1.3);
-    THEME[k]=v;applyTheme();drawConfig();
+    THEME[k]=v;applyTheme();saveTheme();drawConfig();
   };
-  window.__reset=()=>{THEME={...THEME_DEFAULT};applyTheme();drawConfig();toast("Appearance restored to defaults.")};
+  window.__reset=()=>{THEME={...THEME_DEFAULT};applyTheme();saveTheme();drawConfig();
+    toast("Appearance restored to defaults.")};
   const m=MODES[THEME.mode],c=contrast(THEME.accent,m.panel);
   const ACC=["#5CE0A8","#6BA8D8","#E0B255","#D2664C","#B78BE0","#7FD858","#E08AB0","#4FD6D6","#F2F2F0"];
   $("cfgBody").innerHTML=`
@@ -4121,7 +4310,9 @@ function receiptDoc(s, opts) {
   });
   if (s.against) L.push({ t: "rule" }, { t: "center", v: "Refund against sale #" + s.against });
   if (s.reason) L.push({ t: "rule" }, { t: "center", v: "Reason: " + s.reason });
-  L.push({ t: "rule" }, { t: "center", v: "Thank you" }, { t: "blank" });
+  L.push({ t: "rule" }, { t: "center", v: CFG.receipt?.footer || "Thank you" });
+  if (CFG.receipt?.policy) L.push({ t: "center", v: CFG.receipt.policy });
+  L.push({ t: "blank" });
   return { lines: L, kick: !!(opts && opts.kick) };
 }
 async function printReceipt(s, opts) {
