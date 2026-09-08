@@ -13,6 +13,11 @@
 const $=id=>document.getElementById(id);
 const money=n=>(Math.round(n*100)/100).toFixed(2);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+/* For values going inside an inline handler's quoted argument. HTML escaping is
+   not enough there — an apostrophe in "we'd like to start" ends the string and
+   silently kills the button. */
+const jsq=s=>String(s??"").replace(/\\/g,"\\\\").replace(/'/g,"\\'")
+  .replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/\r?\n/g," ");
 const uid=()=>Math.random().toString(36).slice(2,8);
 const byId=(a,id)=>(a||[]).find(x=>x.id===id);
 const hhmm=d=>d.toTimeString().slice(0,5);
@@ -120,6 +125,7 @@ function suggestAccent(){
   return "#5CE0A8";
 }
 window.__acc=hex=>{A.accent=hex;draw()};
+window.__lay=k=>{A.layout=k;draw()};
 const PALETTE=["#3E464A","#3A5A52","#57493B","#3D4D66","#573D4D","#485435","#4A3F5C","#2F4F55"];
 const PERMS=[["void","Void a line or sale"],["discount","Apply a discount"],["refund","Process a return"],
   ["payout","Pay in and pay out"],["nosale","Open the drawer with no sale"],["pricechange","Override a price"],
@@ -226,16 +232,21 @@ const STEPS=[
   ok:()=>A.staff.length&&A.staff.every(s=>s.n.trim()&&/^\d{4}$/.test(s.pin))
     &&new Set(A.staff.map(s=>s.pin)).size===A.staff.length},
 
- {q:"How does your counter work?",s:"This sets how the register is laid out — how big the keys are, whether the search bar leads, and what the function row does. It's the difference between a shop that scans and a shop that taps.",
+ {q:"How should the register look?",s:"This is the shape of the screen your staff will use all day — how products are drawn, where the order sits, whether there's a side rail. Pick one and watch it change on the right.",
   render:()=>fleetNote("layout")
-    +`${chipList2(LAYOUTS.map(l=>[l.k,l.n]),A.layout||suggestLayout(),v=>{A.layout=v;draw()})}
-    <div class="layoutwhy">${esc((LAYOUTS.find(l=>l.k===(A.layout||suggestLayout()))||LAYOUTS[0]).why)}</div>
-    <div class="hint" style="margin-top:26px">And the look of it</div>
-    ${chipList2([["dark","Dark — indoor counter"],["light","Light — bright forecourt"],
+    +`<div class="stylepick">${LAYOUTS.map(l=>`
+      <button class="sp ${(A.layout||suggestLayout())===l.k?"on":""}" onclick="__lay('${l.k}')">
+        <b>${esc(l.n)}</b><em>${esc(l.why.split(".")[0])}.</em></button>`).join("")}</div>`,
+  ok:()=>true},
+
+ {q:"And the colours",s:"Pick something that isn't every other till in town. It's stored on the store, so it follows you to any terminal you sign into.",
+  render:()=>`${chipList2([["dark","Dark — indoor counter"],["light","Light — bright room"],
       ["contrast","High contrast — glare or low vision"]],A.mode||"dark",v=>{A.mode=v;draw()})}
     <div class="swatchrow">${ACCENTS.map(([hex,n])=>
       `<button class="ac ${(A.accent||suggestAccent())===hex?"on":""}" style="background:${hex}"
-        title="${n}" onclick="__acc('${hex}')"></button>`).join("")}</div>`,
+        title="${esc(n)}" onclick="__acc('${hex}')"></button>`).join("")}</div>
+    <div class="hint" style="margin-top:24px">Everything here is editable later under Appearance,
+      along with key size, spacing, corner rounding and where the receipt sits.</div>`,
   ok:()=>true},
 
  {q:"What goes on the receipt?",s:"Printed at the bottom of every one. Most shops put their return policy here, because it's the only place a customer will ever read it.",
@@ -303,7 +314,7 @@ function chipList3(qi,opts,cur){
     softUpdate();
   };
   return`<div class="chips" style="margin-top:10px">`+opts.map(o=>
-    `<button class="chip ${cur===o?"on":""}" onclick="__tq(${qi},'${esc(o)}',this)">
+    `<button class="chip ${cur===o?"on":""}" onclick="__tq(${qi},'${jsq(o)}',this)">
       <span class="tick">\u2713</span>${esc(o)}</button>`).join("")+`</div>`;
 }
 window.__modtog=(id,el)=>{
@@ -332,7 +343,7 @@ function charmPreview(){
 function chipList(a,c,cb){
   const id="c"+(++CHIP_N);CHIP_CB[id]=cb;
   return`<div class="chips">`+a.map(v=>
-    `<button class="chip ${c===v?"on":""}" onclick="__chip('${id}','${esc(v)}')"><span class="tick">✓</span>${esc(v)}</button>`).join("")+`</div>`}
+    `<button class="chip ${c===v?"on":""}" onclick="__chip('${id}','${jsq(v)}')"><span class="tick">✓</span>${esc(v)}</button>`).join("")+`</div>`}
 /* Multi-select updates the one chip that was clicked rather than re-rendering
    the step. Redrawing replayed every chip's entrance animation, so picking six
    things made the whole screen jump six times. */
@@ -395,7 +406,7 @@ function drawSide(){
   const el=$("setupSide"); if(!el)return;
   /* On the layout step the panel stops summarising and starts showing. Reading
      "compact keys, search leads" is not the same as seeing it. */
-  if(STEPS[STEP]&&/counter work/i.test(STEPS[STEP].q))return drawLayoutPreview(el);
+  if(STEPS[STEP]&&/register look|the colours/i.test(STEPS[STEP].q))return drawLayoutPreview(el);
   const filled=[
     A.type&&{k:"Business",v:A.typeOther||A.type},
     A.name&&{k:"Store",v:A.name},
@@ -445,9 +456,13 @@ function drawLayoutPreview(el){
     ? {bg:"#000",panel:"#0C0E0F",line:"#4E585C",txt:"#fff",dim:"#AEB6B9",key:"#1C2123"}
     : {bg:"#1B2023",panel:"#242A2D",line:"#333B3E",txt:"#E6E9EA",dim:"#7C868A",key:"#394145"};
 
-  const cols=L.keyMin>200?2:L.keyMin>170?2:L.keyMin>140?3:4;
-  const keys=Array.from({length:cols*2},(_,i)=>
-    `<div class="mk" style="background:${skin.key};height:${Math.round(16*L.density)}px"></div>`).join("");
+  const cols=L.keyStyle==="list"?1:L.keyMin>200?2:L.keyMin>160?2:3;
+  const rows=L.keyStyle==="list"?5:2;
+  const kr=L.keyStyle==="pad"?Math.round(11*L.density):L.keyStyle==="list"?7:Math.round(16*L.density);
+  const keys=Array.from({length:cols*rows},()=>
+    `<div class="mk ${L.keyStyle}" style="background:${skin.key};height:${kr}px;
+      border-radius:${L.keyStyle==="list"?0:L.keyStyle==="pad"?9:4}px;
+      ${L.keyStyle==="card"?`border-top:3px solid ${accent}`:""}"></div>`).join("");
   const tape=`<div class="mtape" style="background:${skin.panel};border-color:${skin.line}">
       ${[1,2,3].map(()=>`<div class="mline"><i style="background:${skin.line}"></i>
         <i style="background:${skin.line};width:18%"></i></div>`).join("")}
@@ -475,13 +490,17 @@ function drawLayoutPreview(el){
         <span style="background:${accent}"></span>
         <b style="color:${skin.txt}">${esc(A.name||"Your store")}</b>
       </div>
+      ${L.nav==="top"?`<div class="mocknav" style="background:${skin.panel};border-color:${skin.line}">
+        ${[1,2,3,4].map((_,i)=>`<i style="background:${i===0?accent:skin.line}"></i>`).join("")}</div>`:""}
       <div class="mockbody ${L.tape}">
         ${L.tape==="bottom"?board+tape:(L.tape==="right"?board+tape:tape+board)}
       </div>
     </div>
     <div class="mocklabel"><b>${esc(L.n)}</b>
-      <span>${cols*2} keys visible · receipt ${L.tape==="bottom"?"along the bottom":"on the "+L.tape}
-      · sections ${L.depts==="rail"?"down the side":"across the top"}</span></div>
+      <span>Products as ${L.keyStyle==="list"?"dense rows":L.keyStyle==="pad"?"large pads"
+        :L.keyStyle==="card"?"cards with room for options":"tiles"}
+      · navigation ${L.nav==="top"?"across the top":"down the side"}
+      · order ${L.tape==="bottom"?"along the bottom":"on the "+L.tape}</span></div>
     <div class="sidenote">This is your register, not a picture of one. Change any of it later under
       Appearance without touching a price.</div>`;
 }
@@ -1075,12 +1094,16 @@ function drawGrid(){
       <span class="kn">${esc(k.label)}</span><span class="kp">Prepay</span></button>`;
     const p=byId(CFG.plus,k.pluId);if(!p)return"";
     const d=byId(CFG.depts,p.deptId),r=byId(CFG.restricts,p.restrictId),pr=promoFor(p),bl=timeBlocked(p);
-    const col=d?.color||"#3E464A",f=[];
+    const col=k.color||d?.color||"#3E464A",f=[];
     if(r?.minAge)f.push(r.minAge+"+");
     if(p.weighed)f.push("per lb");
     if(p.ebt)f.push("EBT");
     if(p.deposit)f.push("+"+money(p.deposit)+" dep");
     const price=money(p.price)+(p.weighed?" /lb":"");
+    const label=k.label||p.n;
+    /* A key can occupy two columns or two rows, so the things sold all day are
+       the easiest to hit. */
+    const span=`${(k.w||1)>1?"grid-column:span 2;":""}${(k.h||1)>1?"grid-row:span 2;":""}`;
     const flags=`${f.length?`<span class="flag">${esc(f.join(" · "))}</span>`:""}${
       p.modIds?.length?`<span class="flag mod">options</span>`:""}${
       pr?`<span class="flag pr">${pr.qty} for ${money(pr.price)}</span>`:""}${
@@ -1090,19 +1113,19 @@ function drawGrid(){
     /* Four genuinely different renderings of the same product. */
     if(style==="list")return`<button class="${cls}" onclick="__k(${i})" style="${dly}">
       <span class="swatch" style="background:${col}"></span>
-      <span class="kn">${esc(p.n)}</span>
+      <span class="kn">${esc(label)}</span>
       <span class="kmeta">${flags}</span>
       <span class="kp num">${price}</span></button>`;
-    if(style==="pad")return`<button class="${cls}" onclick="__k(${i})" style="${dly};${keyBg(col)}">
-      <span class="kn">${esc(p.n)}</span>
+    if(style==="pad")return`<button class="${cls}" onclick="__k(${i})" style="${dly};${span}${keyBg(col)}">
+      <span class="kn">${esc(label)}</span>
       <span class="kp num">${price}</span>${flags}</button>`;
-    if(style==="card")return`<button class="${cls}" onclick="__k(${i})" style="${dly}">
+    if(style==="card")return`<button class="${cls}" onclick="__k(${i})" style="${dly};${span}">
       <span class="kswatch" style="background:${col}"></span>
-      <span class="kbody"><span class="kn">${esc(p.n)}</span>${flags}</span>
+      <span class="kbody"><span class="kn">${esc(label)}</span>${flags}</span>
       <span class="kfoot"><span class="kp num">${price}</span><span class="kgo">Add</span></span></button>`;
-    return`<button class="${cls}" onclick="__k(${i})" style="${dly};${keyBg(col)}">
+    return`<button class="${cls}" onclick="__k(${i})" style="${dly};${span}${keyBg(col)}">
       <span class="swatch" style="background:${col};filter:brightness(1.7)"></span>
-      <span class="kn">${esc(p.n)}</span>
+      <span class="kn">${esc(label)}</span>
       <span><span class="kp num">${price}</span>${flags}</span></button>`;
   }).join("");
 }

@@ -309,39 +309,133 @@ function tDepts(){
     <div class="note">Departments are accounting buckets, not screens. They drive tax and the department sales
       report. What the cashier actually sees lives under Menus.</div>`;
 }
+/* The menu designer.
+
+   Presets get a store to something usable in a minute. This is what makes it
+   theirs: keys can be dragged into any order, made double-width or double-height
+   so the things sold forty times an hour are the easiest to hit, given their own
+   colour, and relabelled without touching the product's real name. */
+let MENU_EDIT=null;
 function tMenus(){
-  W.setM=(id,v)=>{CFG.menus.find(m=>m.id===id).n=v;reload()};
-  W.delK=(mid,i)=>{CFG.menus.find(m=>m.id===mid).keys.splice(i,1);refresh();reload()};
-  W.mvK=(mid,i,dir)=>{const k=CFG.menus.find(m=>m.id===mid).keys,j=i+dir;
-    if(j<0||j>=k.length)return;[k[i],k[j]]=[k[j],k[i]];refresh();reload()};
-  W.addK=(mid,pid)=>{if(!pid)return;CFG.menus.find(m=>m.id===mid).keys.push({pluId:pid});refresh();reload()};
-  W.addM=()=>{CFG.menus.push({id:"M"+uid(),n:"New menu",color:PALETTE[CFG.menus.length%PALETTE.length],keys:[]});refresh();reload()};
-  W.delM=id=>{CFG.menus=CFG.menus.filter(m=>m.id!==id);MENU=0;refresh();reload()};
-  $("cfgBody").innerHTML=CFG.menus.map(m=>`
-    <div class="sect">Menu</div>
-    <div style="display:flex;gap:8px;align-items:center">
-      <input value="${esc(m.n)}" ${m.fuel?"readonly":""} oninput="__w.setM('${m.id}',this.value)"
-        style="flex:1;background:rgba(0,0,0,.26);border:1px solid var(--line-2);color:var(--txt);padding:10px;border-radius:4px">
-      ${m.fuel?`<span style="font-size:12px;color:var(--txt-3)">pump tiles</span>`
-        :`<button class="del" onclick="__w.delM('${m.id}')" aria-label="Delete menu">×</button>`}
-    </div>
-    ${m.fuel?"":`<table class="tbl" style="margin-top:7px"><tbody>
-      ${m.keys.map((k,i)=>{const p=byId(CFG.plus,k.pluId);return`<tr>
-        <td style="padding-left:9px">${esc(p?p.n:"(missing item)")}
-          ${p?`<span style="color:var(--txt-3);font-size:12px"> · ${money(p.price)}</span>`:""}</td>
-        <td style="width:30px"><button class="del" onclick="__w.mvK('${m.id}',${i},-1)" aria-label="Up">↑</button></td>
-        <td style="width:30px"><button class="del" onclick="__w.mvK('${m.id}',${i},1)" aria-label="Down">↓</button></td>
-        <td style="width:30px"><button class="del" onclick="__w.delK('${m.id}',${i})" aria-label="Remove">×</button></td></tr>`}).join("")
-        ||`<tr><td style="padding:9px;color:var(--txt-3)">No keys on this menu yet.</td></tr>`}
-    </tbody></table>
-    <select onchange="__w.addK('${m.id}',this.value);this.value=''"
-      style="margin-top:8px;background:rgba(0,0,0,.26);border:1px solid var(--line-2);color:var(--txt);padding:9px;border-radius:4px;width:100%">
-      <option value="">Add a key…</option>
-      ${CFG.plus.map(p=>`<option value="${p.id}">${esc(p.n)}</option>`).join("")}</select>`}`).join("")
-    +`<div><button class="mini" onclick="__w.addM()">Add a menu</button></div>
-      <div class="note">One item can sit on several menus. A "Morning" menu can pull coffee from Drinks and
-        donuts from Bakery without either product changing department.</div>`;
+  const menus=CFG.menus;
+  const cur=menus.find(m=>m.id===MENU_EDIT)||menus[0];
+  if(cur)MENU_EDIT=cur.id;
+
+  W.setM=(id,v)=>{menus.find(m=>m.id===id).n=v;reload();queueSave()};
+  W.pickMenu=id=>{MENU_EDIT=id;refresh()};
+  W.addM=()=>{const m={id:"M"+uid(),n:"New menu",color:PALETTE[menus.length%PALETTE.length],keys:[]};
+    menus.push(m);MENU_EDIT=m.id;refresh();reload()};
+  W.delM=id=>{CFG.menus=menus.filter(m=>m.id!==id);MENU_EDIT=null;MENU=0;refresh();reload()};
+  W.addK=(mid,pid)=>{if(!pid)return;
+    menus.find(m=>m.id===mid).keys.push({pluId:pid});refresh();reload()};
+  W.delK=(mid,i)=>{menus.find(m=>m.id===mid).keys.splice(i,1);refresh();reload()};
+  /* Size is stored on the key, not the product — the same coffee can be a big
+     key on the morning menu and a small one on the evening board. */
+  W.keySize=(mid,i,w,h)=>{const k=menus.find(m=>m.id===mid).keys[i];
+    k.w=w;k.h=h;refresh();reload();queueSave()};
+  W.keyColor=(mid,i,col)=>{const k=menus.find(m=>m.id===mid).keys[i];
+    k.color=col||null;refresh();reload();queueSave()};
+  W.keyLabel=(mid,i,v)=>{const k=menus.find(m=>m.id===mid).keys[i];
+    k.label=v.trim()||null;reload();queueSave()};
+  W.moveK=(mid,from,to)=>{
+    const ks=menus.find(m=>m.id===mid).keys;
+    if(to<0||to>=ks.length||from===to)return;
+    ks.splice(to,0,ks.splice(from,1)[0]);
+    refresh();reload();queueSave();
+  };
+  W.autoFill=mid=>{
+    const m=menus.find(x=>x.id===mid);
+    const dept=CFG.depts.find(d=>"M"+d.id===mid);
+    const have=new Set(m.keys.map(k=>k.pluId));
+    const add=CFG.plus.filter(p=>(!dept||p.deptId===dept.id)&&!have.has(p.id));
+    add.forEach(p=>m.keys.push({pluId:p.id}));
+    refresh();reload();
+    toast(`Added <b>${add.length}</b> key${add.length===1?"":"s"}.`);
+  };
+
+  const KEYCOLS=["#3E464A","#3A5A52","#57493B","#3D4D66","#573D4D","#485435","#4A3F5C","#2F4F55",
+                 "#7A3B3B","#2E5F7A"];
+
+  $("cfgBody").innerHTML=`
+    <div class="listtabs">${menus.map(m=>
+      `<button class="${m.id===MENU_EDIT?"on":""}" onclick="__w.pickMenu('${m.id}')">
+        ${esc(m.n)}<em>${m.keys.length}</em></button>`).join("")}
+      <button class="add" onclick="__w.addM()">+ New menu</button></div>
+
+    ${!cur?`<p style="color:var(--txt-3);font-size:13px;padding:16px 2px">No menus yet.</p>`:`
+      <div class="mdhead">
+        <input value="${esc(cur.n)}" oninput="__w.setM('${cur.id}',this.value)" class="mdname">
+        <button class="mini" style="margin:0" onclick="__w.autoFill('${cur.id}')">Add missing products</button>
+        ${cur.fuel?"":`<button class="mini" style="margin:0;border-color:var(--void);color:var(--void)"
+          onclick="__w.delM('${cur.id}')">Delete menu</button>`}
+      </div>
+
+      ${cur.fuel?`<div class="note">Pump tiles are generated from the fuel module and can't be
+        rearranged here.</div>`:`
+        <div class="mdboard" id="mdBoard">
+          ${cur.keys.map((k,i)=>{
+            const p=byId(CFG.plus,k.pluId);
+            const d=p?byId(CFG.depts,p.deptId):null;
+            const col=k.color||d?.color||"#3E464A";
+            return `<div class="mdkey w${k.w||1} h${k.h||1}" draggable="true"
+              data-i="${i}" style="background:linear-gradient(180deg,${col} 0%,${col}CC 120%)">
+              <span class="mdlabel">${esc(k.label||p?.n||"(missing)")}</span>
+              <span class="mdprice num">${p?money(p.price):"—"}</span>
+              <span class="mdtools">
+                <button title="Wider" onclick="__w.keySize('${cur.id}',${i},${(k.w||1)===2?1:2},${k.h||1})">${(k.w||1)===2?"◧":"◫"}</button>
+                <button title="Taller" onclick="__w.keySize('${cur.id}',${i},${k.w||1},${(k.h||1)===2?1:2})">${(k.h||1)===2?"▤":"▥"}</button>
+                <button title="Remove" onclick="__w.delK('${cur.id}',${i})">×</button>
+              </span>
+              <span class="mdswatches">${KEYCOLS.map(cc=>
+                `<i style="background:${cc}" onclick="event.stopPropagation();__w.keyColor('${cur.id}',${i},'${cc}')"></i>`).join("")}
+                <i class="clear" onclick="event.stopPropagation();__w.keyColor('${cur.id}',${i},'')" title="Use the department colour">↺</i></span>
+            </div>`}).join("")
+            ||`<div class="mdempty">Nothing on this menu yet. Add products below, or use
+                 <b>Add missing products</b>.</div>`}
+        </div>
+        <div class="mdadd">
+          <select onchange="__w.addK('${cur.id}',this.value);this.value=''">
+            <option value="">Add a product to this menu…</option>
+            ${CFG.plus.map(p=>`<option value="${p.id}">${esc(p.n)}</option>`).join("")}</select>
+        </div>
+        <div class="note">Drag a key to move it. The two buttons on each key make it double-width or
+          double-height — put the six things you sell all day where a thumb lands without looking.
+          Colour is per key, so the same product can be red on one menu and grey on another.
+          Renaming a key changes the button, never the product.</div>`}`}`;
+
+  /* Drag to rearrange. Plain HTML5 drag events — no library, works with a mouse
+     and with a finger on the terminals that matter. */
+  const board=$("mdBoard");
+  if(board){
+    let from=null;
+    board.querySelectorAll(".mdkey").forEach(el=>{
+      el.addEventListener("dragstart",e=>{from=+el.dataset.i;el.classList.add("dragging");
+        e.dataTransfer.effectAllowed="move"});
+      el.addEventListener("dragend",()=>{el.classList.remove("dragging");
+        board.querySelectorAll(".mdkey").forEach(x=>x.classList.remove("over"))});
+      el.addEventListener("dragover",e=>{e.preventDefault();el.classList.add("over")});
+      el.addEventListener("dragleave",()=>el.classList.remove("over"));
+      el.addEventListener("drop",e=>{e.preventDefault();
+        const to=+el.dataset.i;
+        if(from!=null&&from!==to)W.moveK(MENU_EDIT,from,to);
+      });
+      el.addEventListener("dblclick",()=>{
+        const i=+el.dataset.i;
+        const k=CFG.menus.find(m=>m.id===MENU_EDIT).keys[i];
+        const p=byId(CFG.plus,k.pluId);
+        ask({t:"Rename this key",p:`The product stays "${p?p.n:"—"}". This only changes what's
+          printed on the button.`,yes:"Set it",done:()=>{}});
+        const inp=document.querySelector(".veil .card input");
+        if(inp){inp.type="text";inp.value=k.label||p?.n||"";inp.classList.remove("num");
+          inp.style.textAlign="left";inp.focus();
+          document.querySelector(".veil .card .ok").onclick=()=>{
+            W.keyLabel(MENU_EDIT,i,inp.value);
+            document.querySelector(".veil").remove();refresh()};}
+      });
+    });
+  }
 }
+
 function tMods(){
   W.setG=(id,f,v)=>{const g=byId(CFG.modGroups,id);g[f]=v};
   W.setO=(gid,oi,f,v)=>{const g=byId(CFG.modGroups,gid);g.opts[oi][f]=f==="p"?(parseFloat(v)||0):v};
