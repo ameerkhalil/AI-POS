@@ -653,10 +653,27 @@ function itemRules(){
 async function build(){
   $("setup").classList.add("hide");$("building").style.display="flex";
   let lines=[{t:"Reading your description",s:1}],note="";
-  const paint=()=>$("buildBody").innerHTML=`<h2>Building your site</h2>`
-    +lines.map(l=>`<div class="tick-line ${l.s===2?"done":""}"><b>${l.s===2?"✓":l.s===3?"!":"·"}</b><span>${esc(l.t)}</span></div>`).join("")
-    +(note?`<div class="hint">${esc(note)}</div>`:"");
+  const paint=()=>{
+    const done=lines.filter(l=>l.s===2).length;
+    const pct=Math.round(done/Math.max(1,lines.length)*100);
+    const now=lines.find(l=>l.s===1);
+    $("buildBody").innerHTML=`
+      <div class="bs">
+        <div class="bsorb"><i></i><i></i><i></i></div>
+        <div class="bskicker">Setting up ${esc(A.name||"your store")}</div>
+        <h2 class="bstitle">Building your POS</h2>
+        <div class="bsnow">${esc(now?now.t:"Almost there")}<span class="bsdots"><i></i><i></i><i></i></span></div>
+        <div class="bsbar"><span style="width:${pct}%"></span></div>
+        <div class="bslist">${lines.map((l,i)=>`
+          <div class="bsl ${l.s===2?"done":l.s===3?"skip":l.s===1&&l===now?"now":""}"
+            style="animation-delay:${i*45}ms">
+            <span class="bsm">${l.s===2?"\u2713":l.s===3?"!":""}</span>
+            <span>${esc(l.t)}</span></div>`).join("")}</div>
+        ${note?`<div class="bsnote">${esc(note)}</div>`:""}
+      </div>`;
+  };
   paint();
+
   let shell=null,failed=null;
   /* If enough of this trade already exists, start from what they settled on
      rather than asking a model to imagine it. */

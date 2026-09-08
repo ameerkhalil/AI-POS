@@ -146,17 +146,19 @@ function drawStudio() {
           <i class="x" onclick="event.stopPropagation();__st.colour(${i},'')">↺</i></span>` : ""}</div>`;
   };
 
-  const zone = (label, action) =>
-    `<span class="zt"><b>${label}</b><i>${action}</i></span>`;
+  /* Labels used to sit on top of the thing they described, which covered the
+     content and looked broken. They now live in one bar under the canvas and
+     fill in on hover, so nothing is ever obscured. */
+  const zone = (label, action) => ` data-zone="${esc(label)}" data-act="${esc(action)}"`;
 
-  const sections = `<div class="ssec ${L.depts} zone" onclick="__st.depts()">
-    ${zone("Sections", L.depts === "rail" ? "move to the top" : "move to the side")}
+  const sections = `<div class="ssec ${L.depts} zone" onclick="__st.depts()"${
+    zone("Sections", L.depts === "rail" ? "move them to the top" : "move them to the side")}>
     ${menus.map((m, i) => `<span class="${i === STUDIO_MENU ? "on" : ""}"
       onclick="event.stopPropagation();__st.menu(${i})"
       style="${i === STUDIO_MENU ? `--a:${accent}` : ""}">${esc(m.n)}</span>`).join("")}</div>`;
 
-  const tape = `<div class="stape zone" onclick="__st.tape()">
-    ${zone("Order panel", "move it " + (L.tape === "left" ? "right" : L.tape === "right" ? "to the bottom" : "left"))}
+  const tape = `<div class="stape zone" onclick="__st.tape()"${
+    zone("Order panel", "move it " + (L.tape === "left" ? "to the right" : L.tape === "right" ? "to the bottom" : "to the left"))}>
     <div class="sth">Current sale</div>
     <div class="stl"><span>${esc(CFG.plus[0]?.n || "First product")}</span>
       <span class="num">${money(CFG.plus[0]?.price || 0)}</span></div>
@@ -168,15 +170,14 @@ function drawStudio() {
       <span>Card</span></div></div>`;
 
   const board = `<div class="sboard">
-    ${L.search ? `<div class="ssearch zone" onclick="__st.search()">
-      ${zone("Search bar", "hide it")}Search the pricebook, or scan a barcode</div>` : ""}
+    ${L.search ? `<div class="ssearch zone" onclick="__st.search()"${
+      zone("Search bar", "hide it")}>Search the pricebook, or scan a barcode</div>` : ""}
     ${L.depts === "rail"
       ? `<div class="srail">${sections}<div class="skeys ${L.keyStyle}" id="skeys"
            style="grid-template-columns:repeat(${cols},1fr)">${menu ? menu.keys.map(keyHtml).join("") : ""}</div></div>`
       : sections + `<div class="skeys ${L.keyStyle}" id="skeys"
            style="grid-template-columns:repeat(${cols},1fr)">${menu ? menu.keys.map(keyHtml).join("") : ""}</div>`}
-    ${L.fkeys ? `<div class="sfk zone" onclick="__st.fkeys()">
-      ${zone("Function row", "hide it")}
+    ${L.fkeys ? `<div class="sfk zone" onclick="__st.fkeys()"${zone("Function row", "hide it")}>
       ${["Price check", "Void", "Discount", "No sale", "Suspend", "Return"].map(f =>
         `<span>${f}</span>`).join("")}</div>` : ""}
   </div>`;
@@ -251,24 +252,35 @@ function drawStudio() {
               <span class="sdot" style="background:${accent}"></span>
               <b>${esc(CFG.site.name)}</b><em>Reg 1 · Store 001</em>
             </div>
-            ${L.nav === "top" ? `<div class="snav top zone" onclick="__st.nav()">
-              ${zone("Main menu", "move to the side")}
+            ${L.nav === "top" ? `<div class="snav top zone" onclick="__st.nav()"${
+              zone("Main menu", "move it to the side")}>
               ${["Sale", "Office", "Reports", "Config"].map((n, i) =>
                 `<span class="${i === 0 ? "on" : ""}" style="--a:${accent}">${n}</span>`).join("")}</div>` : ""}
             <div class="stinner ${L.tape} ${L.nav}">
-              ${L.nav === "rail" ? `<div class="snav rail zone" onclick="__st.nav()">
-                ${zone("Main menu", "move to the top")}
+              ${L.nav === "rail" ? `<div class="snav rail zone" onclick="__st.nav()"${
+                zone("Main menu", "move it to the top")}>
                 ${["Sale", "Office", "Reports", "Config"].map((n, i) =>
                   `<span class="${i === 0 ? "on" : ""}" style="--a:${accent}">${n}</span>`).join("")}</div>` : ""}
               ${L.tape === "left" ? tape + board : board + tape}
             </div>
           </div>
-          <div class="sthint">${STUDIO_SEL != null
+          <div class="sthint" id="stHint">${STUDIO_SEL != null
             ? "<b>This key is selected.</b> Drag it to move it. The buttons on it change its width and height, the strip along the bottom sets its colour, and × takes it off this menu."
             : "<b>Click any part of the register to change it.</b> Keys can be dragged, resized and recoloured. The panels around them move with a click."}</div>
         </div>
       </div>
     </div>`;
+
+  /* Hovering any editable region explains it in the bar below, rather than
+     stamping a label over the top of it. */
+  const hint = document.getElementById("stHint");
+  const baseHint = hint ? hint.innerHTML : "";
+  document.querySelectorAll("#studio [data-zone]").forEach(z => {
+    z.addEventListener("mouseenter", () => {
+      if (hint) hint.innerHTML = `<b>${z.dataset.zone}</b> — click to ${z.dataset.act}.`;
+    });
+    z.addEventListener("mouseleave", () => { if (hint) hint.innerHTML = baseHint; });
+  });
 
   /* Drag to rearrange, with the same plain HTML5 events the menu designer uses. */
   const keys = document.getElementById("skeys");
@@ -289,60 +301,67 @@ function drawStudio() {
 
 /* The handover.
 
-   Four beats, roughly two and a half seconds. The controls clear out, the keys
-   fire off one by one, the register pulls toward the viewer and blows out to
-   white, then the real thing arrives behind the store's own name. It's the one
-   moment in this whole product worth being theatrical about — they've just spent
-   ten minutes answering questions and this is the payoff. */
+   Six beats, about four seconds. Long enough to feel like an event, short
+   enough that nobody sitting through it a second time resents it.
+
+     0.0  the tools clear out
+     0.4  the keys fire off one at a time, like a board powering down
+     1.1  the register tilts and flies past the viewer
+     1.7  white-out in the store's own colour
+     2.0  the store name lands
+     3.0  the real register assembles piece by piece behind it
+*/
 function launchPOS() {
   const studio = document.getElementById("studio");
   const mock = studio.querySelector(".stmock");
-  const wrap = studio.querySelector(".stwrap");
   if (!mock) return boot();
 
-  /* Save before any of it, so a slow network can't make the animation lie. */
+  /* Persist first — a slow network must never make the animation a lie. */
   if (typeof saveNow === "function") saveNow();
   if (typeof contributePattern === "function") contributePattern();
 
   const accent = CFG.theme.accent;
-  const curtain = document.createElement("div");
-  curtain.className = "launchveil";
-  curtain.innerHTML = `
-    <div class="lv-flash" style="background:${accent}"></div>
-    <div class="lv-name">
-      <span class="lv-dot" style="background:${accent}"></span>
-      <b>${esc(CFG.site.name)}</b>
-      <em>Register 1 · opening</em>
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const veil = document.createElement("div");
+  veil.className = "lv";
+  veil.innerHTML = `
+    <div class="lv-wash" style="background:${accent}"></div>
+    <div class="lv-rays">${Array.from({length:12},(_,i)=>
+      `<i style="transform:rotate(${i*30}deg);background:linear-gradient(to top,${accent}00,${accent}AA)"></i>`).join("")}</div>
+    <div class="lv-core">
+      <div class="lv-ring" style="border-color:${accent}"></div>
+      <div class="lv-ring two" style="border-color:${accent}"></div>
+      <div class="lv-name">
+        <b>${esc(CFG.site.name)}</b>
+        <em>Register 1 &middot; now open</em>
+      </div>
     </div>`;
-  document.body.appendChild(curtain);
+  document.body.appendChild(veil);
+
+  if (reduce) {
+    studio.classList.remove("on"); studio.innerHTML = "";
+    boot(); veil.remove(); return;
+  }
 
   studio.classList.add("launching");
 
-  /* Beat one: the tools clear, the keys go off in sequence like a board
-     powering up. */
-  mock.querySelectorAll(".sk").forEach((k, i) => {
-    k.style.animation = `keyfire .42s cubic-bezier(.3,1.6,.5,1) ${i * 42}ms both`;
+  const keys = [...mock.querySelectorAll(".sk")];
+  keys.forEach((k, i) => {
+    k.style.animation = `keyfire .5s cubic-bezier(.25,1.5,.45,1) ${380 + i * 55}ms both`;
   });
 
-  /* Beat two: the register comes at you. */
-  setTimeout(() => mock.classList.add("rush"), 620);
-
-  /* Beat three: white out, and the name lands. */
-  setTimeout(() => curtain.classList.add("blown"), 1080);
-  setTimeout(() => curtain.classList.add("named"), 1240);
-
-  /* Beat four: the real register is built behind the curtain, then revealed. */
-  setTimeout(() => {
+  const at = (ms, fn) => setTimeout(fn, ms);
+  at(1100, () => mock.classList.add("rush"));
+  at(1700, () => veil.classList.add("wash"));
+  at(2000, () => veil.classList.add("named"));
+  at(3000, () => {
     studio.classList.remove("on", "launching");
     studio.innerHTML = "";
     boot();
     const app = document.getElementById("app");
-    if (app) {
-      app.classList.add("arrive");
-      setTimeout(() => app.classList.remove("arrive"), 1200);
-    }
-  }, 1600);
-
-  setTimeout(() => curtain.classList.add("lifting"), 1780);
-  setTimeout(() => curtain.remove(), 2600);
+    if (app) { app.classList.add("arrive"); at(1400, () => app.classList.remove("arrive")); }
+  });
+  at(3200, () => veil.classList.add("part"));
+  at(4200, () => veil.remove());
 }
