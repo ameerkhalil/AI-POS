@@ -3,7 +3,7 @@
    dinosaur when the ISP drops is worthless. The shell is cached on install and
    served cache-first; API calls always go to the network and are never cached,
    because a stale pricebook is worse than no answer. */
-const CACHE = "aipos-df0e911d7b";
+const CACHE = "aipos-b24b1a6f48";
 const SHELL = ["/app.html", "/login.html", "/sw.js"];
 
 self.addEventListener("install", e => {

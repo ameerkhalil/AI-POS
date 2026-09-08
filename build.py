@@ -18,7 +18,11 @@ app=re.sub(r'async function callAI\(prompt,opts=\{\}\)\{.*?\n\}\n', '', app, fla
 assert "async function callAI" not in app, "old callAI still present"
 
 # ---- 2. the wizard no longer starts itself; initApp decides ----------------
-app=app.replace("\ndraw();\n", "\n/* start is owned by initApp() in persist.js */\n")
+# Only the top-level call, never one nested in a handler. Anchored to the line
+# that follows it so an indentation slip can't take the wizard's own call with it.
+app=app.replace("\n\ndraw();\n\n/* ========================= AI generation",
+                "\n\n/* start is owned by initApp() in persist.js */\n\n/* ========================= AI generation")
+assert "\n\ndraw();\n\n" not in app, "a stray top-level draw() survived"
 
 # ---- 3. config edits mark the store dirty ----------------------------------
 cfg=cfg.replace("const reload=()=>{", "const reload=()=>{queueSave();")
