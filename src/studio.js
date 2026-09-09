@@ -569,6 +569,7 @@ function runLaunch() {
     `${CFG.employees.length} ${CFG.employees.length === 1 ? "person" : "people"} on the register`,
     `${Object.values(CFG.modules || {}).filter(m => m.on).length} modules enabled`,
     `Offline queue ready`,
+    `Signed in as ${(CFG.employees[0] || {}).n || "manager"}`,
     `Open for business`
   ];
 
@@ -598,27 +599,37 @@ function runLaunch() {
   document.body.appendChild(veil);
 
   if (reduce) {
+    AUTO_IN = true;
     studio.classList.remove("on"); studio.innerHTML = "";
     boot(); veil.remove(); return;
   }
 
+  AUTO_IN = true;
   studio.classList.add("launching");
   [...mock.querySelectorAll(".sk")].forEach((k, i) => {
     k.style.animation = `keyfire .5s cubic-bezier(.25,1.5,.45,1) ${380 + i * 55}ms both`;
   });
 
+  /* The readout is the point of the wait, so nothing may cut it off. Its last
+     line starts at 2700 + 6 x 260 and takes 500ms to land, so the earliest the
+     curtain can honestly lift is 4760 — with a beat afterwards to read it. */
+  const stepStart = 2700, stepGap = 260, stepFor = 500;
+  const lastLandsAt = stepStart + (steps.length - 1) * stepGap + stepFor;
+  const hold = lastLandsAt + 900;
+
   const at = (ms, fn) => setTimeout(fn, ms);
   at(1300, () => mock.classList.add("rush"));
   at(1900, () => veil.classList.add("wash"));
   at(2200, () => veil.classList.add("named"));
-  at(2700, () => veil.classList.add("stepping"));
-  at(5000, () => {
+  at(stepStart - 100, () => veil.classList.add("stepping"));
+  /* The register is built behind the curtain, so it's ready the instant it lifts. */
+  at(hold, () => {
     studio.classList.remove("on", "launching");
     studio.innerHTML = "";
     boot();
     const app = document.getElementById("app");
-    if (app) { app.classList.add("arrive"); at(1500, () => app.classList.remove("arrive")); }
+    if (app) { app.classList.add("arrive"); at(1600, () => app.classList.remove("arrive")); }
   });
-  at(5300, () => veil.classList.add("part"));
-  at(6300, () => veil.remove());
+  at(hold + 400, () => veil.classList.add("part"));
+  at(hold + 1600, () => veil.remove());
 }

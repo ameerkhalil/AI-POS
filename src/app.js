@@ -25,7 +25,7 @@ const hhmm=d=>d.toTimeString().slice(0,5);
 const A={type:"",typeOther:"",name:"",desc:"",caps:[],loc:"",margin:"35",ending:"x9",dir:"nearest",
   priceMode:"margin",trade:{},mods:[],
   staff:[],layout:"",accent:"",mode:"dark",footer:"",policy:"",startCash:"200",
-  logo:"",slogan:""};
+  logo:"",logoRaw:"",logoCut:false,logoTol:60,slogan:""};
 let TRADE_Q=[],REC_MODS=[],TRADE_ASKED=false,FLEET=null,FLEET_ASKED=false;
 
 /* What other stores of this trade already worked out. Structure only — the
@@ -133,8 +133,84 @@ function suggestAccent(){
 }
 window.__acc=hex=>{A.accent=hex;draw()};
 window.__lay=k=>{A.layout=k;draw()};
+/* Background removal.
+
+   Most logos arrive as a mark on a solid white square, which looks like a
+   sticker on a dark launch plate. This floods inward from the edges, clearing
+   anything close to the corner colour, and stops at the artwork. Flooding from
+   the edges rather than matching every white pixel is what keeps the white
+   inside an O, or the highlight on a bottle, intact. */
+function removeBg(src, tol, cb){
+  const img=new Image();
+  img.onload=()=>{
+    const w=img.width,h=img.height;
+    const c=document.createElement("canvas");
+    c.width=w;c.height=h;
+    const cx=c.getContext("2d",{willReadFrequently:true});
+    cx.drawImage(img,0,0);
+    const d=cx.getImageData(0,0,w,h),px=d.data;
+
+    /* The background is whatever the corners agree on. */
+    const corner=i=>[px[i],px[i+1],px[i+2]];
+    const cs=[0,(w-1)*4,(h-1)*w*4,((h-1)*w+(w-1))*4].map(corner);
+    const bg=[0,1,2].map(k=>Math.round(cs.reduce((s,c)=>s+c[k],0)/cs.length));
+    const near=(i)=>{
+      const dr=px[i]-bg[0],dg=px[i+1]-bg[1],db=px[i+2]-bg[2];
+      return Math.sqrt(dr*dr+dg*dg+db*db)<=tol;
+    };
+
+    const seen=new Uint8Array(w*h);
+    const stack=[];
+    for(let x=0;x<w;x++){stack.push(x,(h-1)*w+x)}
+    for(let y=0;y<h;y++){stack.push(y*w,y*w+w-1)}
+
+    while(stack.length){
+      const p=stack.pop();
+      if(seen[p])continue;
+      seen[p]=1;
+      const i=p*4;
+      if(!near(i))continue;
+      px[i+3]=0;
+      const x=p%w,y=(p/w)|0;
+      if(x>0)stack.push(p-1);
+      if(x<w-1)stack.push(p+1);
+      if(y>0)stack.push(p-w);
+      if(y<h-1)stack.push(p+w);
+    }
+
+    /* One pass of feathering, so the cut edge isn't a staircase. */
+    const out=new Uint8ClampedArray(px);
+    for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){
+      const p=(y*w+x),i=p*4;
+      if(px[i+3]===0)continue;
+      let clear=0;
+      if(px[(p-1)*4+3]===0)clear++;
+      if(px[(p+1)*4+3]===0)clear++;
+      if(px[(p-w)*4+3]===0)clear++;
+      if(px[(p+w)*4+3]===0)clear++;
+      if(clear)out[i+3]=Math.round(px[i+3]*(1-clear*0.2));
+    }
+    cx.putImageData(new ImageData(out,w,h),0,0);
+    cb(c.toDataURL("image/png"));
+  };
+  img.onerror=()=>cb(src);
+  img.src=src;
+}
+
 /* Scaled down before it's stored — a 4MB phone photo has no business being in
    a config object that gets written on every keystroke. */
+window.__cut=on=>{
+  if(!on){A.logoCut=false;A.logo=A.logoRaw||A.logo;return draw()}
+  A.logoCut=true;
+  removeBg(A.logoRaw||A.logo,A.logoTol,d=>{A.logo=d;draw()});
+  draw();
+};
+window.__tol=v=>{
+  A.logoTol=parseInt(v)||60;
+  removeBg(A.logoRaw||A.logo,A.logoTol,d=>{A.logo=d;
+    const el=document.querySelector(".lp.on .lpimg img");if(el)el.src=d;
+    const out=document.querySelector(".logotools .strange b");if(out)out.textContent=A.logoTol;});
+};
 function takeLogo(file){
   if(!/^image\//.test(file.type))return;
   const img=new Image(),url=URL.createObjectURL(file);
@@ -146,7 +222,9 @@ function takeLogo(file){
     const cx=c.getContext("2d");
     cx.imageSmoothingQuality="high";
     cx.drawImage(img,0,0,c.width,c.height);
-    A.logo=c.toDataURL("image/png");
+    A.logoRaw=c.toDataURL("image/png");
+    A.logo=A.logoRaw;
+    A.logoCut=false;
     draw();
   };
   img.onerror=()=>URL.revokeObjectURL(url);
@@ -270,7 +348,23 @@ const STEPS=[
       </div>
       <input type="file" id="logoFile" accept="image/*" hidden>
     </div>
-    ${A.logo?`<button class="logoclear" id="logoClear">Remove the logo</button>`:""}
+    ${A.logo?`<div class="logotools">
+      <div class="logopreviews">
+        <div class="lp ${A.logoCut?"":"on"}" onclick="__cut(false)">
+          <span class="lpimg plain"><img src="${A.logoRaw||A.logo}" alt=""></span>
+          <em>As uploaded</em></div>
+        <div class="lp ${A.logoCut?"on":""}" onclick="__cut(true)">
+          <span class="lpimg checker"><img src="${A.logoCut?A.logo:(A.logoRaw||A.logo)}" alt=""></span>
+          <em>Background removed</em></div>
+      </div>
+      ${A.logoCut?`<label class="strange" style="margin-top:12px">
+        <span>How much</span>
+        <input type="range" min="20" max="140" value="${A.logoTol}"
+          oninput="__tol(this.value)"><b>${A.logoTol}</b></label>
+        <div class="hint" style="margin-top:6px">Nudge this if too much or too little came away.
+          It only clears colour connected to the edges, so white inside the artwork stays.</div>`:""}
+      <button class="logoclear" id="logoClear">Remove the logo entirely</button>
+    </div>`:""}
     <div class="field" style="margin-top:26px">
       <input type="text" id="f9" placeholder="Your slogan, or what you're known for" value="${esc(A.slogan)}">
     </div>
@@ -284,7 +378,8 @@ const STEPS=[
     ["dragleave","drop"].forEach(n=>drop.addEventListener(n,e=>{e.preventDefault();
       drop.classList.remove("over")}));
     drop.addEventListener("drop",e=>{const f=e.dataTransfer.files[0];if(f)takeLogo(f)});
-    if($("logoClear"))$("logoClear").onclick=e=>{e.stopPropagation();A.logo="";draw()};
+    if($("logoClear"))$("logoClear").onclick=e=>{e.stopPropagation();
+      A.logo="";A.logoRaw="";A.logoCut=false;draw()};
     $("f9").oninput=e=>{A.slogan=e.target.value;softUpdate()};
   },
   ok:()=>true},
@@ -1058,8 +1153,18 @@ const NAV=[["sale","Sale","sale",null],["office","Office","office",null],
 
 function boot(){
   $("building").style.display="none";$("setup").classList.add("hide");
+  /* Asking for a PIN the owner set four minutes ago, seconds after a launch
+     sequence, is a flat ending. Sign the person who built it straight in; the
+     lock is there for the next person to touch the terminal. */
+  if(AUTO_IN){
+    AUTO_IN=false;
+    const mgr=CFG.employees.find(e=>byId(CFG.groups,e.groupId)?.perms.includes("config"))
+      ||CFG.employees[0];
+    if(mgr){ME=mgr;$("lock").classList.remove("on");return startShell()}
+  }
   signIn();
 }
+let AUTO_IN=false;
 function signIn(){
   /* Reaching here without a configuration is a bug elsewhere, but a blank
      screen with four dots on it helps nobody diagnose it. */

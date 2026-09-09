@@ -1664,7 +1664,7 @@ body.tp-plain .grand .amt{font-size:40px}
 .lv-slogan{font-style:normal;font-size:14.5px;color:rgba(255,255,255,.62);margin-top:9px;
   text-align:center;max-width:32ch;line-height:1.5}
 .lv-rule{width:44px;height:2px;background:var(--a);border-radius:2px;margin:22px 0 20px;opacity:.8}
-.lv-steps{display:flex;flex-direction:column;gap:9px;align-items:flex-start;min-height:172px}
+.lv-steps{display:flex;flex-direction:column;gap:9px;align-items:flex-start;min-height:198px}
 .lv-steps span{display:flex;align-items:center;gap:10px;font-size:12.5px;letter-spacing:.09em;
   text-transform:uppercase;color:rgba(255,255,255,.5);opacity:0;transform:translateX(-8px)}
 .lv-steps span i{width:5px;height:5px;border-radius:50%;background:var(--a);flex:none;opacity:.9}
@@ -1673,3 +1673,23 @@ body.tp-plain .grand .amt{font-size:40px}
 .lv-steps span:last-child{color:#fff;font-weight:600}
 .lv-foot{margin-top:26px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
   color:rgba(255,255,255,.32)}
+
+/* ---- logo background removal ---- */
+.logotools{margin-top:14px}
+.logopreviews{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.lp{border:1.5px solid var(--paper-line);border-radius:10px;padding:12px;cursor:pointer;
+  background:rgba(255,255,255,.55);text-align:center;transition:all .16s var(--ease)}
+.lp:hover{border-color:var(--ink-soft)}
+.lp.on{border-color:var(--ink);background:#fff;box-shadow:0 3px 14px rgba(18,22,24,.09)}
+.lpimg{display:grid;place-items:center;height:86px;border-radius:7px;overflow:hidden;margin-bottom:9px}
+.lpimg img{max-width:100%;max-height:78px;object-fit:contain}
+.lpimg.plain{background:#fff}
+/* a checkerboard, so transparency reads as transparency */
+.lpimg.checker{background-color:#fff;
+  background-image:linear-gradient(45deg,#DDE0DA 25%,transparent 25%,transparent 75%,#DDE0DA 75%),
+    linear-gradient(45deg,#DDE0DA 25%,transparent 25%,transparent 75%,#DDE0DA 75%);
+  background-size:14px 14px;background-position:0 0,7px 7px}
+.lp em{display:block;font-style:normal;font-size:12.5px;color:var(--ink-soft)}
+.lp.on em{color:var(--ink);font-weight:500}
+.logotools .strange>span{width:76px}
+.logotools .strange input{accent-color:var(--ink)}
