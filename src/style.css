@@ -1693,3 +1693,66 @@ body.tp-plain .grand .amt{font-size:40px}
 .lp.on em{color:var(--ink);font-weight:500}
 .logotools .strange>span{width:76px}
 .logotools .strange input{accent-color:var(--ink)}
+
+/* ======================= CONFIGURATION, REGROUPED =======================
+   The same screens, in a sidebar grouped the way an owner thinks about them,
+   with a landing page that explains what each one is for. */
+#vConfig{padding:0;overflow:hidden}
+.cfgwrap{display:grid;grid-template-columns:236px minmax(0,1fr);height:100%;min-height:0}
+.cfgnav{border-right:1px solid var(--line);overflow-y:auto;padding:14px 12px 30px;
+  background:rgba(0,0,0,.14)}
+.cfghome{display:flex;align-items:center;gap:9px;width:100%;padding:10px 12px;border-radius:var(--r);
+  font-size:13.5px;color:var(--txt-2);transition:background .14s,color .14s}
+.cfghome svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round}
+.cfghome:hover{background:rgba(255,255,255,.05);color:var(--txt)}
+.cfghome.on{background:rgba(92,224,168,.12);color:var(--vfd)}
+.cfgsearch{margin:12px 0 6px}
+.cfgsearch input{width:100%;background:rgba(0,0,0,.28);border:1px solid var(--line);
+  color:var(--txt);padding:9px 12px;border-radius:var(--r);font-size:13px}
+.cfgsearch input:focus{outline:none;border-color:var(--vfd)}
+.cfggroup{margin-top:16px}
+.cfggh{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt-3);
+  padding:0 12px 6px}
+.cfgt{display:block;width:100%;padding:8px 12px;border-radius:var(--r);font-size:13.5px;
+  color:var(--txt-2);transition:background .14s,color .14s}
+.cfgt:hover{background:rgba(255,255,255,.05);color:var(--txt)}
+.cfgt.on{background:rgba(92,224,168,.12);color:var(--vfd);font-weight:500}
+.cfgnone{padding:16px 12px;font-size:13px;color:var(--txt-3)}
+
+.cfgmain{display:flex;flex-direction:column;min-height:0;min-width:0;padding:20px 26px 0}
+.cfghead{padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:4px}
+.cfghead h2{font-size:21px;font-weight:600;letter-spacing:-.02em}
+.cfghead p{font-size:13.5px;color:var(--txt-2);margin-top:4px}
+.cfgmain .edwrap{flex:1;overflow-y:auto;padding:16px 4px 30px 0;margin:0}
+
+/* ---- the landing page ---- */
+.cfghero{margin-bottom:30px}
+.cfghero h2{font-size:29px;font-weight:600;letter-spacing:-.025em;margin-bottom:8px}
+.cfghero p{font-size:14.5px;color:var(--txt-2);line-height:1.65;max-width:62ch}
+.cfgalert,.cfgok{display:flex;flex-direction:column;gap:3px;margin-top:18px;padding:14px 17px;
+  border-radius:var(--r2);border:1px solid var(--line);text-align:left;width:fit-content;min-width:280px}
+.cfgalert{cursor:pointer;transition:transform .14s var(--ease),border-color .16s}
+.cfgalert:hover{transform:translateY(-1px)}
+.cfgalert.bad{border-color:rgba(210,102,76,.5);background:rgba(210,102,76,.08)}
+.cfgalert.warn{border-color:rgba(224,178,85,.42);background:rgba(224,178,85,.07)}
+.cfgok{border-color:rgba(92,224,168,.3);background:rgba(92,224,168,.06)}
+.cfgalert b,.cfgok b{font-size:14px;font-weight:600}
+.cfgalert span,.cfgok span{font-size:12.5px;color:var(--txt-2)}
+
+.cfgsect{margin-bottom:26px}
+.cfgsh{display:flex;align-items:baseline;gap:11px;margin-bottom:11px;flex-wrap:wrap}
+.cfgsh b{font-size:15px;font-weight:600}
+.cfgsh em{font-style:normal;font-size:12.5px;color:var(--txt-3)}
+.cfgcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:9px}
+.cfgcard{text-align:left;border:1px solid var(--line);border-radius:var(--r2);padding:14px 16px;
+  background:rgba(255,255,255,.02);transition:border-color .16s,transform .14s var(--ease),background .16s}
+.cfgcard:hover{border-color:var(--vfd);transform:translateY(-2px);background:rgba(255,255,255,.04)}
+.cfgcard b{display:block;font-size:14px;font-weight:600;margin-bottom:5px}
+.cfgcard span{display:block;font-size:12.5px;color:var(--txt-2);line-height:1.55}
+
+@media(max-width:900px){
+  .cfgwrap{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+  .cfgnav{border-right:none;border-bottom:1px solid var(--line);max-height:38vh}
+  .cfgmain{padding:16px 18px 0}
+}

@@ -3,34 +3,89 @@
    every domain is its own form over its own table, and nothing here knows
    anything about the register's rendering.
    ========================================================================== */
-let TAB="pricebook";
+let TAB="home";
 /* Modules the owner switched on get their own tab, named for what they are.
    Everything else stays out of the way. */
-const BASE_TABS=[["import","Import"],["invoice","Invoice intake"],["pricebook","Pricebook"],
-  ["depts","Departments"],["menus","Menus"],["mods","Modifiers"],["mops","Payment"],
-  ["restricts","Restrictions"],["promos","Promotions"],["people","People"],
-  ["reasons","Reason codes"],["site","Site & tax"],["look","Appearance"],
-  ["hardware","Hardware & payments"],["health","Health"],["account","Account & data"],
-  ["ai","Ask for changes"]];
+/* Eighteen tabs in a scrolling strip meant nobody could find anything and
+   everybody felt behind. They're the same eighteen screens, grouped the way a
+   shop owner would think about them, with the ones most people never touch put
+   somewhere you have to go looking. */
+const CGROUPS=[
+ {n:"What you sell",d:"Products, prices and how they're grouped",
+  tabs:[["pricebook","Pricebook","Every product, its price and its cost"],
+        ["depts","Departments","The buckets that carry tax and drive reports"],
+        ["mods","Options","Sizes, milks, toppings — the questions asked at the till"],
+        ["promos","Deals","Mix-and-match and automatic discounts"]]},
+ {n:"Getting products in",d:"Load a pricebook or read it off an invoice",
+  tabs:[["import","Import a file","CSV, spreadsheet or NAXML from another system"],
+        ["invoice","Invoice intake","Photograph an invoice and pull costs off it"]]},
+ {n:"The register",d:"What the cashier sees and can do",
+  tabs:[["menus","Menu designer","Arrange the keys, sizes and colours"],
+        ["look","Appearance","Layout, colours, spacing"],
+        ["mops","Payment methods","Cash, card, EBT, gift cards"],
+        ["restricts","Age & time rules","ID checks and hours when things can't be sold"],
+        ["reasons","Reason codes","Why a void, a refund or a payout happened"]]},
+ {n:"Your people",d:"Who can do what",
+  tabs:[["people","Staff & permissions","Names, codes and what each role can reach"]]},
+ {n:"The business",d:"Tax, receipts and your data",
+  tabs:[["site","Store & tax","Name, address, tax rates, receipt"],
+        ["hardware","Hardware & payments","Printer, drawer, card reader"],
+        ["health","Health check","What's misconfigured, in plain language"],
+        ["account","Account & data","Export, delete, sign-in"]]},
+ {n:"Features",d:"Switch on what your trade needs",
+  tabs:[["modules","Add features","Everything available, on or off"]]},
+ {n:"Ask",d:"Describe a change and approve it",
+  tabs:[["ai","Ask for changes","Bulk edits in plain language"]]}
+];
 function ctabs(){
+  const g=CGROUPS.map(x=>({...x,tabs:x.tabs.slice()}));
+  /* Modules that are on get a home under Features, named for what they are. */
   const mods=Object.keys(MODULES).filter(modOn).map(k=>["mod_"+k,
-    k==="records"?(listsCfg().lists[0]?.n||MODULES[k].n):MODULES[k].n]);
-  const t=BASE_TABS.slice();
-  t.splice(3,0,...mods);
-  t.splice(t.length-1,0,["modules","Add features"]);
-  return t;
+    k==="records"?(listsCfg().lists[0]?.n||MODULES[k].n):MODULES[k].n,MODULES[k].what]);
+  const feat=g.find(x=>x.n==="Features");
+  feat.tabs=[...mods,...feat.tabs];
+  return g;
 }
+const allTabs=()=>ctabs().flatMap(g=>g.tabs.map(t=>({...{k:t[0],n:t[1],d:t[2]},group:g.n})));
 const W={};window.__w=W;
 
+let CQ="";
 function drawConfig(){
-  $("vConfig").innerHTML=`<div class="pane" style="display:flex;flex-direction:column;height:100%;padding-bottom:22px">
-    <h2>Configuration</h2>
-    <p class="lede">Products, accounting buckets and screen layouts are separate objects. Rearranging a menu never
-      touches a price, and changing a tax rate never touches a product.</p>
-    <div class="tabs" id="cfgTabs">${ctabs().map(([k,l])=>
-      `<button data-t="${k}" class="${TAB===k?"on":""}">${l}</button>`).join("")}</div>
-    <div class="edwrap" id="cfgBody"></div></div>`;
-  $("cfgTabs").querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{TAB=b.dataset.t;drawConfig()});
+  const groups=ctabs();
+  const q=CQ.trim().toLowerCase();
+  const match=t=>!q||t[1].toLowerCase().includes(q)||(t[2]||"").toLowerCase().includes(q);
+  const shown=groups.map(g=>({...g,tabs:g.tabs.filter(match)})).filter(g=>g.tabs.length);
+  const here=allTabs().find(t=>t.k===TAB);
+
+  $("vConfig").innerHTML=`
+    <div class="cfgwrap">
+      <aside class="cfgnav">
+        <button class="cfghome ${TAB==="home"?"on":""}" onclick="__w.tab('home')">
+          <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M6 10v10h12V10"/></svg>All settings</button>
+        <div class="cfgsearch">
+          <input id="cfgQ" placeholder="Search settings" value="${esc(CQ)}">
+        </div>
+        ${shown.map(g=>`<div class="cfggroup">
+          <div class="cfggh">${esc(g.n)}</div>
+          ${g.tabs.map(t=>`<button class="cfgt ${TAB===t[0]?"on":""}" onclick="__w.tab('${t[0]}')">
+            ${esc(t[1])}</button>`).join("")}
+        </div>`).join("")||`<div class="cfgnone">Nothing matches “${esc(CQ)}”.</div>`}
+      </aside>
+      <section class="cfgmain">
+        ${TAB==="home"?"":`<div class="cfghead">
+          <div><h2>${esc(here?here.n:"Configuration")}</h2>
+            <p>${esc(here?here.d:"")}</p></div>
+        </div>`}
+        <div class="edwrap" id="cfgBody"></div>
+      </section>
+    </div>`;
+
+  W.tab=k=>{TAB=k;CQ="";drawConfig()};
+  const s=$("cfgQ");
+  if(s){s.oninput=e=>{CQ=e.target.value;drawConfig();const n=$("cfgQ");
+    if(n){n.focus();n.setSelectionRange(n.value.length,n.value.length)}}}
+
+  if(TAB==="home")return cfgHome();
   const views={import:importView,invoice:invoiceView,pricebook:tPricebook,depts:tDepts,
     menus:tMenus,mods:tMods,mops:tMops,restricts:tRestricts,promos:tPromos,people:tPeople,
     reasons:tReasons,site:tSite,look:tLook,hardware:tHardware,health:tHealth,
@@ -38,7 +93,33 @@ function drawConfig(){
     mod_records:tRecords,mod_expiry:tExpiry,mod_staff:tStaff,
     mod_customers:tCustomers,mod_tips:tTips,mod_giftcards:tGiftcards,mod_waste:tWaste,
     mod_commission:tCommission,mod_jobs:tJobs,mod_service:tService};
-  (views[TAB]||tPricebook)();
+  (views[TAB]||cfgHome)();
+}
+
+/* The landing page. Everything at once, but arranged and explained, so the
+   first visit is orienting rather than a wall of nouns. */
+function cfgHome(){
+  const f=typeof health==="function"?health():[];
+  const bad=f.filter(x=>x.sev==="block").length,warn=f.filter(x=>x.sev==="warn").length;
+  $("cfgBody").innerHTML=`
+    <div class="cfghero">
+      <h2>Settings</h2>
+      <p>Everything about how this register behaves. Nothing here is permanent — change it,
+        see what happens, change it back.</p>
+      ${bad||warn?`<button class="cfgalert ${bad?"bad":"warn"}" onclick="__w.tab('health')">
+        <b>${bad?`${bad} thing${bad===1?"":"s"} would break a sale`
+          :`${warn} thing${warn===1?"":"s"} worth fixing`}</b>
+        <span>Open the health check</span></button>`
+        :`<div class="cfgok"><b>Everything checks out</b>
+          <span>No misconfiguration found</span></div>`}
+    </div>
+    ${ctabs().map(g=>`
+      <div class="cfgsect">
+        <div class="cfgsh"><b>${esc(g.n)}</b><em>${esc(g.d)}</em></div>
+        <div class="cfgcards">${g.tabs.map(t=>`
+          <button class="cfgcard" onclick="__w.tab('${t[0]}')">
+            <b>${esc(t[1])}</b><span>${esc(t[2]||"")}</span></button>`).join("")}</div>
+      </div>`).join("")}`;
 }
 
 /* Everything on offer, on or off, describable. Nothing here is generated — each
