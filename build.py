@@ -109,6 +109,15 @@ checks = [
     ("menu experience",           lambda h: "function mnReviewScreen" in h and "function mnDoneScreen" in h),
     ("five shells",               lambda h: all(f"function draw{n}Shell" in h for n in ["Menu","Commerce","Board","Kiosk"])),
 ]
+# Every register must have a preview of its own. Falling back to another
+# register's mock is what made five different shells look identical.
+shells = re.findall(r'shell:"(\w+)"', html)
+shots = re.search(r'const shots = \{([\s\S]*?)\n  \};', html)
+missing_shots = [s for s in set(shells) if shots and f"\n    {s}:" not in shots.group(1)]
+if missing_shots:
+    raise SystemExit("BUILD FAILED — no chooser preview for: " + ", ".join(missing_shots))
+print("  every register has a preview")
+
 bad = [n for n, f in checks if not f(html)]
 if bad:
     raise SystemExit("BUILD FAILED — missing: " + ", ".join(bad))
