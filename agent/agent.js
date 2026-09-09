@@ -105,6 +105,91 @@ function sendWindowsShare(buf) {
 }
 const send = buf => conf.mode === "share" ? sendWindowsShare(buf) : sendNetwork(buf);
 
+/* ------------------------------ tank console ------------------------------
+   A tank gauge speaks RS-232 and nothing else. The usual answer is a $100
+   serial-to-Ethernet converter, but if there's already a PC near the console a
+   $15 USB-to-serial cable does the same job through this agent.
+
+   No npm package for it, on purpose. Windows lets a COM port be opened as a
+   file once `mode` has set the line parameters, and Linux does the same through
+   /dev after `stty`. That keeps this installable on a shop counter with nothing
+   but Node. */
+function serialAsk(cfg, command) {
+  return new Promise((resolve, reject) => {
+    const port = cfg.port || (process.platform === "win32" ? "COM1" : "/dev/ttyUSB0");
+    const baud = cfg.baud || 9600;
+    const win = process.platform === "win32";
+    const path = win ? "\\\\.\\" + port.replace(/^\\\\\.\\/, "") : port;
+
+    /* Line settings first, or the console answers in gibberish. */
+    const setup = win
+      ? ["cmd", ["/c", `mode ${port}: BAUD=${baud} PARITY=${cfg.parity || "n"} ` +
+          `DATA=${cfg.bits || 8} STOP=${cfg.stop || 1} to=off dtr=on rts=on`]]
+      : ["stty", ["-F", port, String(baud), "cs8", "-cstopb", "-parenb", "raw", "-echo"]];
+
+    execFile(setup[0], setup[1], err => {
+      if (err) return reject(new Error(
+        `Couldn't open ${port}. Check the cable is plugged in and nothing else is using it.`));
+
+      let out = "", done = false;
+      let fd;
+      try { fd = fs.openSync(path, "r+"); }
+      catch (e) { return reject(new Error(`${port} wouldn't open — ${e.code || e.message}`)); }
+
+      const finish = (err2) => {
+        if (done) return;
+        done = true;
+        clearInterval(tick);
+        clearTimeout(cap);
+        try { fs.closeSync(fd); } catch (e) {}
+        err2 ? reject(err2) : resolve(out);
+      };
+
+      try { fs.writeSync(fd, Buffer.from("\x01" + command + "\r", "latin1")); }
+      catch (e) { return finish(new Error("Couldn't write to " + port)); }
+
+      /* Poll rather than stream: a plain file descriptor on a COM port has no
+         readable event, and the console answers within a second or two. */
+      const buf = Buffer.alloc(4096);
+      let quiet = 0;
+      const tick = setInterval(() => {
+        let n = 0;
+        try { n = fs.readSync(fd, buf, 0, buf.length, null); } catch (e) { n = 0; }
+        if (n > 0) { out += buf.toString("latin1", 0, n); quiet = 0; }
+        else quiet++;
+        /* ETX ends it; otherwise a second of silence after something arrived. */
+        if (out.includes("\x03") || (out.length > 40 && quiet > 10)) finish();
+      }, 100);
+
+      const cap = setTimeout(() => finish(out
+        ? null
+        : new Error("The console didn't answer. Wrong port, wrong baud rate, or it's the printer " +
+                    "port rather than the computer port.")), 12000);
+    });
+  });
+}
+
+/* Which COM ports exist, so nobody has to guess. */
+function listPorts(cb) {
+  if (process.platform === "win32") {
+    execFile("cmd", ["/c", "wmic path Win32_SerialPort get DeviceID,Description"], (e, out) => {
+      if (e || !out) return execFile("mode", [], (e2, o2) =>
+        cb((String(o2 || "").match(/COM\d+/g) || []).map(p => ({ port: p, label: "" }))));
+      const rows = String(out).split(/\r?\n/).slice(1)
+        .map(l => l.trim()).filter(Boolean)
+        .map(l => { const m = /^(COM\d+)\s+(.*)$/.exec(l) || /(.*?)\s+(COM\d+)$/.exec(l);
+          return m ? { port: m[1].startsWith("COM") ? m[1] : m[2],
+                       label: (m[1].startsWith("COM") ? m[2] : m[1]).trim() } : null; })
+        .filter(Boolean);
+      cb(rows);
+    });
+  } else {
+    fs.readdir("/dev", (e, files) => cb((files || [])
+      .filter(f => /^(ttyUSB|ttyS|ttyACM)\d+$/.test(f))
+      .map(f => ({ port: "/dev/" + f, label: "" }))));
+  }
+}
+
 /* ------------------------------ discovery -------------------------------- */
 /* Sweep the local subnet for anything answering on 9100. Most counter printers
    are on a static address nobody wrote down. */
@@ -151,6 +236,9 @@ http.createServer((req, res) => {
     return json(res, 200, { ok: true, agent: "aipos-station", version: 1,
       printer: conf.printer || conf.share || null, mode: conf.mode, ready: !!(conf.printer || conf.share) });
 
+  if (url.pathname === "/ports")
+    return listPorts(list => json(res, 200, { ports: list }));
+
   if (url.pathname === "/discover") {
     const base = url.searchParams.get("base") || localBase();
     if (!base) return json(res, 400, { error: "Couldn't work out the local network" });
@@ -174,6 +262,12 @@ http.createServer((req, res) => {
         await send(Buffer.concat([CMD.init, CMD.kick]));
         return json(res, 200, { ok: true });
       }
+      if (url.pathname === "/tank") {
+        try {
+          const raw = await serialAsk(data, data.command || "I20100");
+          return json(res, 200, { ok: true, raw });
+        } catch (e) { return json(res, 200, { ok: false, error: e.message }); }
+      }
       if (url.pathname === "/test") {
         await send(render({ kick: false, lines: [
           { t: "title", v: "TEST" }, { t: "center", v: "AI POS station agent" }, { t: "rule" },
@@ -188,6 +282,7 @@ http.createServer((req, res) => {
   });
 }).listen(PORT, "127.0.0.1", () => {
   console.log(`AI POS station agent on http://127.0.0.1:${PORT}`);
+  console.log("  tank console: attach a USB-to-serial cable and set the port in the terminal");
   console.log(conf.printer || conf.share
     ? `  printer: ${conf.printer || conf.share} (${conf.mode})`
     : `  no printer set yet — pair one from Config → Hardware in the terminal`);

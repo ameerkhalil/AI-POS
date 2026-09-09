@@ -29,6 +29,12 @@ const MODULES = {
     fits: /grocer|market|butcher|fish|deli|bakery|convenience|cheese|produce|pharmac|health food|farm/i,
     icon: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18M12 15v3"/>'
   },
+  tanks: {
+    n: "Tank gauge",
+    what: "Live tank levels, water alarms and deliveries read straight off the Veeder-Root console.",
+    fits: /gas|fuel|truck stop|convenience|petrol|forecourt/i,
+    icon: '<path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M5 12h14"/>'
+  },
   staff: {
     n: "Staff performance",
     what: "Who rang what, average basket per person, and which upsells actually land.",

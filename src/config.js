@@ -25,7 +25,8 @@ const CGROUPS=[
         ["mops","Payment methods","Cash, card, EBT, gift cards"],
         ["restricts","Age & time rules","ID checks and hours when things can't be sold",
           ()=>CFG.caps.includes("age")||CFG.restricts.length>0],
-        ["reasons","Reason codes","Why a void, a refund or a payout happened"]]},
+        ["reasons","Reason codes","Why a void, a refund or a payout happened"],
+        ["journal","Electronic journal","Search every sale this store has ever taken"]]},
  {n:"Your people",d:"Who can do what",
   tabs:[["people","Staff & permissions","Names, codes and what each role can reach"]]},
  {n:"The business",d:"Tax, receipts and your data",
@@ -123,7 +124,8 @@ function drawBody(){
     account:tAccount,ai:tAI,modules:tModules,retention:tRetention,
     mod_records:tRecords,mod_expiry:tExpiry,mod_staff:tStaff,
     mod_customers:tCustomers,mod_tips:tTips,mod_giftcards:tGiftcards,mod_waste:tWaste,
-    mod_commission:tCommission,mod_jobs:tJobs,mod_service:tService};
+    mod_commission:tCommission,mod_jobs:tJobs,mod_service:tService,mod_tanks:tTanks,
+    journal:tJournal};
   (views[TAB]||cfgHome)();
 }
 

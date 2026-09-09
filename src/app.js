@@ -1525,12 +1525,66 @@ function toastCard(el,msg){
 }
 function ageGate(p,ex){
   const r=byId(CFG.restricts,p.restrictId);
-  if(r?.minAge)return ask({t:"Check ID",p:`${p.n} is ${r.minAge}+. ${r.idScan?"Scan or confirm":"Confirm"} the date of birth on a valid, unexpired ID.`,
-    yes:"Verified",no:"Refuse sale",done:()=>add(p,{...ex,note:[ex.note,`ID verified · ${r.minAge}+`].filter(Boolean).join(" · ")})});
-  add(p,ex);
+  if(!r?.minAge)return add(p,ex);
+
+  const el=veil(`<div class="card"><h3>Check ID</h3>
+    <p><b>${esc(p.n)}</b> is ${r.minAge}+. Scan the barcode on the back of the licence, or check the
+      date of birth by eye and confirm.</p>
+    <div class="agescan" id="ageScan">
+      <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/>
+        <path d="M6 9v6M9 9v6M12 9v4M15 9v6M18 9v6"/></svg>
+      <span>Waiting for a scan</span>
+    </div>
+    <div class="row"><button class="danger" id="agn">Refuse the sale</button>
+      <button class="ok" id="agy">Checked by eye</button></div></div>`);
+
+  const box=el.querySelector("#ageScan");
+  const close=()=>{AGE_GATE=null;el.remove()};
+
+  /* A scan beats a button, so the gate records which one happened. */
+  AGE_GATE={
+    scanned(lic){
+      if(lic.expired){
+        box.className="agescan bad";
+        box.innerHTML=`<b>Expired licence</b>
+          <span>It expired ${lic.expiresDate.toLocaleDateString()}. That isn't valid ID —
+            refuse or ask for another.</span>`;
+        return;
+      }
+      if(lic.age<r.minAge){
+        box.className="agescan bad";
+        box.innerHTML=`<b>${lic.age} years old</b>
+          <span>Under ${r.minAge}. Refuse the sale.</span>`;
+        SHIFT.exceptions.push({at:new Date(),by:ME.n,
+          what:`Refused ${p.n} — age ${lic.age}`,reason:"Underage"});
+        return;
+      }
+      box.className="agescan ok";
+      box.innerHTML=`<b>${lic.age} years old — clear</b>
+        <span>Born ${lic.dobDate.toLocaleDateString()}${
+          lic.state?" · "+esc(lic.state):""}. Licence valid.</span>`;
+      setTimeout(()=>{
+        close();
+        add(p,{...ex,note:[ex.note,`ID scanned · ${lic.age}y · ${r.minAge}+`].filter(Boolean).join(" · "),
+          idCheck:{by:"scan",age:lic.age,at:new Date().toISOString()}});
+      },700);
+    }
+  };
+
+  el.querySelector("#agn").onclick=()=>{
+    SHIFT.exceptions.push({at:new Date(),by:ME.n,what:`Refused ${p.n}`,reason:"ID refused"});
+    close();
+  };
+  el.querySelector("#agy").onclick=()=>{
+    close();
+    add(p,{...ex,note:[ex.note,`ID checked by eye · ${r.minAge}+`].filter(Boolean).join(" · "),
+      idCheck:{by:"eye",at:new Date().toISOString()}});
+  };
+  el.onclick=e=>{if(e.target===el)close()};
 }
 function add(p,ex={}){
   const line={lid:uid(),pluId:p.id,n:p.n,price:ex.price??p.price,q:1,deptId:p.deptId,
+    idCheck:ex.idCheck||null,
     taxId:byId(CFG.depts,p.deptId)?.taxId,ebt:p.ebt,note:ex.note||null,mods:ex.mods||null,disc:0};
   const m=CART.find(c=>c.pluId===p.id&&!c.note&&!c.mods&&!c.disc&&!ex.note&&!ex.mods);
   if(m){m.q++;FRESH=m.lid}else{CART.push(line);FRESH=line.lid}
@@ -2011,6 +2065,11 @@ function receipt(s){
       :"Printing failed.")};
 }
 function wedge(){
+  /* A licence sends hundreds of characters at once; a barcode sends a dozen.
+     Both arrive as keystrokes, so both listeners run and each ignores what
+     isn't its shape. */
+  if(typeof licenceWedge==="function")
+    document.addEventListener("keydown",licenceWedge);
   let buf="",last=0;
   document.addEventListener("keydown",e=>{
     if(VIEW!=="sale"||document.querySelector(".veil"))return;

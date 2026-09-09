@@ -431,3 +431,384 @@ function tService(){
     <div class="note">A tab lives on this terminal until it's settled. On a second register it won't
       appear — one till per section is the usual arrangement until multi-terminal lands.</div>`;
 }
+
+
+/* =============================== TANK GAUGE ===============================
+   Reads a Veeder-Root TLS console over the store's own network. Nothing here
+   needs a licence or a certification — the protocol has been public for
+   decades, which makes it the one piece of forecourt data reachable today.
+
+   What it deliberately does not do: guess. A number that couldn't be read with
+   confidence is shown as unknown, because a wrong reading on a fuel report
+   sends someone to pull a tank for no reason. */
+let TANK_STATE = null;
+
+async function tTanks(){
+  $("cfgBody").innerHTML=`<p class="lede">Reading the console…</p>`;
+  try{ TANK_STATE=await api("/api/tanks?store="+STORE_ID); }
+  catch(e){ $("cfgBody").innerHTML=`<div class="finding"><b>Couldn't load this</b>
+    <span>${esc(e.message)}</span></div>`; return; }
+  drawTanks();
+}
+
+function drawTanks(){
+  const g=TANK_STATE.gauge||{}, tanks=TANK_STATE.tanks||[], dels=TANK_STATE.deliveries||[];
+  const alarms=TANK_STATE.alarms||[];
+
+  W.gSet=(k,v)=>{g[k]=v};
+  W.gSave=async()=>{
+    try{
+      await api("/api/tanks?store="+STORE_ID,{method:"PUT",
+        body:{store:STORE_ID,host:g.host,port:g.port,every:g.every}});
+      toast(g.host?`Gauge set to <b>${esc(g.host)}</b>.`:"Gauge address cleared.");
+      tTanks();
+    }catch(e){ toast(e.message,true) }
+  };
+  /* The serial route: the agent holds the cable, the server does the parsing. */
+  W.gSerial=async()=>{
+    const out=$("gProbeOut");
+    if(!STATION){out.innerHTML=`<div class="verify"><div class="vhead">No station agent</div>
+      <p>This route needs the agent running on the PC that has the cable. Start it with
+        <span class="num">node agent.js</span> in the agent folder.</p></div>`;return}
+    const port=$("gPort")?$("gPort").value:"";
+    out.innerHTML=`<div class="note" style="margin-top:9px">Asking the console on ${esc(port)}…</div>`;
+    try{
+      const r=await agent("/tank",{port,baud:+($("gBaud")?$("gBaud").value:9600)||9600,
+        command:"I20100"});
+      if(!r.ok){out.innerHTML=`<div class="verify"><div class="vhead">No answer</div>
+        <p>${esc(r.error)}</p></div>`;return}
+      const saved=await api("/api/tanks/ingest?store="+STORE_ID,{method:"POST",
+        body:{store:STORE_ID,raw:r.raw}});
+      out.innerHTML=`<div class="verify ok2"><div class="vhead">Read ${saved.tanks} tank${
+        saved.tanks===1?"":"s"}</div><p>Format recognised as <b>${esc(saved.format)}</b>${
+        saved.alarms?`, with ${saved.alarms} alarm${saved.alarms===1?"":"s"} reported`:""}.</p></div>`;
+      tTanks();
+    }catch(e){
+      out.innerHTML=`<div class="verify"><div class="vhead">Couldn't read it</div>
+        <p>${esc(e.message)}</p>
+        <pre class="cmd">${esc((e.raw||"").slice(0,400))}</pre></div>`;
+    }
+  };
+  W.gPorts=async()=>{
+    const sel=$("gPort");
+    try{
+      const r=await agent("/ports");
+      if(!r.ports.length)return toast("No serial ports found on that machine.",true);
+      sel.innerHTML=r.ports.map(p=>`<option value="${esc(p.port)}">${esc(p.port)}${
+        p.label?" — "+esc(p.label):""}</option>`).join("");
+      toast(`Found <b>${r.ports.length}</b> serial port${r.ports.length===1?"":"s"}.`);
+    }catch(e){ toast("The station agent isn't running on this machine.",true) }
+  };
+  /* No port, no cable, no card — photograph the paper. Every one of these
+     consoles prints, so this works on all twenty sites today while the wiring
+     question is being answered, and it stays useful afterwards as the way to
+     catch a report nobody was there to receive. */
+  W.gShoot=()=>$("tankShot").click();
+  W.gPhoto=async file=>{
+    if(!file)return;
+    const out=$("gProbeOut");
+    out.innerHTML=`<div class="note" style="margin-top:9px">Reading the printout…</div>`;
+    try{
+      const b64=await new Promise((res,rej)=>{
+        const r=new FileReader();
+        r.onload=()=>res(String(r.result).split(",")[1]);
+        r.onerror=()=>rej(new Error("Couldn't read that image"));
+        r.readAsDataURL(file);
+      });
+      /* The model transcribes; it does not interpret. Everything it returns is
+         run through the same parser the serial route uses, so a photographed
+         report and a cabled one end up as identical records. */
+      const r=await callAI(null,{max_tokens:1800,kind:"tank-photo",messages:[{role:"user",content:[
+        {type:"image",source:{type:"base64",media_type:file.type||"image/jpeg",data:b64}},
+        {type:"text",text:`This is a printout from a fuel tank monitoring console.
+
+Transcribe it EXACTLY as printed, line for line. Do not correct, reformat, summarise or convert
+anything. Keep the original labels, the equals signs, the units and the tank headings as they
+appear. Include the alarm lines and the report headings.
+
+If a character is unreadable, write it as ? rather than guessing — a wrong digit on a fuel report
+sends somebody to pull a tank for nothing.
+
+Return ONLY valid JSON, no prose or fences:
+{"text":string,"unclear":number}
+
+"text" is the transcription with real line breaks. "unclear" is how many characters you couldn't
+read with confidence.`}]}]});
+
+      if(!r.text||!r.text.trim())throw new Error("Nothing could be read from that photo.");
+      const saved=await api("/api/tanks/ingest?store="+STORE_ID,{method:"POST",
+        body:{store:STORE_ID,raw:r.text,source:"photo"}});
+      out.innerHTML=`<div class="verify ok2">
+        <div class="vhead">Read ${saved.tanks} tank${saved.tanks===1?"":"s"} off the photo</div>
+        <p>Recognised as <b>${esc(saved.format)}</b> format${
+          saved.alarms?`, with ${saved.alarms} alarm${saved.alarms===1?"":"s"}`:""}.${
+          r.unclear>0?` <b>${r.unclear} character${r.unclear===1?"":"s"} were unclear</b> — check the
+          numbers below against the paper before trusting them.`:""}</p></div>`;
+      tTanks();
+    }catch(e){
+      out.innerHTML=`<div class="verify"><div class="vhead">Couldn't read it</div>
+        <p>${esc(e.message)}</p>
+        <p style="margin-top:8px">Thermal paper photographs badly in low light. Lay it flat, get the
+          whole report in frame, and avoid shadows across the columns.</p></div>`;
+    }
+  };
+  W.gProbe=async()=>{
+    const out=$("gProbeOut");
+    out.innerHTML=`<div class="note" style="margin-top:9px">Trying ${esc(g.host||"—")}…</div>`;
+    try{
+      const r=await api("/api/tanks/probe?store="+STORE_ID,{method:"POST",
+        body:{store:STORE_ID,host:g.host,port:g.port}});
+      out.innerHTML=r.ok
+        ? `<div class="verify ok2"><div class="vhead">The console answered</div>
+           <pre class="cmd">${esc(r.reply)}</pre></div>`
+        : `<div class="verify"><div class="vhead">No answer</div><p>${esc(r.error)}</p>
+           <p style="margin-top:8px">Common causes: the console isn't on the network, the serial
+             converter is on a different port, or another program is holding the session open —
+             these consoles allow one at a time.</p></div>`;
+    }catch(e){ out.innerHTML=`<div class="note" style="border-color:var(--void)">${esc(e.message)}</div>` }
+  };
+  W.gRead=async()=>{
+    toast("Reading the console…");
+    try{
+      const r=await api("/api/tanks/read?store="+STORE_ID,{method:"POST",body:{store:STORE_ID}});
+      if(r.error)return toast(esc(r.error),true);
+      toast(`Read <b>${r.tanks.length}</b> tank${r.tanks.length===1?"":"s"}.`);
+      tTanks();
+    }catch(e){ toast(e.message,true) }
+  };
+
+  /* Ullage is what's left to fill, so capacity is what's in it plus what isn't. */
+  const pct=t=>{
+    if(t.volume==null||t.ullage==null)return null;
+    const cap=t.volume+t.ullage;
+    return cap>0?Math.round(t.volume/cap*100):null;
+  };
+  const WATER_WARN=1.0, WATER_BAD=2.0, LOW=25;
+
+  $("cfgBody").innerHTML=`
+    <p class="lede">Your tank console, read directly over the store network. It doesn't go through
+      the register, needs no licence, and works with a Gilbarco EMC or a Veeder-Root TLS — the
+      format is detected from what the console prints.</p>
+
+    ${!g.host?`<div class="verify"><div class="vhead">No console address set</div>
+      <p>A TLS-450 answers on its own network port. A TLS-350 needs a serial-to-Ethernet converter,
+        usually set to port 10001. Whoever services your tanks will know the address.</p></div>`:""}
+
+    <div class="frm">
+      <label>Console address<input value="${esc(g.host||"")}" placeholder="192.168.1.60"
+        oninput="__w.gSet('host',this.value)"></label>
+      <label>Port<input class="n" value="${g.port||10001}" oninput="__w.gSet('port',this.value)"></label>
+      <label>Read every<input class="n" value="${g.every??15}"
+        oninput="__w.gSet('every',this.value)" placeholder="minutes"></label>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+      <button class="mini" style="margin:0" onclick="__w.gSave()">Save</button>
+      <button class="mini" style="margin:0" onclick="__w.gProbe()">Test the connection</button>
+      ${g.host?`<button class="mini" style="margin:0" onclick="__w.gRead()">Read now</button>`:""}
+    </div>
+    <div id="gProbeOut"></div>
+
+    <div class="sect">No cable? Photograph the printout</div>
+    <p class="lede" style="margin:0 0 12px">Every one of these consoles prints. Press its report
+      button, photograph the paper, and the reading lands here — same records, same alarms, same
+      history as a cabled console. No card, no converter, works on every site today.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="mini" style="margin:0" onclick="__w.gShoot()">Photograph a printout</button>
+    </div>
+    <input type="file" id="tankShot" accept="image/*" capture="environment" hidden
+      onchange="__w.gPhoto(this.files[0])">
+    <div class="note">The transcription is checked against the same parser the cable uses, and
+      anything the reader wasn't sure of is flagged rather than quietly corrected.</div>
+
+    <div class="sect">No network port on the console?</div>
+    <p class="lede" style="margin:0 0 12px">Older consoles only speak serial. Rather than buying a
+      converter, a USB-to-serial cable into any PC near it works — this reads the console through
+      the station agent already running on that machine.</p>
+    <div class="frm">
+      <label>Serial port<select id="gPort"><option value="">Press Find ports…</option></select></label>
+      <label>Baud<select id="gBaud">${[9600,19200,4800,38400,2400].map(b=>
+        `<option ${b===9600?"selected":""}>${b}</option>`).join("")}</select></label>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+      <button class="mini" style="margin:0" onclick="__w.gPorts()">Find ports</button>
+      <button class="mini" style="margin:0" onclick="__w.gSerial()">Read over serial</button>
+    </div>
+    <div class="note">Most consoles run at 9600, no parity, 8 data bits, 1 stop bit. If it doesn't
+      answer, the cable may be on the printer port rather than the computer port — they look
+      identical and only one will talk back.</div>
+
+    ${alarms.length?`
+      <div class="sect">The console is reporting</div>
+      <div class="alarmlist">${alarms.map(a=>`
+        <div class="alarm ${/ALARM/i.test(a.text)?"bad":"warn"}">
+          <b>Tank ${a.tank}</b>
+          <span>${esc(a.text)}</span>
+          <em>since ${esc(String(a.first_at||"").slice(0,16))}</em>
+        </div>`).join("")}</div>
+      <div class="note">These are the console's own words, not our interpretation. They stay here
+        until the console stops reporting them.</div>`:""}
+
+    ${tanks.length?`
+      <div class="sect">Tanks · read ${esc(String(tanks[0].at||"").slice(0,16))}</div>
+      <div class="tankgrid">
+        ${tanks.map(t=>{
+          const p=pct(t);
+          const water=t.water;
+          const flagged=alarms.filter(a=>a.tank===t.tank);
+          const state=flagged.some(a=>/ALARM/i.test(a.text))?"bad"
+            :flagged.length?"warn"
+            :water!=null&&water>=WATER_BAD?"bad"
+            :water!=null&&water>=WATER_WARN?"warn"
+            :p!=null&&p<=LOW?"low":"";
+          return `<div class="tank ${state}">
+            <div class="tkh"><b>${esc(t.product||("Tank "+t.tank))}</b><em>Tank ${t.tank}</em></div>
+            <div class="tkbar"><span style="height:${p==null?0:p}%"></span></div>
+            <div class="tkbig">${t.volume==null?"—":Math.round(t.volume).toLocaleString()}
+              <em>gal</em></div>
+            <div class="tkrows">
+              <div><span>Full</span><b>${p==null?"unknown":p+"%"}</b></div>
+              <div><span>Room left</span><b>${t.ullage==null?"unknown"
+                :Math.round(t.ullage).toLocaleString()+" gal"}</b></div>
+              <div><span>Water</span><b class="${state==="bad"?"bad":state==="warn"?"warn":""}">${
+                water==null?"unknown":water.toFixed(2)+" in"}</b></div>
+              <div><span>Temperature</span><b>${t.temp==null?"unknown":t.temp.toFixed(1)+"°"}</b></div>
+            </div>
+            ${flagged.length
+              ? flagged.map(a=>`<div class="tkflag ${/ALARM/i.test(a.text)?"bad":"warn"}">${esc(a.text)}</div>`).join("")
+              : state==="bad"?`<div class="tkflag bad">Water above two inches</div>`
+              : state==="warn"?`<div class="tkflag warn">Water building up</div>`
+              : state==="low"?`<div class="tkflag low">Getting low</div>`:""}
+          </div>`;
+        }).join("")}
+      </div>`
+    :g.host?`<div class="note" style="margin-top:16px">Nothing read yet. Press <b>Read now</b>, or wait
+      for the next scheduled read.</div>`:""}
+
+    ${dels.length?`
+      <div class="sect">Deliveries</div>
+      <table class="tbl"><thead><tr><th>Tank</th><th>Started</th><th>Before</th><th>After</th>
+        <th>Delivered</th></tr></thead><tbody>
+        ${dels.map(d=>`<tr>
+          <td style="padding-left:9px">${d.tank}</td>
+          <td style="padding-left:9px;color:var(--txt-2)">${esc(d.started||"—")}</td>
+          <td style="padding-left:9px" class="num">${d.start_vol==null?"—":Math.round(d.start_vol).toLocaleString()}</td>
+          <td style="padding-left:9px" class="num">${d.end_vol==null?"—":Math.round(d.end_vol).toLocaleString()}</td>
+          <td style="padding-left:9px" class="num" style="color:var(--vfd)">${
+            d.gallons==null?"—":Math.round(d.gallons).toLocaleString()+" gal"}</td></tr>`).join("")}
+      </tbody></table>
+      <div class="note">Delivered is the difference the console measured, which is what to check a
+        BOL against. A gap of more than a percent or so is worth raising with the carrier.</div>`:""}
+
+    <div class="note">Readings are stored each time, so a level that drops overnight with no sale
+      shows up as a trend rather than a surprise. Anything the console reported unclearly is shown
+      as unknown rather than guessed at.</div>`;
+}
+
+
+/* ========================== THE ELECTRONIC JOURNAL ==========================
+   Every sale ever taken, searchable. The records were always being written; this
+   is the screen that makes them findable when somebody disputes a charge from
+   three weeks ago, or a card company sends a chargeback for an amount and a date
+   and nothing else. */
+let JRN = { from:"", to:"", cashier:"", amount:"", text:"", returns:false, data:null, open:null };
+
+async function tJournal(){
+  if(!JRN.data) await jrnLoad();
+  drawJournal();
+}
+
+async function jrnLoad(){
+  const q=new URLSearchParams({store:STORE_ID});
+  ["from","to","cashier","amount","text"].forEach(k=>{ if(JRN[k]) q.set(k,JRN[k]) });
+  if(JRN.returns) q.set("returns","1");
+  try{ JRN.data=await api("/api/journal?"+q); }
+  catch(e){ JRN.data={sales:[],count:0,sum:0,cashiers:[],error:e.message}; }
+}
+
+function drawJournal(){
+  const d=JRN.data||{sales:[],cashiers:[]};
+
+  W.jSet=(k,v)=>{JRN[k]=v};
+  W.jRun=async()=>{ JRN.open=null; await jrnLoad(); drawJournal(); };
+  W.jClear=async()=>{
+    Object.assign(JRN,{from:"",to:"",cashier:"",amount:"",text:"",returns:false,open:null});
+    await jrnLoad(); drawJournal();
+  };
+  W.jOpen=i=>{ JRN.open=JRN.open===i?null:i; drawJournal(); };
+  W.jPrint=i=>{
+    const s=d.sales[i];
+    /* Reprints are marked as reprints. An unmarked second copy of a receipt is
+       how a refund gets claimed twice. */
+    receipt({...s,n:s.seq,at:new Date(s.at),reprint:true});
+  };
+
+  const when=s=>{
+    const dt=new Date(s.at.replace(" ","T")+(s.at.includes("Z")?"":"Z"));
+    return isNaN(dt)?s.at:dt.toLocaleString([], {month:"short",day:"numeric",
+      hour:"2-digit",minute:"2-digit"});
+  };
+
+  $("cfgBody").innerHTML=`
+    <p class="lede">Every sale this store has taken. Search by day, by amount, by who rang it, or by
+      anything printed on the receipt — a product name, a tender, the last four digits of a card.</p>
+
+    <div class="frm jfilters">
+      <label>From<input type="date" value="${esc(JRN.from)}" oninput="__w.jSet('from',this.value)"></label>
+      <label>To<input type="date" value="${esc(JRN.to)}" oninput="__w.jSet('to',this.value)"></label>
+      <label>Rung by<select onchange="__w.jSet('cashier',this.value)">
+        <option value="">Anyone</option>
+        ${(d.cashiers||[]).map(c=>`<option ${c===JRN.cashier?"selected":""}>${esc(c)}</option>`).join("")}
+      </select></label>
+      <label>Amount<input class="n" value="${esc(JRN.amount)}" placeholder="47.83"
+        oninput="__w.jSet('amount',this.value)"></label>
+    </div>
+    <div class="frm">
+      <label style="flex:2">Anything on the receipt<input value="${esc(JRN.text)}"
+        placeholder="a product, a card's last four, a reason" oninput="__w.jSet('text',this.value)"></label>
+      <label class="chk" style="align-self:end;padding-bottom:11px">
+        <input type="checkbox" ${JRN.returns?"checked":""}
+          onchange="__w.jSet('returns',this.checked)"> Refunds only</label>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+      <button class="mini" style="margin:0" onclick="__w.jRun()">Search</button>
+      <button class="mini" style="margin:0" onclick="__w.jClear()">Clear</button>
+    </div>
+
+    ${d.error?`<div class="finding"><b>Couldn't search</b><span>${esc(d.error)}</span></div>`:`
+      <div class="jsum">
+        <span><b>${d.count}</b> sale${d.count===1?"":"s"}</span>
+        <span>totalling <b>${money(d.sum||0)}</b></span>
+        ${d.count>200?`<em>showing the most recent 200</em>`:""}
+      </div>
+
+      ${d.sales.length?`<div class="jlist">
+        ${d.sales.map((s,i)=>`
+          <div class="jrow ${s.ret?"ret":""} ${JRN.open===i?"open":""}">
+            <button class="jhead" onclick="__w.jOpen(${i})">
+              <span class="jseq">#${s.seq}</span>
+              <span class="jwhen">${esc(when(s))}</span>
+              <span class="jwho">${esc(s.cashier||"—")}</span>
+              <span class="jwhat">${s.lines.length} item${s.lines.length===1?"":"s"}${
+                s.ret?" · refund":""}</span>
+              <span class="jamt">${s.ret?"−":""}${money(Math.abs(s.total))}</span>
+            </button>
+            ${JRN.open===i?`<div class="jdetail">
+              <table class="tbl"><tbody>
+                ${s.lines.map(l=>`<tr>
+                  <td style="padding-left:9px;width:34px" class="num">${l.q}</td>
+                  <td style="padding-left:9px">${esc(l.n)}
+                    ${l.note?`<em style="display:block;font-size:11.5px;color:var(--txt-3)">${esc(l.note)}</em>`:""}</td>
+                  <td style="padding-left:9px;text-align:right" class="num">${money(l.price*l.q*(1-(l.disc||0)/100))}</td>
+                </tr>`).join("")}
+              </tbody></table>
+              <div class="jpays">
+                ${s.pays.map(p=>`<span>${esc(p.mop)} <b>${money(p.amt)}</b>${
+                  p.last4?` ····${esc(p.last4)}`:""}${p.change>0.001?` · change ${money(p.change)}`:""}</span>`).join("")}
+                ${s.against?`<span>against #${esc(String(s.against))}</span>`:""}
+                ${s.reason?`<span>${esc(s.reason)}</span>`:""}
+              </div>
+              <button class="mini" onclick="__w.jPrint(${i})">Reprint the receipt</button>
+            </div>`:""}
+          </div>`).join("")}
+      </div>`:`<div class="note" style="margin-top:16px">Nothing matches that search.</div>`}`}`;
+}

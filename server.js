@@ -17,6 +17,7 @@ const P = require("./lib/privacy");
 const PAY = require("./lib/payments");
 const LEARN = require("./lib/learn");
 const RET = require("./lib/retention");
+const TANKS = require("./lib/tanks");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -360,6 +361,124 @@ app.post("/api/ai", auth, async (req, res) => {
   }
 });
 
+/* -------------------------- the electronic journal ------------------------
+   Every sale ever taken, searchable. The sales are already written down; this
+   is the screen that makes them findable when somebody disputes a charge from
+   three weeks ago. */
+app.get("/api/journal", auth, ownStore, (req, res) => {
+  const q = req.query;
+  const where = ["store_id = ?"], args = [req.store.id];
+
+  if (q.from) { where.push("at >= ?"); args.push(String(q.from) + " 00:00:00"); }
+  if (q.to) { where.push("at <= ?"); args.push(String(q.to) + " 23:59:59"); }
+  if (q.cashier) { where.push("cashier = ?"); args.push(String(q.cashier)); }
+  if (q.returns === "1") where.push("is_return = 1");
+  if (q.amount) {
+    /* An amount search should find £47.83 whether it was a sale or a refund,
+       and should tolerate someone typing 47.8 from a half-remembered figure. */
+    const a = Math.abs(parseFloat(q.amount));
+    if (isFinite(a)) { where.push("ABS(ABS(total) - ?) < 0.005"); args.push(a); }
+  }
+  /* Free text runs against the stored sale, which holds the line items, the
+     tender and the card's last four. */
+  if (q.text) { where.push("json LIKE ?"); args.push("%" + String(q.text).slice(0, 60) + "%"); }
+
+  const rows = db.prepare(
+    "SELECT id, seq, at, cashier, total, is_return, json FROM sales WHERE " +
+    where.join(" AND ") + " ORDER BY at DESC LIMIT 200").all(...args);
+
+  const total = db.prepare("SELECT COUNT(*) n, COALESCE(SUM(total),0) s FROM sales WHERE " +
+    where.join(" AND ")).get(...args);
+
+  res.json({
+    sales: rows.map(r => { let j = {}; try { j = JSON.parse(r.json); } catch (e) {}
+      return { id: r.id, seq: r.seq, at: r.at, cashier: r.cashier, total: r.total,
+        ret: !!r.is_return, lines: j.lines || [], pays: j.pays || [],
+        taxes: j.taxes || {}, sub: j.sub, disc: j.disc, promoOff: j.promoOff,
+        reason: j.reason, against: j.against, customer: j.customer, tip: j.tip }; }),
+    count: total.n, sum: +(total.s || 0).toFixed(2),
+    cashiers: db.prepare(
+      "SELECT DISTINCT cashier FROM sales WHERE store_id = ? AND cashier IS NOT NULL ORDER BY cashier")
+      .all(req.store.id).map(r => r.cashier)
+  });
+});
+
+/* ------------------------------- tank gauge ------------------------------ */
+/* The console is on the store's own network, so only the server can reach it —
+   the browser never talks to fuel equipment directly. */
+app.get("/api/tanks", auth, ownStore, (req, res) => {
+  const s = PAY.getSettings(req.store.id);
+  res.json({
+    gauge: { host: s.gaugeHost || "", port: s.gaugePort || 10001, every: s.gaugeEvery || 15 },
+    tanks: TANKS.latest(req.store.id),
+    alarms: TANKS.alarms(req.store.id),
+    deliveries: TANKS.deliveries(req.store.id)
+  });
+});
+
+app.put("/api/tanks", auth, ownStore, (req, res) => {
+  const cur = PAY.getSettings(req.store.id);
+  const host = String(req.body.host || "").trim().slice(0, 80);
+  const port = Math.min(65535, Math.max(1, parseInt(req.body.port) || 10001));
+  const every = Math.min(240, Math.max(0, parseInt(req.body.every) || 15));
+  PAY.putSettings(req.store.id, { ...cur, gaugeHost: host || undefined, gaugePort: port, gaugeEvery: every });
+  P.audit(req.account.id, "tank-gauge", host ? `${host}:${port}` : "cleared", req);
+  res.json({ ok: true });
+});
+
+app.post("/api/tanks/read", auth, ownStore, async (req, res) => {
+  const s = PAY.getSettings(req.store.id);
+  const r = await TANKS.readSite(req.store.id, { host: s.gaugeHost, port: s.gaugePort });
+  res.json(r);
+});
+
+app.post("/api/tanks/probe", auth, ownStore, async (req, res) => {
+  const host = String(req.body.host || "").trim();
+  if (!host) return res.status(400).json({ error: "No address given" });
+  res.json(await TANKS.probe(host, parseInt(req.body.port) || 10001));
+});
+
+/* A reading taken through the station agent's serial cable rather than over the
+   network. The agent hands over raw console text; parsing and storing stays
+   here so both routes end up in the same place. */
+app.post("/api/tanks/ingest", auth, ownStore, (req, res) => {
+  const raw = String(req.body.raw || "");
+  if (!raw.trim()) return res.status(400).json({ error: "Nothing came back from the console." });
+  const parsed = TANKS.parseInTank(raw);
+  if (!parsed.tanks.length)
+    return res.status(422).json({ error: "The console answered but no tanks could be read.",
+      raw: raw.slice(0, 900) });
+
+  const stmt = db.prepare(
+    "INSERT INTO tank_readings (store_id,tank,product,volume,tc_volume,ullage,height,water,temp,raw) " +
+    "VALUES (?,?,?,?,?,?,?,?,?,?)");
+  parsed.tanks.forEach(t => stmt.run(req.store.id, t.tank, t.product, t.volume, t.tc_volume,
+    t.ullage, t.height, t.water, t.temp, t.raw));
+
+  const seen = new Set();
+  (parsed.alarms || []).forEach(a => {
+    seen.add(`${a.tank}|${a.text}`);
+    db.prepare("INSERT INTO tank_alarms (store_id,tank,text) VALUES (?,?,?) " +
+      "ON CONFLICT(store_id,tank,text) DO UPDATE SET last_at=datetime('now'),cleared=0")
+      .run(req.store.id, a.tank, a.text);
+  });
+  db.prepare("SELECT id,tank,text FROM tank_alarms WHERE store_id = ? AND cleared = 0")
+    .all(req.store.id).forEach(r => {
+      if (!seen.has(`${r.tank}|${r.text}`))
+        db.prepare("UPDATE tank_alarms SET cleared = 1 WHERE id = ?").run(r.id);
+    });
+
+  P.audit(req.account.id, "tank-reading",
+    `${parsed.tanks.length} tanks via ${req.body.source || "serial"}`, req);
+  res.json({ ok: true, tanks: parsed.tanks.length, alarms: (parsed.alarms || []).length,
+    format: parsed.format });
+});
+
+app.get("/api/tanks/history", auth, ownStore, (req, res) => {
+  res.json({ points: TANKS.history(req.store.id, parseInt(req.query.tank) || 1,
+    parseInt(req.query.hours) || 48) });
+});
+
 /* ------------------------------- retention ------------------------------- */
 /* How long this store's trading records are kept, and what happens before they
    go. Setup and pricebook are never touched by any of it. */
@@ -693,6 +812,20 @@ P.startBackups();
 
 /* Retention runs on boot and every six hours after. A store that sets a 7-day
    window and closes the laptop still gets its wipe when it next comes up. */
+/* Every store with a gauge address gets read on a timer. A site that's offline
+   is logged and skipped rather than holding up the rest. */
+const pollGauges = async () => {
+  const stores = db.prepare("SELECT id FROM stores").all();
+  for (const st of stores) {
+    const s = PAY.getSettings(st.id);
+    if (!s.gaugeHost || s.gaugeEvery === 0) continue;
+    try {
+      const r = await TANKS.readSite(st.id, { host: s.gaugeHost, port: s.gaugePort });
+      if (r.error) console.log(`  \u00b7 gauge ${st.id}: ${r.error}`);
+    } catch (e) { console.log(`  \u00b7 gauge ${st.id} failed: ${e.message}`); }
+  }
+};
+
 const runSweep = async () => {
   try {
     const out = await RET.sweepAll(id => PAY.getSettings(id),
@@ -704,6 +837,8 @@ const runSweep = async () => {
 app.listen(PORT, () => {
   console.log(`AI POS listening on :${PORT}`);
   setTimeout(runSweep, 5000);
+  setTimeout(pollGauges, 9000);
+  setInterval(pollGauges, 15 * 60 * 1000);
   setInterval(runSweep, 6 * 60 * 60 * 1000);
   if (!KEY) console.warn("  ! ANTHROPIC_API_KEY is not set — AI features will return 503.");
 });
