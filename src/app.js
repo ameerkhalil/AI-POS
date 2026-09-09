@@ -25,7 +25,8 @@ const hhmm=d=>d.toTimeString().slice(0,5);
 const A={type:"",typeOther:"",name:"",desc:"",caps:[],loc:"",margin:"35",ending:"x9",dir:"nearest",
   priceMode:"margin",trade:{},mods:[],
   staff:[],layout:"",accent:"",mode:"dark",footer:"",policy:"",startCash:"200",
-  logo:"",logoRaw:"",logoCut:false,logoTol:60,slogan:""};
+  logo:"",logoRaw:"",logoCut:false,logoTol:60,slogan:"",
+  keep:"keep",keepDays:"90",keepEmail:""};
 let TRADE_Q=[],REC_MODS=[],TRADE_ASKED=false,FLEET=null,FLEET_ASKED=false;
 
 /* What other stores of this trade already worked out. Structure only — the
@@ -335,6 +336,38 @@ const STEPS=[
   },
   ok:()=>A.staff.length&&A.staff.every(s=>s.n.trim()&&/^\d{4}$/.test(s.pin))
     &&new Set(A.staff.map(s=>s.pin)).size===A.staff.length},
+
+ {q:"How long should your records be kept?",s:"Sales and shift history live on the server so your reports work. Some owners would rather that history didn't sit there indefinitely — this is where you say so.",
+  render:()=>`${chipList2([["keep","Keep everything"],["wipe","Delete it after a while"]],
+      A.keep,v=>{A.keep=v;draw()})}
+    ${A.keep==="wipe"?`
+      <div class="hint" style="margin-top:26px">Delete anything older than</div>
+      ${chipList2([["7","A week"],["30","A month"],["90","Three months"],
+        ["365","A year"],["custom","Something else"]],
+        ["7","30","90","365"].includes(A.keepDays)?A.keepDays:"custom",
+        v=>{A.keepDays=v==="custom"?"14":v;draw()})}
+      ${!["7","30","90","365"].includes(A.keepDays)?`<div class="taxrow">
+        <div><label for="f10">Days to keep</label>
+        <input type="text" id="f10" class="num" value="${esc(A.keepDays)}"></div></div>`:""}
+      <div class="field" style="margin-top:26px">
+        <input type="text" id="f11" placeholder="Email it to me first (optional)"
+          value="${esc(A.keepEmail)}">
+      </div>
+      <div class="keepwhat">
+        <div class="kw go"><b>Deleted</b><span>Sales, shift history, card payment references</span></div>
+        <div class="kw no"><b>Never touched</b><span>Your pricebook, departments, tax rates, staff,
+          layout — the register keeps working exactly as it does now</span></div>
+      </div>
+      <div class="hint" style="margin-top:18px">A copy is always written before anything is removed,
+        and if that copy can't be made the deletion doesn't happen. You can change or stop this at any
+        time under Store &amp; tax.</div>`
+    :`<div class="hint" style="margin-top:24px">Everything is kept and backed up, so your reports go
+      back as far as you've been trading. You can switch to a shorter window whenever you like.</div>`}`,
+  bind(){
+    if($("f10"))$("f10").oninput=e=>{A.keepDays=e.target.value.replace(/\D/g,"").slice(0,4)};
+    if($("f11"))$("f11").oninput=e=>{A.keepEmail=e.target.value};
+  },
+  ok:()=>A.keep!=="wipe"||(parseInt(A.keepDays)>0)},
 
  {q:"Your logo and your line",s:"Both show on the screen when the register opens, on the receipt, and in the corner of the terminal all day. Skip either if you'd rather.",
   render:()=>`<div class="logodrop ${A.logo?"has":""}" id="logoDrop">

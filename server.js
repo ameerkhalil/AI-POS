@@ -16,6 +16,7 @@ const db = require("./lib/db");
 const P = require("./lib/privacy");
 const PAY = require("./lib/payments");
 const LEARN = require("./lib/learn");
+const RET = require("./lib/retention");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -359,6 +360,55 @@ app.post("/api/ai", auth, async (req, res) => {
   }
 });
 
+/* ------------------------------- retention ------------------------------- */
+/* How long this store's trading records are kept, and what happens before they
+   go. Setup and pricebook are never touched by any of it. */
+app.get("/api/retention", auth, ownStore, (req, res) => {
+  const settings = PAY.getSettings(req.store.id);
+  res.json({
+    policy: RET.getPolicy(settings),
+    preview: RET.preview(req.store.id, settings),
+    history: RET.history(req.store.id)
+  });
+});
+
+app.put("/api/retention", auth, ownStore, (req, res) => {
+  const cur = PAY.getSettings(req.store.id);
+  const b = req.body || {};
+  const mode = b.mode === "wipe" ? "wipe" : "keep";
+  const days = Math.min(3650, Math.max(1, parseInt(b.days) || 90));
+  const email = String(b.email || "").trim().slice(0, 160);
+  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))
+    return res.status(400).json({ error: "That doesn't look like an email address." });
+  const retention = { mode, days, email, exportFirst: b.exportFirst !== false };
+  PAY.putSettings(req.store.id, { ...cur, retention });
+  P.audit(req.account.id, "retention",
+    mode === "wipe" ? `wipe after ${days} days` : "keep everything", req);
+  res.json({ ok: true, policy: retention, preview: RET.preview(req.store.id, { retention }) });
+});
+
+/* Run it now rather than waiting for the timer. Deliberately explicit — this
+   destroys records, so it should never happen as a side effect of something else. */
+app.post("/api/retention/run", auth, ownStore, async (req, res) => {
+  if (req.body.confirm !== "WIPE")
+    return res.status(400).json({ error: "Confirmation missing." });
+  const r = await RET.sweepStore(req.store.id, PAY.getSettings(req.store.id),
+    m => P.audit(req.account.id, "wipe", m, req));
+  res.json(r);
+});
+
+app.get("/api/retention/export/:name", auth, ownStore, (req, res) => {
+  const p = RET.exportPath(req.params.name);
+  if (!p || !p.startsWith(RET.EXPORT_DIR)) return res.status(400).json({ error: "Bad file" });
+  /* The filename is prefixed with the store id; anything else belongs to
+     somebody else and is not this account's to read. */
+  if (!req.params.name.startsWith(req.store.id + "-"))
+    return res.status(404).json({ error: "Not found" });
+  res.download(p, `records-${req.params.name}`, err => {
+    if (err && !res.headersSent) res.status(404).json({ error: "That export has been cleared." });
+  });
+});
+
 /* ------------------------------- learning -------------------------------- */
 /* Structure in, structure out. A store contributes the shape of its setup and
    gets the accumulated shape of everyone else's back. Opt out and it does
@@ -641,7 +691,19 @@ app.get("/healthz", (req, res) => res.json({ ok: true, ai: !!KEY, backups: P.lis
 
 P.startBackups();
 
+/* Retention runs on boot and every six hours after. A store that sets a 7-day
+   window and closes the laptop still gets its wipe when it next comes up. */
+const runSweep = async () => {
+  try {
+    const out = await RET.sweepAll(id => PAY.getSettings(id),
+      (id, m) => P.audit(null, "wipe-auto", `store ${id}: ${m}`, null));
+    out.forEach(r => console.log("  \u00b7 retention:", JSON.stringify(r)));
+  } catch (e) { console.error("  \u00b7 retention failed:", e.message); }
+};
+
 app.listen(PORT, () => {
   console.log(`AI POS listening on :${PORT}`);
+  setTimeout(runSweep, 5000);
+  setInterval(runSweep, 6 * 60 * 60 * 1000);
   if (!KEY) console.warn("  ! ANTHROPIC_API_KEY is not set — AI features will return 503.");
 });

@@ -30,6 +30,7 @@ const CGROUPS=[
  {n:"The business",d:"Tax, receipts and your data",
   tabs:[["site","Store & tax","Name, address, tax rates, receipt"],
         ["hardware","Hardware & payments","Printer, drawer, card reader"],
+        ["retention","Data & records","How long sales history is kept, and what happens before it goes"],
         ["health","Health check","What's misconfigured, in plain language"],
         ["account","Account & data","Export, delete, sign-in"]]},
  {n:"Features",d:"Switch on what your trade needs",
@@ -89,7 +90,7 @@ function drawConfig(){
   const views={import:importView,invoice:invoiceView,pricebook:tPricebook,depts:tDepts,
     menus:tMenus,mods:tMods,mops:tMops,restricts:tRestricts,promos:tPromos,people:tPeople,
     reasons:tReasons,site:tSite,look:tLook,hardware:tHardware,health:tHealth,
-    account:tAccount,ai:tAI,modules:tModules,
+    account:tAccount,ai:tAI,modules:tModules,retention:tRetention,
     mod_records:tRecords,mod_expiry:tExpiry,mod_staff:tStaff,
     mod_customers:tCustomers,mod_tips:tTips,mod_giftcards:tGiftcards,mod_waste:tWaste,
     mod_commission:tCommission,mod_jobs:tJobs,mod_service:tService};
@@ -125,6 +126,125 @@ function cfgHome(){
 /* Everything on offer, on or off, describable. Nothing here is generated — each
    one is a built feature, so switching it on is safe and switching it off loses
    nothing but the tab. */
+let RET_STATE=null;
+async function tRetention(){
+  $("cfgBody").innerHTML=`<p class="lede">Checking your current policy…</p>`;
+  try{ RET_STATE=await api("/api/retention?store="+STORE_ID); }
+  catch(e){ $("cfgBody").innerHTML=`<div class="finding"><b>Couldn't load this</b>
+    <span>${esc(e.message)}</span></div>`; return; }
+  drawRetention();
+}
+function drawRetention(){
+  const {policy:p,preview:pv,history:hist}=RET_STATE;
+  const wipe=p.mode==="wipe";
+
+  W.retMode=m=>{RET_STATE.policy.mode=m;drawRetention()};
+  W.retDays=d=>{RET_STATE.policy.days=parseInt(d)||90;drawRetention()};
+  W.retMail=v=>{RET_STATE.policy.email=v};
+  W.retSave=async()=>{
+    const p=RET_STATE.policy;
+    try{
+      const r=await api("/api/retention?store="+STORE_ID,{method:"PUT",
+        body:{store:STORE_ID,mode:p.mode,days:p.days,email:p.email,exportFirst:true}});
+      RET_STATE.policy=r.policy;RET_STATE.preview=r.preview;drawRetention();
+      toast(p.mode==="wipe"
+        ?`Records will be deleted after <b>${p.days} days</b>.`
+        :"Everything will be kept.");
+    }catch(e){ toast(e.message,true) }
+  };
+  W.retRun=()=>{
+    const el=veil(`<div class="card"><h3>Delete now</h3>
+      <p>This removes ${pv.sales||0} sale${pv.sales===1?"":"s"} and ${pv.shifts||0} shift${
+        pv.shifts===1?"":"s"} older than ${p.days} days. A copy is written first. Your pricebook,
+        staff and settings are not affected.</p>
+      <p style="margin-top:10px">Type <b>WIPE</b> to confirm.</p>
+      <input id="rwv" class="big" style="text-align:center;letter-spacing:.2em">
+      <div class="row"><button class="no" id="rwn">Cancel</button>
+        <button class="danger" id="rwy">Delete them</button></div></div>`);
+    const inp=el.querySelector("#rwv");inp.focus();
+    el.querySelector("#rwn").onclick=()=>el.remove();
+    el.querySelector("#rwy").onclick=async()=>{
+      if(inp.value.trim().toUpperCase()!=="WIPE")return;
+      el.remove();
+      try{
+        const r=await api("/api/retention/run?store="+STORE_ID,{method:"POST",
+          body:{store:STORE_ID,confirm:"WIPE"}});
+        toast(r.error?esc(r.error):r.skipped?esc(r.skipped)
+          :`Removed <b>${r.sales}</b> sales and <b>${r.shifts}</b> shifts.`, !!r.error);
+        tRetention();
+      }catch(e){ toast(e.message,true) }
+    };
+  };
+
+  $("cfgBody").innerHTML=`
+    <p class="lede">Your sales and shift history live on the server so reports work and a shift can be
+      re-read. If you'd rather that history didn't sit there indefinitely, set a window and it gets
+      deleted on a schedule — whether or not anyone opens this terminal.</p>
+
+    <div class="retpick">
+      <button class="rp ${!wipe?"on":""}" onclick="__w.retMode('keep')">
+        <b>Keep everything</b>
+        <span>Reports go back as far as you've traded. Backed up nightly.</span></button>
+      <button class="rp ${wipe?"on":""}" onclick="__w.retMode('wipe')">
+        <b>Delete after a while</b>
+        <span>Anything older than your window is removed for good.</span></button>
+    </div>
+
+    ${wipe?`
+      <div class="sect">Keep records for</div>
+      <div class="stchips">${[[7,"A week"],[30,"A month"],[90,"Three months"],[180,"Six months"],
+        [365,"A year"],[730,"Two years"]].map(([d,n])=>
+        `<button class="${p.days===d?"on":""}" onclick="__w.retDays(${d})">${n}</button>`).join("")}</div>
+      <div class="frm" style="margin-top:11px">
+        <label>Or a number of days
+          <input class="n" value="${p.days}" oninput="__w.retDays(this.value)"></label>
+        <label>Email a copy first
+          <input value="${esc(p.email||"")}" placeholder="you@yourshop.com"
+            oninput="__w.retMail(this.value)"></label>
+      </div>
+      ${!pv.mailReady&&p.email?`<div class="note" style="border-color:var(--warn)">
+        No outgoing mail service is configured on this server, so nothing can be emailed yet.
+        The copy is still written and stays downloadable below. Set <span class="num">SMTP_URL</span>
+        in your environment to turn email on.</div>`:""}
+
+      <div class="retnext">
+        <div><b class="num">${pv.sales||0}</b><span>sales would go now</span></div>
+        <div><b class="num">${pv.kept||0}</b><span>would be kept</span></div>
+        <div><b>${pv.oldest?esc(String(pv.oldest).slice(0,10)):"\u2014"}</b><span>oldest on file</span></div>
+      </div>
+
+      <div class="keepwhat" style="margin-top:16px">
+        <div class="kw go"><b>Deleted</b><span>Sales, shift history, card payment references</span></div>
+        <div class="kw no"><b>Never touched</b><span>Pricebook, departments, tax rates, staff, layout,
+          customers you've saved</span></div>
+      </div>`:""}
+
+    <div class="row" style="margin-top:18px">
+      <button class="mini ok" style="color:#0D1F18" onclick="__w.retSave()">Save this policy</button>
+      ${wipe&&pv.sales?`<button class="mini" style="border-color:var(--void);color:var(--void)"
+        onclick="__w.retRun()">Delete the ${pv.sales} now</button>`:""}
+    </div>
+
+    ${hist&&hist.length?`
+      <div class="sect">What's been deleted</div>
+      <table class="tbl"><thead><tr><th>When</th><th>Window</th><th>Sales</th><th>Shifts</th>
+        <th>Copy</th></tr></thead><tbody>
+        ${hist.map(h=>`<tr>
+          <td style="padding-left:9px;color:var(--txt-2)">${esc(String(h.at).slice(0,16))}</td>
+          <td style="padding-left:9px" class="num">${h.kept_days}d</td>
+          <td style="padding-left:9px" class="num">${h.sales}</td>
+          <td style="padding-left:9px" class="num">${h.shifts}</td>
+          <td style="padding-left:9px">${h.file
+            ? `<a href="/api/retention/export/${encodeURIComponent(h.file)}?store=${STORE_ID}"
+                 class="dl">Download</a>${h.emailed?" · emailed":""}`
+            : `<span style="color:var(--txt-3)">none</span>`}</td></tr>`).join("")}
+      </tbody></table>`:""}
+
+    <div class="note">A copy is always written before anything is removed. If that copy can't be
+      written, the deletion is abandoned — losing records because a backup failed is the one outcome
+      that would be unforgivable. Open shifts are never deleted regardless of the window.</div>`;
+}
+
 function tModules(){
   W.togMod=id=>{setModule(id,!modOn(id));refresh();reload();queueSave();
     toast(modOn(id)?`<b>${esc(MODULES[id].n)}</b> switched on.`:`${esc(MODULES[id].n)} switched off.`)};
