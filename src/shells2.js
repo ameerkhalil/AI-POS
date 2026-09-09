@@ -12,66 +12,6 @@
                 pay bar pinned along the bottom.
    =========================================================================== */
 
-/* ------------------------------- RETAIL ------------------------------- */
-function drawRetailShell() {
-  const t = calc(), items = shKeys(), cats = shDepts();
-  document.getElementById("vSale").innerHTML = `
-    <div class="rt">
-      <header class="rt-top">
-        <div class="rt-brand">
-          ${CFG.site.logo ? `<img src="${esc(CFG.site.logo)}" alt="">` : ""}
-          <b>${esc(CFG.site.name)}</b>
-        </div>
-        <div class="rt-search">
-          <input id="rtQ" placeholder="Search library" autocomplete="off" value="${esc(FILTER)}">
-        </div>
-        <button class="rt-more" onclick="__sh.nav()" aria-label="Menu">···</button>
-      </header>
-      <div class="rt-body">
-        <div class="rt-left">
-          <div class="rt-tabs">
-            ${cats.map((m, i) => `<button class="${i === SH_CAT ? "on" : ""}"
-              onclick="__sh.cat(${i})">${esc(m.n)}</button>`).join("")}
-          </div>
-          <div class="rt-grid">
-            ${items.map(({ k, p }, i) => {
-              const d = byId(CFG.depts, p.deptId);
-              return `<button class="rt-t" onclick="__sh.ring('${p.id}')"
-                style="--c:${k.color || d?.color || "#006AFF"};animation-delay:${Math.min(i * 18, 260)}ms">
-                <span class="rt-n">${esc(k.label || p.n)}</span>
-                <span class="rt-p">${money(p.price)}</span>
-              </button>`;
-            }).join("") || `<div class="rt-empty">Nothing in this section</div>`}
-          </div>
-        </div>
-        <aside class="rt-cart">
-          <div class="rt-ch">Current sale</div>
-          <div class="rt-lines">
-            ${CART.map((c, i) => `<div class="rt-l">
-              <div class="rt-ln"><b>${esc(c.n)}</b>
-                ${c.mods?.length ? `<em>${esc(c.mods.join(", "))}</em>` : ""}
-                <span class="rt-lq">${c.q} × ${money(c.price)}</span></div>
-              <div class="rt-lr">
-                <span class="rt-la">${money(c.price * c.q * (1 - (c.disc || 0) / 100))}</span>
-                <button onclick="__sh.drop(${i})" aria-label="Remove">×</button>
-              </div>
-            </div>`).join("") || `<div class="rt-none">Add an item to start a sale</div>`}
-          </div>
-          <div class="rt-sums">
-            <div><span>Subtotal</span><b>${money(t.sub)}</b></div>
-            ${CFG.taxRates.filter(r => r.rate > 0 && Math.abs(t.taxes[r.id] || 0) > 0.001)
-              .map(r => `<div><span>${esc(r.n)}</span><b>${money(t.taxes[r.id])}</b></div>`).join("")}
-          </div>
-          <button class="rt-charge" onclick="__sh.pay()" ${CART.length ? "" : "disabled"}>
-            Charge ${money(Math.abs(t.tot))}
-          </button>
-        </aside>
-      </div>
-    </div>`;
-  const q = document.getElementById("rtQ");
-  if (q) q.oninput = e => { FILTER = e.target.value; drawRetailShell(); };
-}
-
 /* ------------------------------ COMMERCE ------------------------------ */
 function drawCommerceShell() {
   const t = calc(), cats = shDepts();
@@ -140,55 +80,6 @@ function drawCommerceShell() {
     </div>`;
   const s = document.getElementById("cmQ");
   if (s) s.oninput = e => { FILTER = e.target.value; drawCommerceShell(); };
-}
-
-/* ------------------------------- COUNTER ------------------------------- */
-function drawCounterShell() {
-  const t = calc(), items = shKeys(), cats = shDepts();
-  document.getElementById("vSale").innerHTML = `
-    <div class="cn">
-      <header class="cn-top">
-        <button class="cn-mn" onclick="__sh.nav()" aria-label="Menu">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-            stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-        </button>
-        <b>${esc(CFG.site.name)}</b>
-        <span>${esc(ME ? ME.n : "")}</span>
-      </header>
-      <div class="cn-cats">
-        ${cats.map((m, i) => {
-          const d = CFG.depts.find(x => "M" + x.id === m.id);
-          return `<button class="${i === SH_CAT ? "on" : ""}" onclick="__sh.cat(${i})">
-            <span class="cn-circle" style="background:${d?.color || "#00A05A"}">
-              ${esc(m.n.trim()[0] || "?")}</span>
-            <em>${esc(m.n)}</em></button>`;
-        }).join("")}
-      </div>
-      <div class="cn-body">
-        <div class="cn-grid">
-          ${items.map(({ k, p }, i) => `<button class="cn-t" onclick="__sh.ring('${p.id}')"
-            style="animation-delay:${Math.min(i * 18, 260)}ms">
-            <span class="cn-n">${esc(k.label || p.n)}</span>
-            <span class="cn-p">${money(p.price)}</span>
-          </button>`).join("") || `<div class="cn-empty">Nothing here yet</div>`}
-        </div>
-        <aside class="cn-tick">
-          <div class="cn-th">Order</div>
-          <div class="cn-lines">
-            ${CART.map((c, i) => `<div class="cn-l">
-              <span class="cn-lq">${c.q}</span>
-              <span class="cn-ln">${esc(c.n)}</span>
-              <span class="cn-la">${money(c.price * c.q * (1 - (c.disc || 0) / 100))}</span>
-              <button onclick="__sh.drop(${i})" aria-label="Remove">×</button>
-            </div>`).join("") || `<div class="cn-none">Tap an item</div>`}
-          </div>
-        </aside>
-      </div>
-      <div class="cn-pay">
-        <div class="cn-total"><span>Total</span><b>${money(Math.abs(t.tot))}</b></div>
-        <button class="cn-btn" onclick="__sh.pay()" ${CART.length ? "" : "disabled"}>Pay</button>
-      </div>
-    </div>`;
 }
 
 /* A payment picker in each register's own manner, rather than one shared modal. */

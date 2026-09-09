@@ -2067,10 +2067,13 @@ body.tp-plain .grand .amt{font-size:40px}
 
 /* ================================ MENU ================================ */
 #vSale.on.shell-menu{display:block;padding:0;overflow:hidden}
-.mn{display:grid;grid-template-rows:auto minmax(0,1fr);height:100%;background:var(--bg);position:relative}
-.mn-cats{display:flex;gap:8px;padding:16px 18px;overflow-x:auto;border-bottom:1px solid var(--line)}
-.mn-cats button{flex:none;padding:12px 22px;border-radius:99px;font-size:15px;font-weight:600;
-  color:var(--txt-2);border:1px solid var(--line);transition:all .15s}
+.mn{display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;height:100%;background:var(--bg);
+  position:relative;min-height:0}
+.mn-cats{display:flex;align-items:center;gap:8px;padding:14px 18px;overflow-x:auto;
+  border-bottom:1px solid var(--line);flex:none}
+.mn-cats button{flex:none;height:42px;line-height:1}
+.mn-cats button{padding:0 22px;border-radius:99px;font-size:15px;font-weight:600;
+  color:var(--txt-2);border:1px solid var(--line);transition:all .15s;white-space:nowrap}
 .mn-cats button:hover{color:var(--txt);border-color:var(--line-2)}
 .mn-cats button.on{background:var(--vfd);color:#20120A;border-color:var(--vfd)}
 .mn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;
@@ -2234,56 +2237,6 @@ body.tp-plain .grand .amt{font-size:40px}
 .shell-classic .cls-fn button{border-radius:2px;background:#3C4347;border:1px solid #5A6266}
 .shell-classic .cls-entry{background:#373D41;border-left:1px solid #4A5155}
 
-/* ================================== RETAIL ==================================
-   White, blue, a tile library on the left and the basket held to the right. */
-#vSale.on.shell-retail{display:block;padding:0;overflow:hidden;background:#F7F7F7}
-.rt{display:grid;grid-template-rows:auto minmax(0,1fr);height:100%;font-family:Inter,var(--ff),sans-serif}
-.rt-top{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:18px;align-items:center;
-  padding:12px 18px;background:#fff;border-bottom:1px solid #E3E3E3}
-.rt-brand{display:flex;align-items:center;gap:10px}
-.rt-brand img{width:26px;height:26px;object-fit:contain;border-radius:5px}
-.rt-brand b{font-size:15px;font-weight:600;color:#1A1A1A}
-.rt-search input{width:100%;max-width:460px;padding:10px 14px;border:1px solid #D9D9D9;
-  border-radius:6px;font-size:14px;background:#F7F7F7;color:#1A1A1A}
-.rt-search input:focus{outline:none;border-color:#006AFF;background:#fff}
-.rt-more{font-size:19px;color:#5A5A5A;padding:4px 12px;letter-spacing:.08em}
-.rt-body{display:grid;grid-template-columns:minmax(0,1fr) 340px;min-height:0}
-.rt-left{display:flex;flex-direction:column;min-height:0}
-.rt-tabs{display:flex;gap:0;overflow-x:auto;background:#fff;border-bottom:1px solid #E3E3E3;padding:0 12px}
-.rt-tabs button{padding:13px 18px;font-size:14px;color:#5A5A5A;white-space:nowrap;
-  border-bottom:2px solid transparent;font-weight:500}
-.rt-tabs button.on{color:#006AFF;border-bottom-color:#006AFF}
-.rt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(146px,1fr));gap:10px;
-  padding:16px;overflow-y:auto;align-content:start}
-.rt-t{background:var(--c);border-radius:6px;padding:14px 13px;min-height:96px;display:flex;
-  flex-direction:column;justify-content:space-between;color:#fff;text-align:left;
-  animation:keyLand .4s cubic-bezier(.16,1.3,.4,1) both;transition:filter .12s,transform .1s}
-.rt-t:hover{filter:brightness(1.08)}
-.rt-t:active{transform:scale(.98)}
-.rt-n{font-size:14px;font-weight:600;line-height:1.28;text-shadow:0 1px 2px rgba(0,0,0,.25)}
-.rt-p{font-size:14px;font-weight:500;opacity:.95}
-.rt-empty{grid-column:1/-1;padding:50px;text-align:center;color:#8A8A8A;font-size:14px}
-.rt-cart{background:#fff;border-left:1px solid #E3E3E3;display:flex;flex-direction:column;min-height:0}
-.rt-ch{padding:15px 18px 11px;font-size:13px;font-weight:600;color:#5A5A5A;
-  border-bottom:1px solid #EFEFEF}
-.rt-lines{flex:1;overflow-y:auto;padding:6px 0}
-.rt-l{display:flex;justify-content:space-between;gap:12px;padding:12px 18px;
-  border-bottom:1px solid #F2F2F2}
-.rt-ln b{display:block;font-size:14px;font-weight:500;color:#1A1A1A;line-height:1.3}
-.rt-ln em{display:block;font-style:normal;font-size:12px;color:#8A8A8A;margin-top:2px}
-.rt-lq{display:block;font-size:12px;color:#8A8A8A;margin-top:3px}
-.rt-lr{display:flex;align-items:flex-start;gap:9px}
-.rt-la{font-size:14px;font-weight:500;color:#1A1A1A}
-.rt-lr button{color:#B0B0B0;font-size:17px}
-.rt-lr button:hover{color:#D0342C}
-.rt-none{padding:44px 18px;text-align:center;color:#9A9A9A;font-size:13.5px;line-height:1.6}
-.rt-sums{padding:12px 18px;border-top:1px solid #EFEFEF}
-.rt-sums div{display:flex;justify-content:space-between;padding:3px 0;font-size:13px;color:#5A5A5A}
-.rt-sums b{color:#1A1A1A;font-weight:500}
-.rt-charge{margin:12px 16px 16px;padding:17px;border-radius:6px;background:#006AFF;color:#fff;
-  font-size:16px;font-weight:600;border:none}
-.rt-charge:hover{background:#0057D1}
-.rt-charge[disabled]{background:#D6D6D6;color:#8A8A8A}
 
 /* ================================= COMMERCE =================================
    Search-led, a product list with thumbnails, and a cart that totals like a web
@@ -2293,7 +2246,8 @@ body.tp-plain .grand .amt{font-size:40px}
   font-family:Inter,var(--ff),sans-serif}
 .cm-nav{background:#1A1F26;padding:16px 12px;display:flex;flex-direction:column;gap:2px}
 .cm-brand{display:flex;align-items:center;gap:9px;padding:4px 8px 18px}
-.cm-brand img{width:24px;height:24px;object-fit:contain;border-radius:5px;background:#fff;padding:2px}
+.cm-brand img{width:26px;height:26px;min-width:26px;max-height:26px;flex:none;object-fit:contain;
+  border-radius:6px;background:#fff;padding:2px}
 .cm-brand i{width:9px;height:9px;border-radius:99px;background:#008060;display:block}
 .cm-brand b{font-size:14px;font-weight:600;color:#F1F2F4;line-height:1.2}
 .cm-nb{text-align:left;padding:9px 11px;border-radius:6px;font-size:13.5px;color:#A9B2BD}
@@ -2305,8 +2259,9 @@ body.tp-plain .grand .amt{font-size:40px}
 .cm-searchbar input{width:100%;padding:11px 14px;border:1px solid #C9CFD6;border-radius:8px;
   font-size:14px;background:#fff;color:#1F2933}
 .cm-searchbar input:focus{outline:none;border-color:#008060;box-shadow:0 0 0 3px rgba(0,128,96,.12)}
-.cm-cats{display:flex;gap:6px;padding:11px 18px;overflow-x:auto;background:#fff;
-  border-bottom:1px solid #DFE3E8}
+.cm-cats{display:flex;align-items:center;gap:6px;padding:11px 18px;overflow-x:auto;background:#fff;
+  border-bottom:1px solid #DFE3E8;flex:none}
+.cm-cats button{height:34px;line-height:1;white-space:nowrap}
 .cm-cats button{flex:none;padding:7px 15px;border-radius:99px;font-size:13px;color:#5C6975;
   border:1px solid #DFE3E8;background:#fff}
 .cm-cats button.on{background:#E3F1EC;border-color:#008060;color:#00654D;font-weight:500}
@@ -2349,7 +2304,6 @@ body.tp-plain .grand .amt{font-size:40px}
 
 /* ================================== COUNTER ==================================
    Round category buttons, a soft tile grid, and a wide pay bar along the bottom. */
-#vSale.on.shell-counter{display:block;padding:0;overflow:hidden;background:#fff}
 .cn{display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;height:100%;
   font-family:Inter,var(--ff),sans-serif}
 .cn-top{display:flex;align-items:center;gap:14px;padding:13px 18px;border-bottom:1px solid #E1E4E6}
@@ -2357,17 +2311,19 @@ body.tp-plain .grand .amt{font-size:40px}
   place-items:center;color:#4A5157}
 .cn-top b{font-size:16px;font-weight:600;color:#1B1F22}
 .cn-top span{margin-left:auto;font-size:13px;color:#7B848B}
-.cn-cats{display:flex;gap:20px;padding:16px 20px 12px;overflow-x:auto}
+.cn-cats{display:flex;align-items:flex-start;gap:20px;padding:16px 20px 12px;overflow-x:auto}
 .cn-cats button{flex:none;display:flex;flex-direction:column;align-items:center;gap:7px;width:74px}
-.cn-circle{width:56px;height:56px;border-radius:99px;display:grid;place-items:center;color:#fff;
+.cn-circle{width:56px;height:56px;min-width:56px;flex:none;border-radius:99px;display:grid;place-items:center;color:#fff;
   font-size:21px;font-weight:600;transition:transform .13s,box-shadow .15s;opacity:.5}
 .cn-cats button.on .cn-circle{opacity:1;transform:scale(1.06);
   box-shadow:0 4px 14px rgba(0,0,0,.14)}
 .cn-cats em{font-style:normal;font-size:11.5px;color:#7B848B;text-align:center;line-height:1.3}
 .cn-cats button.on em{color:#1B1F22;font-weight:500}
-.cn-body{display:grid;grid-template-columns:minmax(0,1fr) 288px;min-height:0}
-.cn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;
-  padding:8px 20px 20px;overflow-y:auto;align-content:start}
+/* No side panel. The order lives in the bar along the bottom, which expands —
+   otherwise this is Retail with rounder corners. */
+.cn-body{display:grid;grid-template-columns:minmax(0,1fr);min-height:0}
+.cn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:12px;
+  padding:8px 22px 22px;overflow-y:auto;align-content:start}
 .cn-t{background:#F6F7F8;border:1px solid #E1E4E6;border-radius:10px;padding:16px 14px;
   min-height:92px;display:flex;flex-direction:column;justify-content:space-between;text-align:left;
   animation:keyLand .38s cubic-bezier(.16,1.3,.4,1) both;transition:border-color .13s,transform .1s}
@@ -2376,7 +2332,7 @@ body.tp-plain .grand .amt{font-size:40px}
 .cn-n{font-size:14.5px;font-weight:600;color:#1B1F22;line-height:1.3}
 .cn-p{font-size:15px;font-weight:500;color:#00A05A}
 .cn-empty{grid-column:1/-1;padding:50px;text-align:center;color:#8A9298}
-.cn-tick{border-left:1px solid #E1E4E6;display:flex;flex-direction:column;min-height:0;background:#FCFCFD}
+.cn-tick{display:none}
 .cn-th{padding:14px 18px 10px;font-size:13px;font-weight:600;color:#7B848B;
   border-bottom:1px solid #EDEFF0}
 .cn-lines{flex:1;overflow-y:auto;padding:4px 0}
@@ -2385,8 +2341,15 @@ body.tp-plain .grand .amt{font-size:40px}
 .cn-lq{color:#00A05A;font-weight:600}
 .cn-l button{color:#B6BCC1;font-size:16px}
 .cn-none{padding:40px 18px;text-align:center;color:#9AA1A7;font-size:13.5px}
-.cn-pay{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center;
-  padding:14px 20px;border-top:1px solid #E1E4E6;background:#fff}
+.cn-pay{border-top:1px solid #E1E4E6;background:#fff}
+.cn-drawer{max-height:0;overflow:hidden;transition:max-height .3s cubic-bezier(.16,1,.3,1)}
+.cn-pay.open .cn-drawer{max-height:34vh;overflow-y:auto}
+.cn-drawer .cn-l{border-bottom:1px solid #F2F4F5}
+.cn-payrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:18px;align-items:center;
+  padding:13px 22px}
+.cn-toggle{display:flex;align-items:center;gap:9px;font-size:13.5px;color:#4A5157;
+  border:1px solid #E1E4E6;border-radius:99px;padding:9px 16px;white-space:nowrap}
+.cn-toggle b{color:#00A05A;font-weight:600}
 .cn-total span{display:block;font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;
   color:#7B848B}
 .cn-total b{font-size:29px;font-weight:700;color:#1B1F22;letter-spacing:-.02em}
@@ -2407,6 +2370,146 @@ body.tp-plain .grand .amt{font-size:40px}
 .pay-grid button.cash{border-color:var(--vfd);background:color-mix(in srgb,var(--vfd) 12%,transparent)}
 .pay-grid b{display:block;font-size:16px;font-weight:600;margin-bottom:4px}
 .pay-grid em{display:block;font-style:normal;font-size:12px;color:var(--txt-3)}
+
+/* --- Service: the masthead, restored --- */
+.mn-top{display:flex;align-items:center;gap:12px;padding:14px 18px 6px;flex:none;min-width:0}
+.mn-top img{width:34px;height:34px;min-width:34px;max-width:34px;max-height:34px;flex:none;
+  object-fit:contain;border-radius:9px;background:#fff;padding:3px}
+.mn-dot{width:9px;height:9px;border-radius:99px;background:var(--vfd);flex:none;display:block}
+.mn-top b{font-size:20px;font-weight:700;letter-spacing:-.02em;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;max-width:38ch}
+.mn-top em{font-style:normal;font-size:12.5px;color:var(--txt-3);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;max-width:30ch}
+.mn-who{margin-left:auto;font-size:13px;color:var(--txt-2);white-space:nowrap;flex:none}
+.mn-menu{flex:none;width:38px;height:38px;border-radius:99px;border:1px solid var(--line);
+  display:grid;place-items:center;color:var(--txt-2)}
+.mn-menu:hover{background:rgba(255,255,255,.06);color:var(--txt)}
+
+/* ================================== BOARD ==================================
+   Several orders open at once as cards. No other register works this way. */
+#vSale.on.shell-board{display:block;padding:0;overflow:hidden;background:#1E2429}
+.bd{display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;height:100%;
+  font-family:Inter,var(--ff),sans-serif;color:#E4E9ED}
+.bd-top{display:flex;align-items:center;gap:14px;padding:12px 18px;background:#171C21;
+  border-bottom:1px solid #39434B}
+.bd-top b{font-size:15px;font-weight:600}
+.bd-top span{margin-left:auto;font-size:12.5px;color:#8A96A0}
+.bd-top button{width:34px;height:34px;border-radius:7px;border:1px solid #39434B;display:grid;
+  place-items:center;color:#A4AEB6}
+
+.bd-tickets{display:flex;gap:10px;padding:14px 18px;overflow-x:auto;align-items:stretch;
+  border-bottom:1px solid #39434B;background:#1A2025}
+.bd-tk{flex:none;width:210px;background:#262E34;border:2px solid #39434B;border-radius:8px;
+  padding:11px 13px;cursor:pointer;display:flex;flex-direction:column;gap:8px;
+  transition:border-color .14s,transform .12s}
+.bd-tk:hover{border-color:#4E5A64}
+.bd-tk.on{border-color:#4FA3D9;background:#2A353E;transform:translateY(-2px)}
+.bd-tkh{display:flex;justify-content:space-between;align-items:center}
+.bd-tkh b{font-size:14px;font-weight:600}
+.bd-tkh button{color:#7C8892;font-size:17px;line-height:1;padding:0 3px}
+.bd-tkh button:hover{color:#E0603C}
+.bd-tkl{display:flex;flex-direction:column;gap:3px;min-height:56px}
+.bd-tkl span{font-size:12px;color:#9BA6AF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bd-tke{color:#5F6B74;font-style:italic}
+.bd-tkm{color:#6E7A83}
+.bd-tkf{display:flex;justify-content:space-between;align-items:baseline;padding-top:8px;
+  border-top:1px solid #39434B;font-size:12px;color:#8A96A0}
+.bd-tkf b{font-size:15px;color:#E4E9ED;font-weight:600}
+.bd-new{flex:none;width:112px;border:2px dashed #39434B;border-radius:8px;display:flex;
+  flex-direction:column;align-items:center;justify-content:center;gap:5px;color:#7C8892}
+.bd-new:hover{border-color:#4FA3D9;color:#4FA3D9}
+.bd-new span{font-size:26px;line-height:1}
+.bd-new em{font-style:normal;font-size:11.5px}
+
+.bd-mid{display:grid;grid-template-columns:158px minmax(0,1fr);min-height:0}
+.bd-cats{border-right:1px solid #39434B;padding:12px 9px;overflow-y:auto;background:#1A2025}
+.bd-cats button{display:block;width:100%;text-align:left;padding:10px 12px;border-radius:6px;
+  font-size:13.5px;color:#9BA6AF;margin-bottom:2px}
+.bd-cats button:hover{background:rgba(255,255,255,.05);color:#E4E9ED}
+.bd-cats button.on{background:rgba(79,163,217,.16);color:#7FC4F5;font-weight:500}
+.bd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(142px,1fr));gap:8px;
+  padding:14px;overflow-y:auto;align-content:start}
+.bd-t{background:var(--c);border-radius:6px;padding:13px 12px;min-height:74px;display:flex;
+  flex-direction:column;justify-content:space-between;color:#fff;text-align:left;
+  animation:keyLand .35s cubic-bezier(.16,1.3,.4,1) both;transition:filter .12s,transform .1s}
+.bd-t:hover{filter:brightness(1.14)}
+.bd-t:active{transform:scale(.98)}
+.bd-t span{font-size:13.5px;font-weight:600;line-height:1.28}
+.bd-t em{font-style:normal;font-size:13px;opacity:.92}
+.bd-empty{grid-column:1/-1;padding:44px;text-align:center;color:#6E7A83}
+.bd-foot{display:flex;align-items:center;gap:18px;padding:13px 18px;border-top:1px solid #39434B;
+  background:#171C21}
+.bd-active{flex:1}
+.bd-active span{display:block;font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:#7C8892}
+.bd-active b{font-size:27px;font-weight:700;color:#4FA3D9;letter-spacing:-.02em}
+.bd-settle{padding:16px 34px;border-radius:7px;background:#4FA3D9;color:#0B1B24;font-size:15.5px;
+  font-weight:600;border:none}
+.bd-settle:hover{background:#6BB6E4}
+.bd-settle[disabled]{background:#39434B;color:#6E7A83}
+
+/* ================================== KIOSK ==================================
+   One question per screen. Nothing sits beside anything else. */
+#vSale.on.shell-kiosk{display:block;padding:0;overflow:hidden;background:#fff}
+.kk{display:grid;grid-template-rows:auto minmax(0,1fr) auto;height:100%;
+  font-family:Inter,var(--ff),sans-serif;color:#16211C}
+.kk-top{display:flex;align-items:center;gap:16px;padding:16px 22px;border-bottom:1px solid #E1E6E3}
+.kk-top b{flex:1;font-size:22px;font-weight:700;letter-spacing:-.02em}
+.kk-back{width:42px;height:42px;border-radius:99px;border:1px solid #E1E6E3;display:grid;
+  place-items:center;color:#3E4A44;flex:none}
+.kk-back:hover{background:#F5F7F6}
+.kk-mn{color:#8A9691;font-size:20px;letter-spacing:.08em;padding:0 6px}
+.kk-body{overflow-y:auto;padding:22px}
+.kk-grid{display:grid;gap:14px;align-content:start}
+.kk-grid.cats{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.kk-grid.items{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.kk-cat{background:var(--c);border-radius:16px;padding:34px 26px;min-height:150px;display:flex;
+  flex-direction:column;justify-content:flex-end;gap:6px;color:#fff;text-align:left;
+  animation:keyLand .45s cubic-bezier(.16,1.35,.4,1) both;transition:transform .13s,filter .13s}
+.kk-cat:hover{transform:translateY(-3px);filter:brightness(1.1)}
+.kk-cat span{font-size:26px;font-weight:700;line-height:1.15;letter-spacing:-.02em}
+.kk-cat em{font-style:normal;font-size:14px;opacity:.85}
+.kk-item{background:#F5F7F6;border:2px solid #E1E6E3;border-radius:16px;padding:28px 24px;
+  min-height:132px;display:flex;flex-direction:column;justify-content:space-between;gap:12px;
+  text-align:left;animation:keyLand .4s cubic-bezier(.16,1.35,.4,1) both;
+  transition:border-color .13s,transform .12s}
+.kk-item:hover{border-color:#00A05A;background:#F0F7F3}
+.kk-item:active{transform:scale(.98)}
+.kk-item span{font-size:21px;font-weight:600;line-height:1.2;color:#16211C}
+.kk-item em{font-style:normal;font-size:22px;font-weight:700;color:#00A05A}
+.kk-empty{grid-column:1/-1;padding:60px;text-align:center;color:#8A9691;font-size:16px}
+
+.kk-qty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  min-height:56vh;text-align:center}
+.kk-qn{font-size:32px;font-weight:700;letter-spacing:-.025em;max-width:20ch;line-height:1.15}
+.kk-qp{font-size:17px;color:#6E7B75}
+.kk-stepper{display:flex;align-items:center;gap:26px;margin:12px 0}
+.kk-stepper button{width:82px;height:82px;border-radius:99px;border:2px solid #E1E6E3;
+  font-size:38px;color:#16211C;display:grid;place-items:center;line-height:1}
+.kk-stepper button:hover{border-color:#00A05A;color:#00A05A}
+.kk-stepper b{font-size:64px;font-weight:700;min-width:96px;letter-spacing:-.03em}
+.kk-confirm{padding:24px 54px;border-radius:16px;background:#00A05A;color:#fff;font-size:21px;
+  font-weight:700;border:none}
+.kk-confirm:hover{background:#008C4E}
+
+.kk-lines{margin-bottom:18px}
+.kk-l{display:grid;grid-template-columns:44px minmax(0,1fr) auto 44px;gap:14px;align-items:center;
+  padding:18px 4px;border-bottom:1px solid #EDF1EF;font-size:19px}
+.kk-lq{font-size:22px;font-weight:700;color:#00A05A}
+.kk-la{font-weight:600}
+.kk-l button{color:#B4BEB9;font-size:24px}
+.kk-sum{padding-top:14px}
+.kk-sum div{display:flex;justify-content:space-between;padding:6px 4px;font-size:16px;color:#6E7B75}
+.kk-sum div.tot{font-size:26px;font-weight:700;color:#16211C;padding-top:14px;margin-top:8px;
+  border-top:2px solid #E1E6E3}
+.kk-bar{display:flex;align-items:center;gap:16px;margin:0 22px 22px;padding:20px 26px;
+  border-radius:16px;background:#00A05A;color:#fff;border:none}
+.kk-bn{background:rgba(0,0,0,.22);border-radius:99px;padding:5px 15px;font-size:17px;font-weight:700}
+.kk-bl{flex:1;text-align:left;font-size:18px;font-weight:600}
+.kk-bt{font-size:22px;font-weight:700}
+.kk-pay{margin:0 22px 22px;padding:26px;border-radius:16px;background:#00A05A;color:#fff;
+  font-size:22px;font-weight:700;border:none;display:block;width:calc(100% - 44px)}
+.kk-pay[disabled]{background:#DDE3E0;color:#98A29D}
 
 .tchip.save{transition:color .2s,border-color .2s}
 .tchip.save.pending{color:var(--warn);border-color:rgba(224,178,85,.4)}
@@ -2613,11 +2716,11 @@ const LAYOUTS=[
   ref:"Near-black with a hot orange, heavy type, full-bleed tiles and an order that reads back before payment.",
   why:"Built for a hot line and a queue. Options open as a full screen, the order is confirmed once, and the ticket number fills the display at the end."},
 
- {k:"retail",n:"Retail",tag:"Shops, market stalls, anywhere with a card reader",
-  shell:"retail",font:"Inter",mono:"Inter",mode:"light",accent:"#006AFF",
-  bg:"#F7F7F7",panel:"#FFFFFF",line:"#E3E3E3",key:"#FFFFFF",radius:6,chrome:"own",
-  ref:"White, generous, a blue action colour and a library of coloured tiles with the basket held to the right.",
-  why:"The one most people have already used. Tiles on the left, running basket on the right, and one large charge button."},
+ {k:"board",n:"Board",tag:"Delis, takeaways, repair counters — several orders at once",
+  shell:"board",font:"Inter",mono:"Inter",mode:"dark",accent:"#4FA3D9",
+  bg:"#1E2429",panel:"#262E34",line:"#39434B",key:"#2E3740",radius:6,chrome:"own",
+  ref:"Every open order visible at the same time as a card, with products adding to whichever one is active.",
+  why:"No other register here can hold four orders at once. Tap a ticket to make it live, tap products to fill it, settle it when they pay. Built for a counter where three people are waiting on different things."},
 
  {k:"commerce",n:"Commerce",tag:"Clothing, gifts, anything with a catalogue behind it",
   shell:"commerce",font:"Inter",mono:"Inter",mode:"light",accent:"#008060",
@@ -2625,11 +2728,11 @@ const LAYOUTS=[
   ref:"Search-led, products as a list rather than a grid, a green checkout button and a cart panel that behaves like an online one.",
   why:"For a shop with more products than fit on a screen. You search or scan rather than browse, and the cart totals like a web checkout."},
 
- {k:"counter",n:"Counter",tag:"Bakeries, delis, takeaways — quick service",
-  shell:"counter",font:"Inter",mono:"Inter",mode:"light",accent:"#00A05A",
-  bg:"#FFFFFF",panel:"#F6F7F8",line:"#E1E4E6",key:"#F6F7F8",radius:10,chrome:"own",
-  ref:"Round category buttons across the top, a soft tile grid, and a wide green pay bar pinned to the bottom.",
-  why:"Fast and forgiving. Big targets, few steps, and the total always visible along the bottom."}
+ {k:"kiosk",n:"Kiosk",tag:"Big screens, queues, anywhere a customer can see it",
+  shell:"kiosk",font:"Inter",mono:"Inter",mode:"light",accent:"#00A05A",
+  bg:"#FFFFFF",panel:"#F5F7F6",line:"#E1E6E3",key:"#F5F7F6",radius:16,chrome:"own",
+  ref:"One thing on screen at a time — categories, then products, then how many. Nothing sits beside anything else.",
+  why:"Every other register shows a grid and an order together. This one never does: it asks one question per screen with targets big enough to hit from a metre away."}
 ];
 const ACCENTS=[
  ["#5CE0A8","Mint"],["#3FBF8F","Jade"],["#2FA3A3","Teal"],["#4FD6D6","Aqua"],
@@ -2642,10 +2745,11 @@ const ACCENTS=[
 function suggestLayout(){
   const t=(A.type+" "+A.desc).toLowerCase();
   if(/restaurant|pizz|bar|pub|brewery|taproom|caf|coffee/.test(t))return "service";
-  if(/bakery|deli|sandwich|juice|ice cream|food truck|takeaway|fast food/.test(t))return "counter";
+  if(/deli|sandwich|takeaway|butcher|repair|phone|tailor|dry clean/.test(t))return "board";
   if(/cloth|boutique|shoe|jewel|watch|handbag|furniture|gift|book|record|toy|craft/.test(t))return "commerce";
   if(/convenience|gas|fuel|truck stop|liquor|tobacco|vape|hardware|auto parts|pharmac/.test(t))return "commander";
-  return "retail";
+  if(/bakery|juice|ice cream|food truck|market stall|kiosk|stand/.test(t))return "kiosk";
+  return "commerce";
 }
 function suggestAccent(){
   const t=(A.type+" "+A.desc).toLowerCase();
@@ -4048,7 +4152,7 @@ function setTotal(v){
 /* Two shells now render the same sale. Everything that changes the cart calls
    this instead of assuming the panel-and-grid layout is on screen. */
 const SHELLS={classic:()=>drawClassic(),menu:()=>drawMenuShell(),
-  retail:()=>drawRetailShell(),commerce:()=>drawCommerceShell(),counter:()=>drawCounterShell()};
+  commerce:()=>drawCommerceShell(),board:()=>drawBoardShell(),kiosk:()=>drawKioskShell()};
 function refreshSale(){
   const s=typeof THEME!=="undefined"&&THEME.shell;
   if(s&&SHELLS[s])return SHELLS[s]();
@@ -5574,7 +5678,7 @@ function applyTheme(){
   document.body.classList.toggle("own-chrome",THEME.chrome==="own"&&VIEW==="sale");
   const sale=$("vSale");
   if(sale){
-    ["classic","menu","retail","commerce","counter","panels"].forEach(s=>
+    ["classic","menu","commerce","board","kiosk","panels"].forEach(s=>
       sale.classList.remove("shell-"+s));
     sale.classList.add("shell-"+(THEME.shell||"panels"));
     sale.classList.remove("tape-left","tape-right","tape-bottom");
@@ -5654,7 +5758,7 @@ function health(){
   themeIssues().forEach(i=>f.push({sev:i.t==="warn"?"warn":"info",t:"Appearance",d:i.m,fix:null}));
   return f;
 }
-const BUILD="483a2a661a";
+const BUILD="a2d747c0d1";
 function tHealth(){
   const f=health();
   window.__fix=i=>{f[i].fix&&f[i].fix();reload();drawConfig()};
@@ -8393,66 +8497,6 @@ function mnFinished(sale) {
                 pay bar pinned along the bottom.
    =========================================================================== */
 
-/* ------------------------------- RETAIL ------------------------------- */
-function drawRetailShell() {
-  const t = calc(), items = shKeys(), cats = shDepts();
-  document.getElementById("vSale").innerHTML = `
-    <div class="rt">
-      <header class="rt-top">
-        <div class="rt-brand">
-          ${CFG.site.logo ? `<img src="${esc(CFG.site.logo)}" alt="">` : ""}
-          <b>${esc(CFG.site.name)}</b>
-        </div>
-        <div class="rt-search">
-          <input id="rtQ" placeholder="Search library" autocomplete="off" value="${esc(FILTER)}">
-        </div>
-        <button class="rt-more" onclick="__sh.nav()" aria-label="Menu">···</button>
-      </header>
-      <div class="rt-body">
-        <div class="rt-left">
-          <div class="rt-tabs">
-            ${cats.map((m, i) => `<button class="${i === SH_CAT ? "on" : ""}"
-              onclick="__sh.cat(${i})">${esc(m.n)}</button>`).join("")}
-          </div>
-          <div class="rt-grid">
-            ${items.map(({ k, p }, i) => {
-              const d = byId(CFG.depts, p.deptId);
-              return `<button class="rt-t" onclick="__sh.ring('${p.id}')"
-                style="--c:${k.color || d?.color || "#006AFF"};animation-delay:${Math.min(i * 18, 260)}ms">
-                <span class="rt-n">${esc(k.label || p.n)}</span>
-                <span class="rt-p">${money(p.price)}</span>
-              </button>`;
-            }).join("") || `<div class="rt-empty">Nothing in this section</div>`}
-          </div>
-        </div>
-        <aside class="rt-cart">
-          <div class="rt-ch">Current sale</div>
-          <div class="rt-lines">
-            ${CART.map((c, i) => `<div class="rt-l">
-              <div class="rt-ln"><b>${esc(c.n)}</b>
-                ${c.mods?.length ? `<em>${esc(c.mods.join(", "))}</em>` : ""}
-                <span class="rt-lq">${c.q} × ${money(c.price)}</span></div>
-              <div class="rt-lr">
-                <span class="rt-la">${money(c.price * c.q * (1 - (c.disc || 0) / 100))}</span>
-                <button onclick="__sh.drop(${i})" aria-label="Remove">×</button>
-              </div>
-            </div>`).join("") || `<div class="rt-none">Add an item to start a sale</div>`}
-          </div>
-          <div class="rt-sums">
-            <div><span>Subtotal</span><b>${money(t.sub)}</b></div>
-            ${CFG.taxRates.filter(r => r.rate > 0 && Math.abs(t.taxes[r.id] || 0) > 0.001)
-              .map(r => `<div><span>${esc(r.n)}</span><b>${money(t.taxes[r.id])}</b></div>`).join("")}
-          </div>
-          <button class="rt-charge" onclick="__sh.pay()" ${CART.length ? "" : "disabled"}>
-            Charge ${money(Math.abs(t.tot))}
-          </button>
-        </aside>
-      </div>
-    </div>`;
-  const q = document.getElementById("rtQ");
-  if (q) q.oninput = e => { FILTER = e.target.value; drawRetailShell(); };
-}
-
 /* ------------------------------ COMMERCE ------------------------------ */
 function drawCommerceShell() {
   const t = calc(), cats = shDepts();
@@ -8523,55 +8567,6 @@ function drawCommerceShell() {
   if (s) s.oninput = e => { FILTER = e.target.value; drawCommerceShell(); };
 }
 
-/* ------------------------------- COUNTER ------------------------------- */
-function drawCounterShell() {
-  const t = calc(), items = shKeys(), cats = shDepts();
-  document.getElementById("vSale").innerHTML = `
-    <div class="cn">
-      <header class="cn-top">
-        <button class="cn-mn" onclick="__sh.nav()" aria-label="Menu">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-            stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-        </button>
-        <b>${esc(CFG.site.name)}</b>
-        <span>${esc(ME ? ME.n : "")}</span>
-      </header>
-      <div class="cn-cats">
-        ${cats.map((m, i) => {
-          const d = CFG.depts.find(x => "M" + x.id === m.id);
-          return `<button class="${i === SH_CAT ? "on" : ""}" onclick="__sh.cat(${i})">
-            <span class="cn-circle" style="background:${d?.color || "#00A05A"}">
-              ${esc(m.n.trim()[0] || "?")}</span>
-            <em>${esc(m.n)}</em></button>`;
-        }).join("")}
-      </div>
-      <div class="cn-body">
-        <div class="cn-grid">
-          ${items.map(({ k, p }, i) => `<button class="cn-t" onclick="__sh.ring('${p.id}')"
-            style="animation-delay:${Math.min(i * 18, 260)}ms">
-            <span class="cn-n">${esc(k.label || p.n)}</span>
-            <span class="cn-p">${money(p.price)}</span>
-          </button>`).join("") || `<div class="cn-empty">Nothing here yet</div>`}
-        </div>
-        <aside class="cn-tick">
-          <div class="cn-th">Order</div>
-          <div class="cn-lines">
-            ${CART.map((c, i) => `<div class="cn-l">
-              <span class="cn-lq">${c.q}</span>
-              <span class="cn-ln">${esc(c.n)}</span>
-              <span class="cn-la">${money(c.price * c.q * (1 - (c.disc || 0) / 100))}</span>
-              <button onclick="__sh.drop(${i})" aria-label="Remove">×</button>
-            </div>`).join("") || `<div class="cn-none">Tap an item</div>`}
-          </div>
-        </aside>
-      </div>
-      <div class="cn-pay">
-        <div class="cn-total"><span>Total</span><b>${money(Math.abs(t.tot))}</b></div>
-        <button class="cn-btn" onclick="__sh.pay()" ${CART.length ? "" : "disabled"}>Pay</button>
-      </div>
-    </div>`;
-}
-
 /* A payment picker in each register's own manner, rather than one shared modal. */
 window.__sh.pay = function () {
   if (!CART.length) return;
@@ -8592,6 +8587,264 @@ window.__sh.pay = function () {
     el.remove();
     if (m) tender(m);
   });
+};
+
+/* ===========================================================================
+   Board and Kiosk.
+
+   The two registers that were too alike are gone. These are different ideas,
+   not different arrangements:
+
+     board   several orders open at once, side by side as cards. You tap a
+             ticket to make it active and tap products to add to it. Nothing
+             else on screen works this way — it's how a deli, a takeaway or a
+             repair counter actually runs, with four things on the go.
+
+     kiosk   one screen at a time. Categories fill the display, then products
+             fill the display, then a quantity step, then back. No persistent
+             panels, no grid and cart together. For a queue and a big screen.
+   =========================================================================== */
+
+/* ================================= BOARD ================================= */
+let BD = { tickets: [], active: 0, seq: 1 };
+
+function bdInit() {
+  if (!BD.tickets.length) BD.tickets = [{ id: "T" + uid(), label: "Ticket 1", lines: [], at: new Date() }];
+  if (BD.active >= BD.tickets.length) BD.active = 0;
+}
+/* The live CART always belongs to the active ticket. Switching parks the one
+   you were on and picks up another, so four orders can be genuinely open. */
+function bdPark() {
+  bdInit();
+  BD.tickets[BD.active].lines = CART;
+}
+function bdLoad(i) {
+  bdPark();
+  BD.active = i;
+  CART = BD.tickets[i].lines;
+  SEL = null;
+  refreshSale();
+}
+
+function drawBoardShell() {
+  bdInit();
+  BD.tickets[BD.active].lines = CART;
+  const items = shKeys(), cats = shDepts(), t = calc();
+
+  const totalOf = lines => {
+    const sum = lines.reduce((a, c) => a + c.price * c.q * (1 - (c.disc || 0) / 100), 0);
+    return money(sum);
+  };
+
+  document.getElementById("vSale").innerHTML = `
+    <div class="bd">
+      <header class="bd-top">
+        <b>${esc(CFG.site.name)}</b>
+        <span>${esc(ME ? ME.n : "")}</span>
+        <button onclick="__sh.nav()" aria-label="Menu">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+      </header>
+
+      <div class="bd-tickets">
+        ${BD.tickets.map((tk, i) => {
+          const n = tk.lines.reduce((a, c) => a + c.q, 0);
+          return `<div class="bd-tk ${i === BD.active ? "on" : ""}" onclick="__bd.pick(${i})">
+            <div class="bd-tkh">
+              <b>${esc(tk.label)}</b>
+              ${BD.tickets.length > 1
+                ? `<button onclick="event.stopPropagation();__bd.close(${i})" aria-label="Close">×</button>` : ""}
+            </div>
+            <div class="bd-tkl">
+              ${tk.lines.slice(0, 4).map(c =>
+                `<span>${c.q > 1 ? c.q + "× " : ""}${esc(c.n)}</span>`).join("")
+                || `<span class="bd-tke">empty</span>`}
+              ${tk.lines.length > 4 ? `<span class="bd-tkm">+${tk.lines.length - 4} more</span>` : ""}
+            </div>
+            <div class="bd-tkf"><span>${n} item${n === 1 ? "" : "s"}</span>
+              <b>${totalOf(tk.lines)}</b></div>
+          </div>`;
+        }).join("")}
+        <button class="bd-new" onclick="__bd.add()">
+          <span>+</span><em>New ticket</em></button>
+      </div>
+
+      <div class="bd-mid">
+        <div class="bd-cats">
+          ${cats.map((m, i) => `<button class="${i === SH_CAT ? "on" : ""}"
+            onclick="__sh.cat(${i})">${esc(m.n)}</button>`).join("")}
+        </div>
+        <div class="bd-grid">
+          ${items.map(({ k, p }, i) => {
+            const d = byId(CFG.depts, p.deptId);
+            return `<button class="bd-t" onclick="__sh.ring('${p.id}')"
+              style="--c:${k.color || d?.color || "#4A5A6B"};animation-delay:${Math.min(i * 16, 240)}ms">
+              <span>${esc(k.label || p.n)}</span><em>${money(p.price)}</em></button>`;
+          }).join("") || `<div class="bd-empty">Nothing in this section</div>`}
+        </div>
+      </div>
+
+      <div class="bd-foot">
+        <div class="bd-active">
+          <span>${esc(BD.tickets[BD.active].label)}</span>
+          <b>${money(Math.abs(t.tot))}</b>
+        </div>
+        <button class="bd-settle" onclick="__sh.pay()" ${CART.length ? "" : "disabled"}>
+          Settle this ticket</button>
+      </div>
+    </div>`;
+}
+
+window.__bd = {
+  pick(i) { bdLoad(i); },
+  add() {
+    bdPark();
+    BD.seq++;
+    BD.tickets.push({ id: "T" + uid(), label: "Ticket " + BD.seq, lines: [], at: new Date() });
+    BD.active = BD.tickets.length - 1;
+    CART = BD.tickets[BD.active].lines;
+    refreshSale();
+  },
+  close(i) {
+    const tk = BD.tickets[i];
+    const go = () => {
+      BD.tickets.splice(i, 1);
+      if (!BD.tickets.length) { BD.seq = 1; bdInit(); }
+      BD.active = Math.max(0, Math.min(BD.active, BD.tickets.length - 1));
+      CART = BD.tickets[BD.active].lines;
+      refreshSale();
+    };
+    if (!tk.lines.length) return go();
+    const el = veil(`<div class="card"><h3>Close ${esc(tk.label)}?</h3>
+      <p>It has ${tk.lines.length} item${tk.lines.length === 1 ? "" : "s"} on it that haven't been
+        paid for. Closing it throws them away.</p>
+      <div class="row"><button class="no" id="bdn">Keep it</button>
+        <button class="danger" id="bdy">Throw it away</button></div></div>`);
+    el.querySelector("#bdn").onclick = () => el.remove();
+    el.querySelector("#bdy").onclick = () => { el.remove(); go(); };
+  }
+};
+
+/* ================================= KIOSK =================================
+   One thing on screen at a time. Categories, then products, then how many.
+   No panel is ever visible beside another. */
+let KK_STEP = "cats", KK_P = null, KK_Q = 1;
+
+function drawKioskShell() {
+  if (KK_STEP === "items") return kkItems();
+  if (KK_STEP === "qty") return kkQty();
+  if (KK_STEP === "order") return kkOrder();
+  kkCats();
+}
+
+const kkFrame = (title, back, body, bar) => `
+  <div class="kk">
+    <header class="kk-top">
+      ${back ? `<button class="kk-back" onclick="__kk.back()">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+          stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>` : ""}
+      <b>${title}</b>
+      <button class="kk-mn" onclick="__sh.nav()" aria-label="Menu">···</button>
+    </header>
+    <div class="kk-body">${body}</div>
+    ${bar || ""}
+  </div>`;
+
+const kkBar = () => {
+  const t = calc(), n = CART.reduce((a, c) => a + c.q, 0);
+  if (!n) return "";
+  return `<button class="kk-bar" onclick="__kk.order()">
+    <span class="kk-bn">${n}</span>
+    <span class="kk-bl">See the order</span>
+    <span class="kk-bt">${money(Math.abs(t.tot))}</span></button>`;
+};
+
+function kkCats() {
+  const cats = shDepts();
+  document.getElementById("vSale").innerHTML = kkFrame(esc(CFG.site.name), false, `
+    <div class="kk-grid cats">
+      ${cats.map((m, i) => {
+        const d = CFG.depts.find(x => "M" + x.id === m.id);
+        return `<button class="kk-cat" onclick="__kk.cat(${i})"
+          style="--c:${d?.color || "#3E5C55"};animation-delay:${Math.min(i * 40, 320)}ms">
+          <span>${esc(m.n)}</span>
+          <em>${m.keys.length} item${m.keys.length === 1 ? "" : "s"}</em></button>`;
+      }).join("")}
+    </div>`, kkBar());
+}
+
+function kkItems() {
+  const items = shKeys(), cat = shDepts()[SH_CAT];
+  document.getElementById("vSale").innerHTML = kkFrame(esc(cat ? cat.n : ""), true, `
+    <div class="kk-grid items">
+      ${items.map(({ k, p }, i) => `<button class="kk-item" onclick="__kk.item('${p.id}')"
+        style="animation-delay:${Math.min(i * 32, 280)}ms">
+        <span>${esc(k.label || p.n)}</span>
+        <em>${money(p.price)}</em></button>`).join("")
+        || `<div class="kk-empty">Nothing in here</div>`}
+    </div>`, kkBar());
+}
+
+function kkQty() {
+  const p = KK_P;
+  document.getElementById("vSale").innerHTML = kkFrame("How many?", true, `
+    <div class="kk-qty">
+      <div class="kk-qn">${esc(p.n)}</div>
+      <div class="kk-qp">${money(p.price)} each</div>
+      <div class="kk-stepper">
+        <button onclick="__kk.less()" aria-label="Fewer">−</button>
+        <b>${KK_Q}</b>
+        <button onclick="__kk.more()" aria-label="More">+</button>
+      </div>
+      <button class="kk-confirm" onclick="__kk.confirm()">
+        Add ${KK_Q} · ${money(p.price * KK_Q)}</button>
+    </div>`, "");
+}
+
+function kkOrder() {
+  const t = calc();
+  document.getElementById("vSale").innerHTML = kkFrame("The order", true, `
+    <div class="kk-lines">
+      ${CART.map((c, i) => `<div class="kk-l">
+        <span class="kk-lq">${c.q}</span>
+        <span class="kk-ln">${esc(c.n)}</span>
+        <span class="kk-la">${money(c.price * c.q * (1 - (c.disc || 0) / 100))}</span>
+        <button onclick="__kk.drop(${i})" aria-label="Remove">×</button>
+      </div>`).join("") || `<div class="kk-empty">Nothing added</div>`}
+    </div>
+    <div class="kk-sum">
+      ${CFG.taxRates.filter(r => r.rate > 0 && Math.abs(t.taxes[r.id] || 0) > 0.001)
+        .map(r => `<div><span>${esc(r.n)}</span><b>${money(t.taxes[r.id])}</b></div>`).join("")}
+      <div class="tot"><span>Total</span><b>${money(Math.abs(t.tot))}</b></div>
+    </div>`, `<button class="kk-pay" onclick="__sh.pay()" ${CART.length ? "" : "disabled"}>
+      Pay ${money(Math.abs(t.tot))}</button>`);
+}
+
+window.__kk = {
+  back() {
+    KK_STEP = KK_STEP === "items" ? "cats" : KK_STEP === "qty" ? "items"
+      : KK_STEP === "order" ? "cats" : "cats";
+    drawKioskShell();
+  },
+  cat(i) { SH_CAT = i; KK_STEP = "items"; drawKioskShell(); },
+  item(id) {
+    const p = byId(CFG.plus, id);
+    if (!p) return;
+    /* Anything with choices still goes through the shared restriction and
+       modifier path — this register only changes how quantity is asked. */
+    if (p.modIds?.length) return ring(p);
+    KK_P = p; KK_Q = 1; KK_STEP = "qty"; drawKioskShell();
+  },
+  more() { KK_Q = Math.min(99, KK_Q + 1); drawKioskShell(); },
+  less() { KK_Q = Math.max(1, KK_Q - 1); drawKioskShell(); },
+  confirm() {
+    const p = KK_P, q = KK_Q;
+    KK_STEP = "items"; KK_P = null; KK_Q = 1;
+    for (let i = 0; i < q; i++) ring(p);
+  },
+  order() { KK_STEP = "order"; drawKioskShell(); },
+  drop(i) { CART.splice(i, 1); if (!CART.length) KK_STEP = "cats"; drawKioskShell(); }
 };
 
 /* ============================ CONFIGURATION CLIENT ============================

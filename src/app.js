@@ -113,11 +113,11 @@ const LAYOUTS=[
   ref:"Near-black with a hot orange, heavy type, full-bleed tiles and an order that reads back before payment.",
   why:"Built for a hot line and a queue. Options open as a full screen, the order is confirmed once, and the ticket number fills the display at the end."},
 
- {k:"retail",n:"Retail",tag:"Shops, market stalls, anywhere with a card reader",
-  shell:"retail",font:"Inter",mono:"Inter",mode:"light",accent:"#006AFF",
-  bg:"#F7F7F7",panel:"#FFFFFF",line:"#E3E3E3",key:"#FFFFFF",radius:6,chrome:"own",
-  ref:"White, generous, a blue action colour and a library of coloured tiles with the basket held to the right.",
-  why:"The one most people have already used. Tiles on the left, running basket on the right, and one large charge button."},
+ {k:"board",n:"Board",tag:"Delis, takeaways, repair counters — several orders at once",
+  shell:"board",font:"Inter",mono:"Inter",mode:"dark",accent:"#4FA3D9",
+  bg:"#1E2429",panel:"#262E34",line:"#39434B",key:"#2E3740",radius:6,chrome:"own",
+  ref:"Every open order visible at the same time as a card, with products adding to whichever one is active.",
+  why:"No other register here can hold four orders at once. Tap a ticket to make it live, tap products to fill it, settle it when they pay. Built for a counter where three people are waiting on different things."},
 
  {k:"commerce",n:"Commerce",tag:"Clothing, gifts, anything with a catalogue behind it",
   shell:"commerce",font:"Inter",mono:"Inter",mode:"light",accent:"#008060",
@@ -125,11 +125,11 @@ const LAYOUTS=[
   ref:"Search-led, products as a list rather than a grid, a green checkout button and a cart panel that behaves like an online one.",
   why:"For a shop with more products than fit on a screen. You search or scan rather than browse, and the cart totals like a web checkout."},
 
- {k:"counter",n:"Counter",tag:"Bakeries, delis, takeaways — quick service",
-  shell:"counter",font:"Inter",mono:"Inter",mode:"light",accent:"#00A05A",
-  bg:"#FFFFFF",panel:"#F6F7F8",line:"#E1E4E6",key:"#F6F7F8",radius:10,chrome:"own",
-  ref:"Round category buttons across the top, a soft tile grid, and a wide green pay bar pinned to the bottom.",
-  why:"Fast and forgiving. Big targets, few steps, and the total always visible along the bottom."}
+ {k:"kiosk",n:"Kiosk",tag:"Big screens, queues, anywhere a customer can see it",
+  shell:"kiosk",font:"Inter",mono:"Inter",mode:"light",accent:"#00A05A",
+  bg:"#FFFFFF",panel:"#F5F7F6",line:"#E1E6E3",key:"#F5F7F6",radius:16,chrome:"own",
+  ref:"One thing on screen at a time — categories, then products, then how many. Nothing sits beside anything else.",
+  why:"Every other register shows a grid and an order together. This one never does: it asks one question per screen with targets big enough to hit from a metre away."}
 ];
 const ACCENTS=[
  ["#5CE0A8","Mint"],["#3FBF8F","Jade"],["#2FA3A3","Teal"],["#4FD6D6","Aqua"],
@@ -142,10 +142,11 @@ const ACCENTS=[
 function suggestLayout(){
   const t=(A.type+" "+A.desc).toLowerCase();
   if(/restaurant|pizz|bar|pub|brewery|taproom|caf|coffee/.test(t))return "service";
-  if(/bakery|deli|sandwich|juice|ice cream|food truck|takeaway|fast food/.test(t))return "counter";
+  if(/deli|sandwich|takeaway|butcher|repair|phone|tailor|dry clean/.test(t))return "board";
   if(/cloth|boutique|shoe|jewel|watch|handbag|furniture|gift|book|record|toy|craft/.test(t))return "commerce";
   if(/convenience|gas|fuel|truck stop|liquor|tobacco|vape|hardware|auto parts|pharmac/.test(t))return "commander";
-  return "retail";
+  if(/bakery|juice|ice cream|food truck|market stall|kiosk|stand/.test(t))return "kiosk";
+  return "commerce";
 }
 function suggestAccent(){
   const t=(A.type+" "+A.desc).toLowerCase();
@@ -1557,7 +1558,7 @@ function setTotal(v){
 /* Two shells now render the same sale. Everything that changes the cart calls
    this instead of assuming the panel-and-grid layout is on screen. */
 const SHELLS={classic:()=>drawClassic(),menu:()=>drawMenuShell(),
-  retail:()=>drawRetailShell(),commerce:()=>drawCommerceShell(),counter:()=>drawCounterShell()};
+  commerce:()=>drawCommerceShell(),board:()=>drawBoardShell(),kiosk:()=>drawKioskShell()};
 function refreshSale(){
   const s=typeof THEME!=="undefined"&&THEME.shell;
   if(s&&SHELLS[s])return SHELLS[s]();

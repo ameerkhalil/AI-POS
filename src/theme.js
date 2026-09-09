@@ -99,7 +99,7 @@ function applyTheme(){
   document.body.classList.toggle("own-chrome",THEME.chrome==="own"&&VIEW==="sale");
   const sale=$("vSale");
   if(sale){
-    ["classic","menu","retail","commerce","counter","panels"].forEach(s=>
+    ["classic","menu","commerce","board","kiosk","panels"].forEach(s=>
       sale.classList.remove("shell-"+s));
     sale.classList.add("shell-"+(THEME.shell||"panels"));
     sale.classList.remove("tape-left","tape-right","tape-bottom");
