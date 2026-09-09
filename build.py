@@ -12,6 +12,7 @@ mod2=open(f"{SRC}/modules2.js").read()
 stu=open(f"{SRC}/studio.js").read()
 cls=open(f"{SRC}/classic.js").read()
 shl=open(f"{SRC}/shells.js").read()
+msh=open(f"{SRC}/menu-shell.js").read()
 cfg=open(f"{SRC}/config.js").read()
 per=open("lib/persist.js").read()
 off=open("lib/offline.js").read()
@@ -71,7 +72,7 @@ css+='''
 
 shell=open("shell.html").read()
 html=(shell.replace("__CSS__",css).replace("__APP__",app).replace("__PRI__",pri)
-      .replace("__THM__",thm).replace("__IMP__",imp).replace("__HW__",hw).replace("__MOD__",mod).replace("__MOD2__",mod2).replace("__STUDIO__",stu).replace("__CLASSIC__",cls).replace("__SHELLS__",shl).replace("__CFG__",cfg).replace("__OFFLINE__",off).replace("__PERSIST__",per)
+      .replace("__THM__",thm).replace("__IMP__",imp).replace("__HW__",hw).replace("__MOD__",mod).replace("__MOD2__",mod2).replace("__STUDIO__",stu).replace("__CLASSIC__",cls).replace("__SHELLS__",shl).replace("__MENUSHELL__",msh).replace("__CFG__",cfg).replace("__OFFLINE__",off).replace("__PERSIST__",per)
       .replace(head_old,head_new).replace(lock_old,lock_new))
 os.makedirs("public",exist_ok=True)
 open("public/app.html","w").write(html)
@@ -103,6 +104,7 @@ checks = [
     ("module registry",           lambda h: "const MODULES = {" in h),
     ("design studio",             lambda h: "function openStudio" in h and "launchPOS" in h),
     ("classic register",          lambda h: "function drawClassic" in h),
+    ("menu experience",           lambda h: "function mnReviewScreen" in h and "function mnDoneScreen" in h),
     ("five shells",               lambda h: all(f"function draw{n}Shell" in h for n in ["Menu","Terminal","Catalogue","Pad"])),
 ]
 bad = [n for n, f in checks if not f(html)]

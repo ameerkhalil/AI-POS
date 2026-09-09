@@ -1955,7 +1955,7 @@ body.tp-plain .grand .amt{font-size:40px}
 /* ============================ THE CLASSIC REGISTER ============================
    A different machine, not a rearranged one. Line display across the top, paper
    tape down one side, keypad and department keys filling the rest. */
-#vSale.shell-classic{display:block;padding:0;overflow:hidden}
+#vSale.on.shell-classic{display:block;padding:0;overflow:hidden}
 .cls{display:grid;grid-template-rows:auto minmax(0,1fr);height:100%;background:var(--bg)}
 
 /* --- the line display --- */
@@ -2066,7 +2066,7 @@ body.tp-plain .grand .amt{font-size:40px}
 }
 
 /* ================================ MENU ================================ */
-#vSale.shell-menu{display:block;padding:0;overflow:hidden}
+#vSale.on.shell-menu{display:block;padding:0;overflow:hidden}
 .mn{display:grid;grid-template-rows:auto minmax(0,1fr);height:100%;background:var(--bg);position:relative}
 .mn-cats{display:flex;gap:8px;padding:16px 18px;overflow-x:auto;border-bottom:1px solid var(--line)}
 .mn-cats button{flex:none;padding:12px 22px;border-radius:99px;font-size:15px;font-weight:600;
@@ -2126,7 +2126,7 @@ body.tp-plain .grand .amt{font-size:40px}
 .mn-pay button[disabled]{opacity:.3}
 
 /* ============================== TERMINAL ============================== */
-#vSale.shell-terminal{display:block;padding:0;overflow:hidden;background:#000}
+#vSale.on.shell-terminal{display:block;padding:0;overflow:hidden;background:#000}
 .tm{display:grid;grid-template-rows:auto minmax(0,1fr);height:100%;
   font-family:"IBM Plex Mono",monospace;font-size:13px;color:#FFB000}
 .tm-head{display:flex;gap:26px;padding:9px 16px;border-bottom:1px solid #3A3320;
@@ -2171,7 +2171,7 @@ body.tp-plain .grand .amt{font-size:40px}
 .tm-pay[disabled]{opacity:.3}
 
 /* ============================= CATALOGUE ============================= */
-#vSale.shell-catalogue{display:block;padding:0;overflow:hidden}
+#vSale.on.shell-catalogue{display:block;padding:0;overflow:hidden}
 .ct{display:grid;grid-template-columns:236px minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;
   height:100%;background:var(--bg)}
 .ct-side{grid-row:1/3;border-right:1px solid var(--line);padding:24px 18px;overflow-y:auto;
@@ -2229,7 +2229,7 @@ body.tp-plain .grand .amt{font-size:40px}
 .ct-pay button[disabled]{opacity:.35}
 
 /* ================================ PAD ================================ */
-#vSale.shell-pad{display:block;padding:0;overflow:hidden}
+#vSale.on.shell-pad{display:block;padding:0;overflow:hidden}
 .pd{display:grid;grid-template-rows:auto auto minmax(0,1fr);height:100%;background:var(--bg);
   position:relative;max-width:760px;margin:0 auto;width:100%;border-left:1px solid var(--line);
   border-right:1px solid var(--line)}
@@ -2282,6 +2282,145 @@ body.tp-plain .grand .amt{font-size:40px}
   .ct-side{grid-row:auto;border-right:none;border-bottom:1px solid var(--line)}
   .ct-bar{grid-column:1}
 }
+
+/* Each register brings its own chrome. The shared top bar and rail are what
+   made five different screens read as one product, so shells that draw their
+   own navigation get the app's out of the way entirely. */
+body.own-chrome .topbar,body.own-chrome .rail{display:none}
+body.own-chrome #app.on{grid-template-columns:1fr;grid-template-rows:1fr}
+body.own-chrome .view,body.own-chrome #vSale{grid-column:1;grid-row:1}
+
+/* the small navigation each shell renders for itself */
+.shnav{display:flex;align-items:center;gap:8px}
+.shnav button{display:flex;align-items:center;gap:7px;border-radius:99px;padding:8px 14px;
+  font-size:12.5px;border:1px solid transparent;transition:all .14s}
+.shnav .live{width:6px;height:6px;border-radius:99px;background:var(--vfd);flex:none}
+.shnav .live.off{background:var(--void)}
+
+/* --- Menu: its own masthead --- */
+.mn-top{display:flex;align-items:center;gap:12px;padding:16px 18px 4px}
+.mn-top img{width:30px;height:30px;object-fit:contain;border-radius:8px;background:#fff;padding:3px}
+.mn-dot{width:9px;height:9px;border-radius:99px;background:var(--vfd);flex:none;display:block}
+.mn-top b{font-size:21px;font-weight:700;letter-spacing:-.02em}
+.mn-top em{font-style:normal;font-size:12.5px;color:var(--txt-3)}
+.mn-who{margin-left:auto;font-size:13px;color:var(--txt-2)}
+.mn-menu{width:38px;height:38px;border-radius:99px;border:1px solid var(--line);display:grid;
+  place-items:center;color:var(--txt-2)}
+.mn-menu:hover{background:rgba(255,255,255,.06);color:var(--txt)}
+
+/* --- Terminal: a status line, not a bar --- */
+.tm-mode{margin-left:auto}
+.tm-nav{background:none;border:none;color:#FFB000;font-family:inherit;font-size:11.5px;
+  letter-spacing:.1em;padding:0 0 0 20px;cursor:pointer}
+.tm-nav:hover{text-decoration:underline}
+.tm-head span:last-of-type{margin-left:0}
+
+/* --- Catalogue: nav lives at the foot of its own sidebar --- */
+.ct-foot{display:flex;justify-content:space-between;align-items:center;margin-top:26px;
+  padding-top:16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--txt-3)}
+.ct-foot button{font-size:12.5px;color:var(--txt-2);border:1px solid var(--line);border-radius:99px;
+  padding:7px 15px}
+.ct-foot button:hover{color:var(--txt);border-color:var(--line-2)}
+
+/* --- Pad: a phone-shaped header --- */
+.pd-top img{width:28px;height:28px;object-fit:contain;border-radius:8px;background:#fff;padding:2px}
+.pd-top{gap:11px}
+.pd-menu{margin-left:auto;width:38px;height:38px;border-radius:99px;border:1px solid var(--line);
+  display:grid;place-items:center;color:var(--txt-2)}
+.pd-menu:hover{background:rgba(0,0,0,.04);color:var(--txt)}
+
+/* ==================== MENU: its own screens ====================
+   Full-screen steps rather than dialogs over a board. Nothing here is shared
+   with the other four registers. */
+.mn-badge{position:absolute;top:10px;right:10px;min-width:26px;height:26px;border-radius:99px;
+  background:rgba(0,0,0,.32);display:grid;place-items:center;font-size:13px;font-weight:600;
+  padding:0 8px}
+.mn-t{position:relative}
+
+.mn-step{display:grid;grid-template-rows:auto minmax(0,1fr) auto;height:100%}
+.mn-shead{display:flex;align-items:center;gap:18px;padding:16px 20px;border-bottom:1px solid var(--line)}
+.mn-shead b{font-size:20px;font-weight:700;letter-spacing:-.02em}
+.mn-back{display:flex;align-items:center;gap:7px;font-size:13.5px;color:var(--txt-2);
+  border:1px solid var(--line);border-radius:99px;padding:8px 15px}
+.mn-back:hover{color:var(--txt);border-color:var(--line-2)}
+.mn-sbody{overflow-y:auto;padding:20px}
+
+/* options as a wall of buttons */
+.mn-grp{margin-bottom:26px}
+.mn-gh{display:flex;align-items:baseline;gap:11px;margin-bottom:11px}
+.mn-gh b{font-size:17px;font-weight:600}
+.mn-gh em{font-style:normal;font-size:12.5px;color:var(--txt-3);letter-spacing:.06em;
+  text-transform:uppercase}
+.mn-opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:9px}
+.mn-opt{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:19px 18px;
+  border-radius:var(--r2);border:2px solid var(--line);background:var(--panel);font-size:16px;
+  font-weight:500;text-align:left;transition:all .13s}
+.mn-opt:hover{border-color:var(--line-2)}
+.mn-opt.on{border-color:var(--vfd);background:color-mix(in srgb,var(--vfd) 14%,var(--panel))}
+.mn-opt em{font-style:normal;font-size:13.5px;color:var(--txt-3);font-weight:400}
+.mn-opt.on em{color:var(--vfd)}
+
+.mn-sfoot{display:flex;align-items:center;gap:14px;padding:16px 20px;border-top:1px solid var(--line);
+  background:var(--panel)}
+.mn-need{font-size:13.5px;color:var(--warn);flex:1}
+.mn-need.ok{color:var(--txt-3)}
+.mn-add{display:flex;align-items:center;gap:12px;padding:18px 28px;border-radius:99px;
+  background:var(--vfd);color:#3A1607;font-size:16px;font-weight:600;border:none;
+  transition:transform .12s,opacity .15s}
+.mn-add:hover{transform:translateY(-1px)}
+.mn-add.off,.mn-add[disabled]{opacity:.35;pointer-events:none}
+.mn-add b{font-weight:700}
+.mn-ghost{padding:17px 22px;border-radius:99px;border:1px solid var(--line-2);color:var(--txt-2);
+  font-size:14.5px}
+.mn-ghost:hover{color:var(--txt)}
+
+/* review */
+.mn-rl{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:16px;align-items:center;
+  padding:16px 0;border-bottom:1px solid var(--line)}
+.mn-rq{display:flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:99px;
+  padding:3px}
+.mn-rq button{width:34px;height:34px;border-radius:99px;font-size:19px;color:var(--txt-2)}
+.mn-rq button:hover{background:rgba(255,255,255,.07);color:var(--txt)}
+.mn-rq span{min-width:26px;text-align:center;font-size:15px;font-weight:600}
+.mn-rn b{display:block;font-size:16.5px;font-weight:500;line-height:1.3}
+.mn-rn em{display:block;font-style:normal;font-size:13px;color:var(--txt-3);margin-top:3px}
+.mn-ra{font-size:16.5px;font-weight:500}
+.mn-rx{width:34px;height:34px;border-radius:99px;color:var(--txt-3);font-size:20px}
+.mn-rx:hover{background:rgba(210,102,76,.15);color:var(--void)}
+.mn-rsum{padding:14px 20px;border-top:1px solid var(--line)}
+.mn-rsum div{display:flex;justify-content:space-between;padding:4px 0;font-size:14px;color:var(--txt-2)}
+.mn-rsum div.big{font-size:18px;color:var(--txt);padding-top:11px;margin-top:7px;
+  border-top:1px solid var(--line)}
+.mn-rsum div.big b{font-size:31px;font-weight:700;color:var(--vfd)}
+
+/* payment */
+.mn-due{display:flex;align-items:baseline;justify-content:center;gap:16px;padding:34px 20px 8px}
+.mn-due span{font-size:14px;letter-spacing:.16em;text-transform:uppercase;color:var(--txt-3)}
+.mn-due b{font-size:clamp(46px,7vw,74px);font-weight:700;letter-spacing:-.03em;color:var(--vfd)}
+.mn-err{margin:0 20px 8px;padding:13px 17px;border-radius:var(--r2);font-size:14px;
+  background:rgba(210,102,76,.12);border:1px solid rgba(210,102,76,.45);color:#F2BCAC}
+.mn-paygrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;
+  padding:20px;align-content:start}
+.mn-paytile{padding:34px 22px;border-radius:var(--r2);border:2px solid var(--line);
+  background:var(--panel);text-align:left;transition:all .13s}
+.mn-paytile:hover{border-color:var(--vfd);transform:translateY(-2px)}
+.mn-paytile.cash{background:color-mix(in srgb,var(--vfd) 15%,var(--panel));border-color:var(--vfd)}
+.mn-paytile b{display:block;font-size:21px;font-weight:600;margin-bottom:6px}
+.mn-paytile em{display:block;font-style:normal;font-size:13px;color:var(--txt-3)}
+
+/* completion */
+.mn-done{display:grid;place-items:center;align-content:center;gap:34px;height:100%;padding:30px}
+.mn-tick{text-align:center}
+.mn-tlab{display:block;font-size:14px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--txt-3);margin-bottom:8px}
+.mn-tnum{display:block;font-size:clamp(90px,16vw,168px);font-weight:700;line-height:.95;
+  letter-spacing:-.04em;color:var(--vfd)}
+.mn-tsum{display:block;font-size:16px;color:var(--txt-2);margin-top:14px}
+.mn-change{display:inline-flex;align-items:baseline;gap:14px;margin-top:22px;padding:14px 26px;
+  border-radius:99px;border:2px solid var(--vfd)}
+.mn-change span{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--txt-3)}
+.mn-change b{font-size:32px;font-weight:700;color:var(--vfd)}
+.mn-dact{display:flex;gap:12px}
 
 .tchip.save{transition:color .2s,border-color .2s}
 .tchip.save.pending{color:var(--warn);border-color:rgba(224,178,85,.4)}
@@ -2471,27 +2610,27 @@ const TYPES=TYPE_GROUPS.flatMap(g=>g[1]);
    different typeface, different palette. Somebody shown two of these would not
    guess they were the same software. */
 const LAYOUTS=[
- {k:"classic",n:"Classic",tag:"Convenience, liquor, hardware",
+ {k:"classic",chrome:"own",n:"Classic",tag:"Convenience, liquor, hardware",
   shell:"classic",font:"Archivo",mono:"Azeret Mono",mode:"dark",accent:"#5CE0A8",
   bg:"#141819",panel:"#1C2123",line:"#2E3639",key:"#262C2F",radius:3,
   why:"A keypad, department keys and a line display. No product grid at all — type a price and press a department, or scan. What a Verifone or an NCR looks like, and what most counters have actually run for thirty years."},
 
- {k:"menu",n:"Menu",tag:"Cafés, pizzerias, bars, food trucks",
+ {k:"menu",chrome:"own",n:"Menu",tag:"Cafés, pizzerias, bars, food trucks",
   shell:"menu",font:"Space Grotesk",mono:"Space Mono",mode:"dark",accent:"#FF7A45",
   bg:"#17110E",panel:"#231A15",line:"#3B2B22",key:"#2E211A",radius:18,
   why:"Products edge to edge, as big and colourful as the screen allows. No order panel taking up room — it lives behind one button and slides up over the top when you want it."},
 
- {k:"terminal",n:"Terminal",tag:"Parts counters, pharmacy, wholesale",
+ {k:"terminal",chrome:"own",n:"Terminal",tag:"Parts counters, pharmacy, wholesale",
   shell:"terminal",font:"IBM Plex Mono",mono:"IBM Plex Mono",mode:"contrast",accent:"#FFB000",
   bg:"#000000",panel:"#080A08",line:"#3A3320",key:"#141208",radius:0,
   why:"A command line. Type a barcode, or three-times-a-code, and press enter. Amber on black, no pictures, function keys down the side. Nobody needs to lift a hand off the keyboard."},
 
- {k:"catalogue",n:"Catalogue",tag:"Clothing, jewellery, furniture",
+ {k:"catalogue",chrome:"own",n:"Catalogue",tag:"Clothing, jewellery, furniture",
   shell:"catalogue",font:"Fraunces",mono:"Azeret Mono",mode:"light",accent:"#7B5EA7",
   bg:"#F5F2ED",panel:"#FDFBF8",line:"#E2DBD1",key:"#EFEAE2",radius:14,
   why:"Browse first. Large cards with room for sizes, categories set in a serif down the side, and the order along the bottom where it isn't competing for attention."},
 
- {k:"pad",n:"Pad",tag:"Market stalls, pop-ups, tablets",
+ {k:"pad",chrome:"own",n:"Pad",tag:"Market stalls, pop-ups, tablets",
   shell:"pad",font:"Space Grotesk",mono:"Space Mono",mode:"light",accent:"#0E9B8E",
   bg:"#F1F5F4",panel:"#FFFFFF",line:"#DCE5E3",key:"#E8EFED",radius:20,
   why:"One column, everything oversized, order as a sheet you pull up from the bottom. Built for a tablet held in one hand."}
@@ -3670,6 +3809,10 @@ function drawRail(){
 }
 function go(v){
   VIEW=v;drawRail();
+  /* Only the sale screen is handed over to a shell. Office, Reports and Config
+     stay in the shared chrome, or there'd be four of everything. */
+  document.body.classList.toggle("own-chrome",
+    typeof THEME!=="undefined"&&THEME.chrome==="own"&&v==="sale");
   ["vSale","vOffice","vReports","vConfig"].forEach(id=>$(id).classList.remove("on"));
   $({sale:"vSale",office:"vOffice",reports:"vReports",config:"vConfig"}[v]).classList.add("on");
   if(v==="office")drawOffice();
@@ -4283,6 +4426,14 @@ function finish(pays,roundAdj,reason,cid){
   if(held&&!TRAIN)capturePayment(held.intent);
   if(typeof printReceipt==="function"&&!RETURN)
     printReceipt(sale,{kick:pays.some(p=>{const m=CFG.mops.find(x=>x.n===p.mop);return m&&m.drawer})});
+  /* A shell can take over what happens after a sale. Menu shows a ticket
+     number rather than a receipt, because that's what a café hands over. */
+  if(typeof THEME!=="undefined"&&THEME.shell==="menu"&&typeof mnFinished==="function"){
+    mnFinished(sale);
+    if(typeof printReceipt==="function"&&!wasRet)printReceipt(sale,{kick:pays.some(p=>{
+      const m=CFG.mops.find(x=>x.n===p.mop);return m&&m.drawer})});
+    return;
+  }
   window.__rcpt=n=>receipt(SHIFT.sales.find(s=>s.n===n)||sale);
   toast(`${wasRet?"Refunded":"Paid"} <b>${money(Math.abs(t.tot))}</b> · ${esc(paid)}${ch?` · change <b>${money(ch.change)}</b>`:""}
     &nbsp;<button class="act" onclick="__rcpt(${sale.n})">Receipt</button>`);
@@ -5385,6 +5536,7 @@ function themeFromConfig(){
     THEME.nav=L.nav;
     THEME.tapeStyle=L.tapeStyle;
     THEME.font=L.font;THEME.mono=L.mono;THEME.shell=L.shell||"panels";
+    THEME.chrome=L.chrome||"shared";
     THEME.bg=L.bg;THEME.panel=L.panel;THEME.line=L.line;THEME.key=L.key;
     if(CFG.theme?.radius==null)THEME.radius=L.radius;
     if(CFG.theme?.fontScale==null)THEME.fontScale=L.fs;
@@ -5423,6 +5575,7 @@ function applyTheme(){
   document.body.classList.toggle("searchlead",THEME.searchLeads!==false);
   /* Where the receipt sits and how sections are reached are the two things that
      actually make one trade's register look unlike another's. */
+  document.body.classList.toggle("own-chrome",THEME.chrome==="own"&&VIEW==="sale");
   const sale=$("vSale");
   if(sale){
     ["classic","menu","terminal","catalogue","pad","panels"].forEach(s=>
@@ -5505,7 +5658,7 @@ function health(){
   themeIssues().forEach(i=>f.push({sev:i.t==="warn"?"warn":"info",t:"Appearance",d:i.m,fix:null}));
   return f;
 }
-const BUILD="ba6f77511e";
+const BUILD="96a4a3fd7c";
 function tHealth(){
   const f=health();
   window.__fix=i=>{f[i].fix&&f[i].fix();reload();drawConfig()};
@@ -7746,68 +7899,20 @@ function clsKeyboard(e) {
 
 let SH_CAT = 0, SH_OPEN = false, SH_CMD = "", SH_LOG = [];
 
+/* Every shell draws its own way out. Sharing one top bar across five registers
+   is exactly what made them look like one product wearing five coats. */
+function shMenuBtn(cls) {
+  return `<button class="${cls || ""}" onclick="__sh.nav()" title="Menu">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+      stroke-width="1.9" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>`;
+}
+
 const shDepts = () => CFG.menus.filter(m => !m.fuel);
 const shKeys = () => {
   const m = shDepts()[SH_CAT];
   return m ? m.keys.map(k => ({ k, p: byId(CFG.plus, k.pluId) })).filter(x => x.p) : [];
 };
 const shCount = () => CART.reduce((a, c) => a + c.q, 0);
-
-/* ============================== MENU ==============================
-   No cart on screen. Products edge to edge, as big and as colourful as they
-   can be. The order lives behind a button and slides up when you want it —
-   which is how a counter with a queue actually works: hands on products,
-   totals at the end. */
-function drawMenuShell() {
-  const t = calc(), items = shKeys(), cats = shDepts();
-  document.getElementById("vSale").innerHTML = `
-    <div class="mn">
-      <div class="mn-cats">
-        ${cats.map((m, i) => `<button class="${i === SH_CAT ? "on" : ""}"
-          onclick="__sh.cat(${i})">${esc(m.n)}</button>`).join("")}
-      </div>
-      <div class="mn-grid">
-        ${items.length ? items.map(({ k, p }, i) => {
-          const d = byId(CFG.depts, p.deptId);
-          const col = k.color || d?.color || "#3E464A";
-          return `<button class="mn-t" onclick="__sh.ring('${p.id}')"
-            style="--c:${col};animation-delay:${Math.min(i * 22, 320)}ms">
-            <span class="mn-n">${esc(k.label || p.n)}</span>
-            <span class="mn-p num">${money(p.price)}</span>
-            ${p.modIds?.length ? `<span class="mn-o">options</span>` : ""}
-          </button>`;
-        }).join("") : `<div class="mn-empty">Nothing on this menu yet</div>`}
-      </div>
-      <button class="mn-bar ${CART.length ? "" : "off"}" onclick="__sh.open()">
-        <span class="mn-cnt">${shCount()}</span>
-        <span class="mn-lbl">${CART.length ? "View the order" : "No items yet"}</span>
-        <span class="mn-tot num">${money(Math.abs(t.tot))}</span>
-      </button>
-      <div class="mn-sheet ${SH_OPEN ? "up" : ""}">
-        <div class="mn-sh">
-          <b>Current order</b>
-          <button onclick="__sh.close()">Back to the menu</button>
-        </div>
-        <div class="mn-lines">
-          ${CART.map((c, i) => `<div class="mn-l">
-            <span class="mn-lq">${c.q}</span>
-            <span class="mn-ln">${esc(c.n)}${c.mods?.length ? `<em>${esc(c.mods.join(", "))}</em>` : ""}</span>
-            <span class="mn-la num">${money(c.price * c.q * (1 - (c.disc || 0) / 100))}</span>
-            <button class="mn-lx" onclick="__sh.drop(${i})">×</button>
-          </div>`).join("") || `<div class="mn-empty2">Nothing added</div>`}
-        </div>
-        <div class="mn-sums">
-          ${CFG.taxRates.filter(r => r.rate > 0 && Math.abs(t.taxes[r.id] || 0) > 0.001)
-            .map(r => `<div><span>${esc(r.n)}</span><b class="num">${money(t.taxes[r.id])}</b></div>`).join("")}
-          <div class="big"><span>Total</span><b class="num">${money(Math.abs(t.tot))}</b></div>
-        </div>
-        <div class="mn-pay">
-          ${CFG.mops.map(m => `<button onclick="__sh.tender('${m.id}')"
-            ${CART.length ? "" : "disabled"}>${esc(m.n)}</button>`).join("")}
-        </div>
-      </div>
-    </div>`;
-}
 
 /* ============================ TERMINAL ============================
    A command line. Type a barcode, a PLU number, or a quantity and a code, and
@@ -7821,7 +7926,9 @@ function drawTerminalShell() {
         <span>${esc(CFG.site.name).toUpperCase()}</span>
         <span>REG ${esc(CFG.site.register)}</span>
         <span>${esc(ME ? ME.n.toUpperCase() : "")}</span>
-        <span>${RETURN ? "** RETURN **" : "SALE"}</span>
+        <span>${new Date().toTimeString().slice(0, 5)}</span>
+        <span class="tm-mode">${RETURN ? "** RETURN **" : "SALE"}</span>
+        <button class="tm-nav" onclick="__sh.nav()">[MENU]</button>
       </div>
       <div class="tm-cols">
         <div class="tm-main">
@@ -7893,6 +8000,10 @@ function drawCatalogueShell() {
         <div class="ct-srch">
           <input id="ctQ" placeholder="Search" autocomplete="off">
         </div>
+        <div class="ct-foot">
+          <span>${esc(ME ? ME.n : "")}</span>
+          <button onclick="__sh.nav()">Menu</button>
+        </div>
       </aside>
       <main class="ct-main">
         <div class="ct-h">
@@ -7942,8 +8053,9 @@ function drawPadShell() {
   document.getElementById("vSale").innerHTML = `
     <div class="pd">
       <div class="pd-top">
+        ${CFG.site.logo ? `<img src="${esc(CFG.site.logo)}" alt="">` : ""}
         <b>${esc(CFG.site.name)}</b>
-        <span>${esc(ME ? ME.n : "")}</span>
+        ${shMenuBtn("pd-menu")}
       </div>
       <div class="pd-cats">
         ${cats.map((m, i) => `<button class="${i === SH_CAT ? "on" : ""}"
@@ -7987,6 +8099,26 @@ function drawPadShell() {
 
 /* ------------------------- shared interactions ------------------------- */
 window.__sh = {
+  /* One way out, drawn in whatever style the shell is wearing. */
+  nav() {
+    const el = veil(`<div class="card"><h3>${esc(CFG.site.name)}</h3>
+      <p>Signed in as ${esc(ME ? ME.n : "")} · Register ${esc(CFG.site.register)}</p>
+      <div class="opts" style="flex-direction:column;margin-top:16px">
+        <button data-g="office" style="width:100%">Office — shift, cash, tasks</button>
+        <button data-g="reports" style="width:100%">Reports</button>
+        <button data-g="config" style="width:100%">Settings</button>
+        <button data-g="ret" style="width:100%">${RETURN ? "Leave return mode" : "Start a return"}</button>
+        <button data-g="lock" style="width:100%">Lock the register</button>
+      </div>
+      <div class="row"><button class="no" id="shx">Back to the sale</button></div></div>`);
+    el.querySelector("#shx").onclick = () => el.remove();
+    el.querySelectorAll("[data-g]").forEach(b => b.onclick = () => {
+      const g = b.dataset.g; el.remove();
+      if (g === "ret") return toggleReturn();
+      if (g === "lock") return lock();
+      go(g);
+    });
+  },
   cat(i) { SH_CAT = i; FILTER = ""; refreshSale(); },
   ring(id) { ring(byId(CFG.plus, id)); },
   drop(i) { CART.splice(i, 1); SEL = null; refreshSale(); },
@@ -8023,6 +8155,279 @@ window.__sh = {
     refreshSale();
   }
 };
+
+/* ===========================================================================
+   Menu — the whole experience, not a skin.
+
+   Different styling was never going to be enough. What gives software away is
+   its behaviour: the same modal, the same words, the same number of taps. So
+   this register borrows nothing from the others.
+
+     vocabulary   an order, not a sale. Sent, not tendered. A ticket number.
+     options      a full screen with big choices, never a dialog box
+     review       an explicit step before payment, because a café reads the
+                  order back before taking money
+     payment      its own screen with large tiles, not a modal over the top
+     completion   a full-screen ticket number that clears itself
+
+   The register underneath is untouched — same CART, same tax, same Stripe
+   path. Only the conversation with the cashier is different.
+   =========================================================================== */
+
+let MN_STEP = "menu", MN_P = null, MN_PICK = {}, MN_DONE = null, MN_ERR = "";
+
+const mnMoney = n => "$" + money(Math.abs(n));
+const mnCount = () => CART.reduce((a, c) => a + c.q, 0);
+
+/* Every screen this register can be on. One of them is showing at any time —
+   there is no stack of dialogs over a background. */
+function drawMenuShell() {
+  if (MN_STEP === "options") return mnOptionsScreen();
+  if (MN_STEP === "review") return mnReviewScreen();
+  if (MN_STEP === "pay") return mnPayScreen();
+  if (MN_STEP === "done") return mnDoneScreen();
+  mnBoardScreen();
+}
+
+/* ------------------------------- the board ------------------------------- */
+function mnBoardScreen() {
+  const items = shKeys(), cats = shDepts();
+  document.getElementById("vSale").innerHTML = `
+    <div class="mn">
+      <header class="mn-top">
+        ${CFG.site.logo ? `<img src="${esc(CFG.site.logo)}" alt="">` : `<i class="mn-dot"></i>`}
+        <b>${esc(CFG.site.name)}</b>
+        ${CFG.site.slogan ? `<em>${esc(CFG.site.slogan)}</em>` : ""}
+        <span class="mn-who">${esc(ME ? ME.n : "")}</span>
+        <button class="mn-menu" onclick="__sh.nav()" aria-label="Menu">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+            stroke-width="1.9" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+      </header>
+      <div class="mn-cats">
+        ${cats.map((m, i) => `<button class="${i === SH_CAT ? "on" : ""}"
+          onclick="__mn.cat(${i})">${esc(m.n)}</button>`).join("")}
+      </div>
+      <div class="mn-grid">
+        ${items.length ? items.map(({ k, p }, i) => {
+          const d = byId(CFG.depts, p.deptId);
+          const col = k.color || d?.color || "#8A3D2A";
+          const on = CART.filter(c => c.pluId === p.id).reduce((a, c) => a + c.q, 0);
+          return `<button class="mn-t" onclick="__mn.tap('${p.id}')"
+            style="--c:${col};animation-delay:${Math.min(i * 22, 320)}ms">
+            ${on ? `<span class="mn-badge">${on}</span>` : ""}
+            <span class="mn-n">${esc(k.label || p.n)}</span>
+            <span class="mn-p num">${mnMoney(p.price)}</span>
+            ${p.modIds?.length ? `<span class="mn-o">choices</span>` : ""}
+          </button>`;
+        }).join("") : `<div class="mn-empty">Nothing on this board yet</div>`}
+      </div>
+      ${CART.length ? `<button class="mn-bar" onclick="__mn.review()">
+        <span class="mn-cnt">${mnCount()}</span>
+        <span class="mn-lbl">Review the order</span>
+        <span class="mn-tot num">${mnMoney(calc().tot)}</span>
+      </button>` : ""}
+    </div>`;
+}
+
+/* ------------------------------ the options ------------------------------
+   A full screen with buttons big enough to hit without looking. Every café POS
+   worth using does this; a 320px dialog with radio buttons is a spreadsheet's
+   idea of taking an order. */
+function mnOptionsScreen() {
+  const p = MN_P;
+  const groups = (p.modIds || []).map(id => byId(CFG.modGroups, id)).filter(Boolean);
+  const extra = groups.reduce((a, g) =>
+    a + (MN_PICK[g.id] || []).reduce((s, n) => s + (g.opts.find(o => o.n === n)?.p || 0), 0), 0);
+  const missing = groups.filter(g => g.required && !(MN_PICK[g.id] || []).length);
+
+  document.getElementById("vSale").innerHTML = `
+    <div class="mn mn-step">
+      <header class="mn-shead">
+        <button onclick="__mn.back()" class="mn-back">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>
+          Back to the board</button>
+        <b>${esc(p.n)}</b>
+      </header>
+      <div class="mn-sbody">
+        ${groups.map(g => `
+          <div class="mn-grp">
+            <div class="mn-gh">
+              <b>${esc(g.n)}</b>
+              <em>${g.required ? "Pick one" : g.multi ? "Add any" : "Optional"}</em>
+            </div>
+            <div class="mn-opts">
+              ${g.opts.map(o => {
+                const on = (MN_PICK[g.id] || []).includes(o.n);
+                return `<button class="mn-opt ${on ? "on" : ""}"
+                  onclick="__mn.opt('${g.id}','${jsq(o.n)}',${!!g.multi})">
+                  <span>${esc(o.n)}</span>
+                  ${o.p ? `<em>+${mnMoney(o.p)}</em>` : ""}
+                </button>`;
+              }).join("")}
+            </div>
+          </div>`).join("")}
+      </div>
+      <div class="mn-sfoot">
+        ${missing.length
+          ? `<span class="mn-need">Pick ${esc(missing[0].n.toLowerCase())} to carry on</span>`
+          : `<span class="mn-need ok">Ready</span>`}
+        <button class="mn-add ${missing.length ? "off" : ""}" onclick="__mn.add()">
+          Add to the order <b class="num">${mnMoney(p.price + extra)}</b>
+        </button>
+      </div>
+    </div>`;
+}
+
+/* ------------------------------- the review ------------------------------
+   A café reads the order back before taking money. This is that step, and it's
+   why there is no cart panel on the board — the order is checked once, here,
+   rather than glanced at forty times. */
+function mnReviewScreen() {
+  const t = calc();
+  document.getElementById("vSale").innerHTML = `
+    <div class="mn mn-step">
+      <header class="mn-shead">
+        <button onclick="__mn.back()" class="mn-back">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>
+          Add more</button>
+        <b>The order</b>
+      </header>
+      <div class="mn-sbody">
+        ${CART.map((c, i) => `
+          <div class="mn-rl">
+            <div class="mn-rq">
+              <button onclick="__mn.less(${i})" aria-label="One fewer">−</button>
+              <span>${c.q}</span>
+              <button onclick="__mn.more(${i})" aria-label="One more">+</button>
+            </div>
+            <div class="mn-rn">
+              <b>${esc(c.n)}</b>
+              ${c.mods?.length ? `<em>${esc(c.mods.join(", "))}</em>` : ""}
+              ${c.note ? `<em>${esc(c.note)}</em>` : ""}
+            </div>
+            <span class="mn-ra num">${mnMoney(c.price * c.q * (1 - (c.disc || 0) / 100))}</span>
+            <button class="mn-rx" onclick="__mn.drop(${i})" aria-label="Remove">×</button>
+          </div>`).join("") || `<div class="mn-empty2">The order is empty</div>`}
+      </div>
+      <div class="mn-rsum">
+        ${CFG.taxRates.filter(r => r.rate > 0 && Math.abs(t.taxes[r.id] || 0) > 0.001)
+          .map(r => `<div><span>${esc(r.n)}</span><b class="num">${mnMoney(t.taxes[r.id])}</b></div>`).join("")}
+        <div class="big"><span>To pay</span><b class="num">${mnMoney(t.tot)}</b></div>
+      </div>
+      <div class="mn-sfoot">
+        <button class="mn-ghost" onclick="__mn.clear()">Start again</button>
+        <button class="mn-add" onclick="__mn.toPay()" ${CART.length ? "" : "disabled"}>
+          Take payment <b class="num">${mnMoney(t.tot)}</b></button>
+      </div>
+    </div>`;
+}
+
+/* ------------------------------ the payment ------------------------------ */
+function mnPayScreen() {
+  const t = calc();
+  document.getElementById("vSale").innerHTML = `
+    <div class="mn mn-step">
+      <header class="mn-shead">
+        <button onclick="__mn.review()" class="mn-back">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>
+          Back to the order</button>
+        <b>How are they paying?</b>
+      </header>
+      <div class="mn-due"><span>Due</span><b class="num">${mnMoney(t.tot)}</b></div>
+      ${MN_ERR ? `<div class="mn-err">${esc(MN_ERR)}</div>` : ""}
+      <div class="mn-paygrid">
+        ${CFG.mops.map(m => `<button class="mn-paytile ${m.kind}" onclick="__mn.pay('${m.id}')">
+          <b>${esc(m.n)}</b>
+          <em>${m.kind === "cash" ? "Drawer opens" : m.kind === "gift" ? "Scan the card"
+            : m.kind === "ebt" ? "Eligible items only" : "Reader takes it"}</em>
+        </button>`).join("")}
+      </div>
+    </div>`;
+}
+
+/* ----------------------------- the completion ----------------------------
+   A ticket number, big, for a few seconds. Nobody signs a receipt in a café —
+   they walk away with a number and wait for it to be called. */
+function mnDoneScreen() {
+  const s = MN_DONE;
+  document.getElementById("vSale").innerHTML = `
+    <div class="mn mn-done">
+      <div class="mn-tick">
+        <span class="mn-tlab">Order</span>
+        <b class="mn-tnum num">${s.n}</b>
+        <span class="mn-tsum">${s.lines.reduce((a, c) => a + c.q, 0)} items ·
+          ${mnMoney(s.tot + (s.roundAdj || 0))}</span>
+        ${s.pays.some(p => p.change > 0.001)
+          ? `<div class="mn-change"><span>Change</span>
+             <b class="num">${mnMoney(s.pays.find(p => p.change > 0.001).change)}</b></div>` : ""}
+      </div>
+      <div class="mn-dact">
+        <button class="mn-ghost" onclick="__mn.receipt()">Print a receipt</button>
+        <button class="mn-add" onclick="__mn.next()">Next order</button>
+      </div>
+    </div>`;
+}
+
+/* ------------------------------ its behaviour ----------------------------- */
+window.__mn = {
+  cat(i) { SH_CAT = i; drawMenuShell(); },
+  back() { MN_STEP = CART.length && MN_STEP === "review" ? "menu" : "menu"; MN_P = null; drawMenuShell(); },
+  tap(id) {
+    const p = byId(CFG.plus, id);
+    if (!p) return;
+    /* Anything needing a decision goes to its own screen. Anything that doesn't
+       lands straight on the order — no confirmation, no dialog. */
+    if (p.modIds?.length) { MN_P = p; MN_PICK = {}; MN_STEP = "options"; return drawMenuShell(); }
+    ring(p);
+  },
+  opt(gid, name, multi) {
+    const cur = MN_PICK[gid] || [];
+    MN_PICK[gid] = multi
+      ? (cur.includes(name) ? cur.filter(x => x !== name) : [...cur, name])
+      : (cur[0] === name ? [] : [name]);
+    drawMenuShell();
+  },
+  add() {
+    const p = MN_P, groups = (p.modIds || []).map(id => byId(CFG.modGroups, id)).filter(Boolean);
+    if (groups.some(g => g.required && !(MN_PICK[g.id] || []).length)) return;
+    const chosen = [], extra = groups.reduce((a, g) => {
+      (MN_PICK[g.id] || []).forEach(n => {
+        chosen.push(n);
+        a += g.opts.find(o => o.n === n)?.p || 0;
+      });
+      return a;
+    }, 0);
+    MN_STEP = "menu"; MN_P = null;
+    add(p, { price: p.price + extra, mods: chosen });
+  },
+  review() { MN_STEP = "review"; drawMenuShell(); },
+  more(i) { CART[i].q++; drawMenuShell(); },
+  less(i) { CART[i].q > 1 ? CART[i].q-- : CART.splice(i, 1); if (!CART.length) MN_STEP = "menu"; drawMenuShell(); },
+  drop(i) { CART.splice(i, 1); if (!CART.length) MN_STEP = "menu"; drawMenuShell(); },
+  clear() { CART = []; SEL = null; DISC = null; MN_STEP = "menu"; drawMenuShell(); },
+  toPay() { MN_ERR = ""; MN_STEP = "pay"; drawMenuShell(); },
+  pay(id) {
+    const m = byId(CFG.mops, id);
+    if (!m || !CART.length) return;
+    if (!m.change && typeof ONLINE !== "undefined" && !ONLINE) {
+      MN_ERR = "Card payments need the network. Take cash, or wait for it to come back.";
+      return drawMenuShell();
+    }
+    tender(m);
+  },
+  receipt() { if (MN_DONE) receipt(MN_DONE); },
+  next() { MN_DONE = null; MN_STEP = "menu"; drawMenuShell(); }
+};
+
+/* When a sale completes, this register shows a ticket rather than a receipt. */
+function mnFinished(sale) {
+  MN_DONE = sale; MN_STEP = "done"; MN_PICK = {}; MN_P = null; MN_ERR = "";
+  drawMenuShell();
+}
 
 /* ============================ CONFIGURATION CLIENT ============================
    Modelled on Commander's Config Client and Passport's Manager Workstation:

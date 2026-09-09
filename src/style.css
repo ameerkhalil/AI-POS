@@ -1945,7 +1945,7 @@ body.tp-plain .grand .amt{font-size:40px}
 /* ============================ THE CLASSIC REGISTER ============================
    A different machine, not a rearranged one. Line display across the top, paper
    tape down one side, keypad and department keys filling the rest. */
-#vSale.shell-classic{display:block;padding:0;overflow:hidden}
+#vSale.on.shell-classic{display:block;padding:0;overflow:hidden}
 .cls{display:grid;grid-template-rows:auto minmax(0,1fr);height:100%;background:var(--bg)}
 
 /* --- the line display --- */
@@ -2056,7 +2056,7 @@ body.tp-plain .grand .amt{font-size:40px}
 }
 
 /* ================================ MENU ================================ */
-#vSale.shell-menu{display:block;padding:0;overflow:hidden}
+#vSale.on.shell-menu{display:block;padding:0;overflow:hidden}
 .mn{display:grid;grid-template-rows:auto minmax(0,1fr);height:100%;background:var(--bg);position:relative}
 .mn-cats{display:flex;gap:8px;padding:16px 18px;overflow-x:auto;border-bottom:1px solid var(--line)}
 .mn-cats button{flex:none;padding:12px 22px;border-radius:99px;font-size:15px;font-weight:600;
@@ -2116,7 +2116,7 @@ body.tp-plain .grand .amt{font-size:40px}
 .mn-pay button[disabled]{opacity:.3}
 
 /* ============================== TERMINAL ============================== */
-#vSale.shell-terminal{display:block;padding:0;overflow:hidden;background:#000}
+#vSale.on.shell-terminal{display:block;padding:0;overflow:hidden;background:#000}
 .tm{display:grid;grid-template-rows:auto minmax(0,1fr);height:100%;
   font-family:"IBM Plex Mono",monospace;font-size:13px;color:#FFB000}
 .tm-head{display:flex;gap:26px;padding:9px 16px;border-bottom:1px solid #3A3320;
@@ -2161,7 +2161,7 @@ body.tp-plain .grand .amt{font-size:40px}
 .tm-pay[disabled]{opacity:.3}
 
 /* ============================= CATALOGUE ============================= */
-#vSale.shell-catalogue{display:block;padding:0;overflow:hidden}
+#vSale.on.shell-catalogue{display:block;padding:0;overflow:hidden}
 .ct{display:grid;grid-template-columns:236px minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;
   height:100%;background:var(--bg)}
 .ct-side{grid-row:1/3;border-right:1px solid var(--line);padding:24px 18px;overflow-y:auto;
@@ -2219,7 +2219,7 @@ body.tp-plain .grand .amt{font-size:40px}
 .ct-pay button[disabled]{opacity:.35}
 
 /* ================================ PAD ================================ */
-#vSale.shell-pad{display:block;padding:0;overflow:hidden}
+#vSale.on.shell-pad{display:block;padding:0;overflow:hidden}
 .pd{display:grid;grid-template-rows:auto auto minmax(0,1fr);height:100%;background:var(--bg);
   position:relative;max-width:760px;margin:0 auto;width:100%;border-left:1px solid var(--line);
   border-right:1px solid var(--line)}
@@ -2272,3 +2272,142 @@ body.tp-plain .grand .amt{font-size:40px}
   .ct-side{grid-row:auto;border-right:none;border-bottom:1px solid var(--line)}
   .ct-bar{grid-column:1}
 }
+
+/* Each register brings its own chrome. The shared top bar and rail are what
+   made five different screens read as one product, so shells that draw their
+   own navigation get the app's out of the way entirely. */
+body.own-chrome .topbar,body.own-chrome .rail{display:none}
+body.own-chrome #app.on{grid-template-columns:1fr;grid-template-rows:1fr}
+body.own-chrome .view,body.own-chrome #vSale{grid-column:1;grid-row:1}
+
+/* the small navigation each shell renders for itself */
+.shnav{display:flex;align-items:center;gap:8px}
+.shnav button{display:flex;align-items:center;gap:7px;border-radius:99px;padding:8px 14px;
+  font-size:12.5px;border:1px solid transparent;transition:all .14s}
+.shnav .live{width:6px;height:6px;border-radius:99px;background:var(--vfd);flex:none}
+.shnav .live.off{background:var(--void)}
+
+/* --- Menu: its own masthead --- */
+.mn-top{display:flex;align-items:center;gap:12px;padding:16px 18px 4px}
+.mn-top img{width:30px;height:30px;object-fit:contain;border-radius:8px;background:#fff;padding:3px}
+.mn-dot{width:9px;height:9px;border-radius:99px;background:var(--vfd);flex:none;display:block}
+.mn-top b{font-size:21px;font-weight:700;letter-spacing:-.02em}
+.mn-top em{font-style:normal;font-size:12.5px;color:var(--txt-3)}
+.mn-who{margin-left:auto;font-size:13px;color:var(--txt-2)}
+.mn-menu{width:38px;height:38px;border-radius:99px;border:1px solid var(--line);display:grid;
+  place-items:center;color:var(--txt-2)}
+.mn-menu:hover{background:rgba(255,255,255,.06);color:var(--txt)}
+
+/* --- Terminal: a status line, not a bar --- */
+.tm-mode{margin-left:auto}
+.tm-nav{background:none;border:none;color:#FFB000;font-family:inherit;font-size:11.5px;
+  letter-spacing:.1em;padding:0 0 0 20px;cursor:pointer}
+.tm-nav:hover{text-decoration:underline}
+.tm-head span:last-of-type{margin-left:0}
+
+/* --- Catalogue: nav lives at the foot of its own sidebar --- */
+.ct-foot{display:flex;justify-content:space-between;align-items:center;margin-top:26px;
+  padding-top:16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--txt-3)}
+.ct-foot button{font-size:12.5px;color:var(--txt-2);border:1px solid var(--line);border-radius:99px;
+  padding:7px 15px}
+.ct-foot button:hover{color:var(--txt);border-color:var(--line-2)}
+
+/* --- Pad: a phone-shaped header --- */
+.pd-top img{width:28px;height:28px;object-fit:contain;border-radius:8px;background:#fff;padding:2px}
+.pd-top{gap:11px}
+.pd-menu{margin-left:auto;width:38px;height:38px;border-radius:99px;border:1px solid var(--line);
+  display:grid;place-items:center;color:var(--txt-2)}
+.pd-menu:hover{background:rgba(0,0,0,.04);color:var(--txt)}
+
+/* ==================== MENU: its own screens ====================
+   Full-screen steps rather than dialogs over a board. Nothing here is shared
+   with the other four registers. */
+.mn-badge{position:absolute;top:10px;right:10px;min-width:26px;height:26px;border-radius:99px;
+  background:rgba(0,0,0,.32);display:grid;place-items:center;font-size:13px;font-weight:600;
+  padding:0 8px}
+.mn-t{position:relative}
+
+.mn-step{display:grid;grid-template-rows:auto minmax(0,1fr) auto;height:100%}
+.mn-shead{display:flex;align-items:center;gap:18px;padding:16px 20px;border-bottom:1px solid var(--line)}
+.mn-shead b{font-size:20px;font-weight:700;letter-spacing:-.02em}
+.mn-back{display:flex;align-items:center;gap:7px;font-size:13.5px;color:var(--txt-2);
+  border:1px solid var(--line);border-radius:99px;padding:8px 15px}
+.mn-back:hover{color:var(--txt);border-color:var(--line-2)}
+.mn-sbody{overflow-y:auto;padding:20px}
+
+/* options as a wall of buttons */
+.mn-grp{margin-bottom:26px}
+.mn-gh{display:flex;align-items:baseline;gap:11px;margin-bottom:11px}
+.mn-gh b{font-size:17px;font-weight:600}
+.mn-gh em{font-style:normal;font-size:12.5px;color:var(--txt-3);letter-spacing:.06em;
+  text-transform:uppercase}
+.mn-opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:9px}
+.mn-opt{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:19px 18px;
+  border-radius:var(--r2);border:2px solid var(--line);background:var(--panel);font-size:16px;
+  font-weight:500;text-align:left;transition:all .13s}
+.mn-opt:hover{border-color:var(--line-2)}
+.mn-opt.on{border-color:var(--vfd);background:color-mix(in srgb,var(--vfd) 14%,var(--panel))}
+.mn-opt em{font-style:normal;font-size:13.5px;color:var(--txt-3);font-weight:400}
+.mn-opt.on em{color:var(--vfd)}
+
+.mn-sfoot{display:flex;align-items:center;gap:14px;padding:16px 20px;border-top:1px solid var(--line);
+  background:var(--panel)}
+.mn-need{font-size:13.5px;color:var(--warn);flex:1}
+.mn-need.ok{color:var(--txt-3)}
+.mn-add{display:flex;align-items:center;gap:12px;padding:18px 28px;border-radius:99px;
+  background:var(--vfd);color:#3A1607;font-size:16px;font-weight:600;border:none;
+  transition:transform .12s,opacity .15s}
+.mn-add:hover{transform:translateY(-1px)}
+.mn-add.off,.mn-add[disabled]{opacity:.35;pointer-events:none}
+.mn-add b{font-weight:700}
+.mn-ghost{padding:17px 22px;border-radius:99px;border:1px solid var(--line-2);color:var(--txt-2);
+  font-size:14.5px}
+.mn-ghost:hover{color:var(--txt)}
+
+/* review */
+.mn-rl{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:16px;align-items:center;
+  padding:16px 0;border-bottom:1px solid var(--line)}
+.mn-rq{display:flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:99px;
+  padding:3px}
+.mn-rq button{width:34px;height:34px;border-radius:99px;font-size:19px;color:var(--txt-2)}
+.mn-rq button:hover{background:rgba(255,255,255,.07);color:var(--txt)}
+.mn-rq span{min-width:26px;text-align:center;font-size:15px;font-weight:600}
+.mn-rn b{display:block;font-size:16.5px;font-weight:500;line-height:1.3}
+.mn-rn em{display:block;font-style:normal;font-size:13px;color:var(--txt-3);margin-top:3px}
+.mn-ra{font-size:16.5px;font-weight:500}
+.mn-rx{width:34px;height:34px;border-radius:99px;color:var(--txt-3);font-size:20px}
+.mn-rx:hover{background:rgba(210,102,76,.15);color:var(--void)}
+.mn-rsum{padding:14px 20px;border-top:1px solid var(--line)}
+.mn-rsum div{display:flex;justify-content:space-between;padding:4px 0;font-size:14px;color:var(--txt-2)}
+.mn-rsum div.big{font-size:18px;color:var(--txt);padding-top:11px;margin-top:7px;
+  border-top:1px solid var(--line)}
+.mn-rsum div.big b{font-size:31px;font-weight:700;color:var(--vfd)}
+
+/* payment */
+.mn-due{display:flex;align-items:baseline;justify-content:center;gap:16px;padding:34px 20px 8px}
+.mn-due span{font-size:14px;letter-spacing:.16em;text-transform:uppercase;color:var(--txt-3)}
+.mn-due b{font-size:clamp(46px,7vw,74px);font-weight:700;letter-spacing:-.03em;color:var(--vfd)}
+.mn-err{margin:0 20px 8px;padding:13px 17px;border-radius:var(--r2);font-size:14px;
+  background:rgba(210,102,76,.12);border:1px solid rgba(210,102,76,.45);color:#F2BCAC}
+.mn-paygrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;
+  padding:20px;align-content:start}
+.mn-paytile{padding:34px 22px;border-radius:var(--r2);border:2px solid var(--line);
+  background:var(--panel);text-align:left;transition:all .13s}
+.mn-paytile:hover{border-color:var(--vfd);transform:translateY(-2px)}
+.mn-paytile.cash{background:color-mix(in srgb,var(--vfd) 15%,var(--panel));border-color:var(--vfd)}
+.mn-paytile b{display:block;font-size:21px;font-weight:600;margin-bottom:6px}
+.mn-paytile em{display:block;font-style:normal;font-size:13px;color:var(--txt-3)}
+
+/* completion */
+.mn-done{display:grid;place-items:center;align-content:center;gap:34px;height:100%;padding:30px}
+.mn-tick{text-align:center}
+.mn-tlab{display:block;font-size:14px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--txt-3);margin-bottom:8px}
+.mn-tnum{display:block;font-size:clamp(90px,16vw,168px);font-weight:700;line-height:.95;
+  letter-spacing:-.04em;color:var(--vfd)}
+.mn-tsum{display:block;font-size:16px;color:var(--txt-2);margin-top:14px}
+.mn-change{display:inline-flex;align-items:baseline;gap:14px;margin-top:22px;padding:14px 26px;
+  border-radius:99px;border:2px solid var(--vfd)}
+.mn-change span{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--txt-3)}
+.mn-change b{font-size:32px;font-weight:700;color:var(--vfd)}
+.mn-dact{display:flex;gap:12px}

@@ -14,68 +14,20 @@
 
 let SH_CAT = 0, SH_OPEN = false, SH_CMD = "", SH_LOG = [];
 
+/* Every shell draws its own way out. Sharing one top bar across five registers
+   is exactly what made them look like one product wearing five coats. */
+function shMenuBtn(cls) {
+  return `<button class="${cls || ""}" onclick="__sh.nav()" title="Menu">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+      stroke-width="1.9" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>`;
+}
+
 const shDepts = () => CFG.menus.filter(m => !m.fuel);
 const shKeys = () => {
   const m = shDepts()[SH_CAT];
   return m ? m.keys.map(k => ({ k, p: byId(CFG.plus, k.pluId) })).filter(x => x.p) : [];
 };
 const shCount = () => CART.reduce((a, c) => a + c.q, 0);
-
-/* ============================== MENU ==============================
-   No cart on screen. Products edge to edge, as big and as colourful as they
-   can be. The order lives behind a button and slides up when you want it —
-   which is how a counter with a queue actually works: hands on products,
-   totals at the end. */
-function drawMenuShell() {
-  const t = calc(), items = shKeys(), cats = shDepts();
-  document.getElementById("vSale").innerHTML = `
-    <div class="mn">
-      <div class="mn-cats">
-        ${cats.map((m, i) => `<button class="${i === SH_CAT ? "on" : ""}"
-          onclick="__sh.cat(${i})">${esc(m.n)}</button>`).join("")}
-      </div>
-      <div class="mn-grid">
-        ${items.length ? items.map(({ k, p }, i) => {
-          const d = byId(CFG.depts, p.deptId);
-          const col = k.color || d?.color || "#3E464A";
-          return `<button class="mn-t" onclick="__sh.ring('${p.id}')"
-            style="--c:${col};animation-delay:${Math.min(i * 22, 320)}ms">
-            <span class="mn-n">${esc(k.label || p.n)}</span>
-            <span class="mn-p num">${money(p.price)}</span>
-            ${p.modIds?.length ? `<span class="mn-o">options</span>` : ""}
-          </button>`;
-        }).join("") : `<div class="mn-empty">Nothing on this menu yet</div>`}
-      </div>
-      <button class="mn-bar ${CART.length ? "" : "off"}" onclick="__sh.open()">
-        <span class="mn-cnt">${shCount()}</span>
-        <span class="mn-lbl">${CART.length ? "View the order" : "No items yet"}</span>
-        <span class="mn-tot num">${money(Math.abs(t.tot))}</span>
-      </button>
-      <div class="mn-sheet ${SH_OPEN ? "up" : ""}">
-        <div class="mn-sh">
-          <b>Current order</b>
-          <button onclick="__sh.close()">Back to the menu</button>
-        </div>
-        <div class="mn-lines">
-          ${CART.map((c, i) => `<div class="mn-l">
-            <span class="mn-lq">${c.q}</span>
-            <span class="mn-ln">${esc(c.n)}${c.mods?.length ? `<em>${esc(c.mods.join(", "))}</em>` : ""}</span>
-            <span class="mn-la num">${money(c.price * c.q * (1 - (c.disc || 0) / 100))}</span>
-            <button class="mn-lx" onclick="__sh.drop(${i})">×</button>
-          </div>`).join("") || `<div class="mn-empty2">Nothing added</div>`}
-        </div>
-        <div class="mn-sums">
-          ${CFG.taxRates.filter(r => r.rate > 0 && Math.abs(t.taxes[r.id] || 0) > 0.001)
-            .map(r => `<div><span>${esc(r.n)}</span><b class="num">${money(t.taxes[r.id])}</b></div>`).join("")}
-          <div class="big"><span>Total</span><b class="num">${money(Math.abs(t.tot))}</b></div>
-        </div>
-        <div class="mn-pay">
-          ${CFG.mops.map(m => `<button onclick="__sh.tender('${m.id}')"
-            ${CART.length ? "" : "disabled"}>${esc(m.n)}</button>`).join("")}
-        </div>
-      </div>
-    </div>`;
-}
 
 /* ============================ TERMINAL ============================
    A command line. Type a barcode, a PLU number, or a quantity and a code, and
@@ -89,7 +41,9 @@ function drawTerminalShell() {
         <span>${esc(CFG.site.name).toUpperCase()}</span>
         <span>REG ${esc(CFG.site.register)}</span>
         <span>${esc(ME ? ME.n.toUpperCase() : "")}</span>
-        <span>${RETURN ? "** RETURN **" : "SALE"}</span>
+        <span>${new Date().toTimeString().slice(0, 5)}</span>
+        <span class="tm-mode">${RETURN ? "** RETURN **" : "SALE"}</span>
+        <button class="tm-nav" onclick="__sh.nav()">[MENU]</button>
       </div>
       <div class="tm-cols">
         <div class="tm-main">
@@ -161,6 +115,10 @@ function drawCatalogueShell() {
         <div class="ct-srch">
           <input id="ctQ" placeholder="Search" autocomplete="off">
         </div>
+        <div class="ct-foot">
+          <span>${esc(ME ? ME.n : "")}</span>
+          <button onclick="__sh.nav()">Menu</button>
+        </div>
       </aside>
       <main class="ct-main">
         <div class="ct-h">
@@ -210,8 +168,9 @@ function drawPadShell() {
   document.getElementById("vSale").innerHTML = `
     <div class="pd">
       <div class="pd-top">
+        ${CFG.site.logo ? `<img src="${esc(CFG.site.logo)}" alt="">` : ""}
         <b>${esc(CFG.site.name)}</b>
-        <span>${esc(ME ? ME.n : "")}</span>
+        ${shMenuBtn("pd-menu")}
       </div>
       <div class="pd-cats">
         ${cats.map((m, i) => `<button class="${i === SH_CAT ? "on" : ""}"
@@ -255,6 +214,26 @@ function drawPadShell() {
 
 /* ------------------------- shared interactions ------------------------- */
 window.__sh = {
+  /* One way out, drawn in whatever style the shell is wearing. */
+  nav() {
+    const el = veil(`<div class="card"><h3>${esc(CFG.site.name)}</h3>
+      <p>Signed in as ${esc(ME ? ME.n : "")} · Register ${esc(CFG.site.register)}</p>
+      <div class="opts" style="flex-direction:column;margin-top:16px">
+        <button data-g="office" style="width:100%">Office — shift, cash, tasks</button>
+        <button data-g="reports" style="width:100%">Reports</button>
+        <button data-g="config" style="width:100%">Settings</button>
+        <button data-g="ret" style="width:100%">${RETURN ? "Leave return mode" : "Start a return"}</button>
+        <button data-g="lock" style="width:100%">Lock the register</button>
+      </div>
+      <div class="row"><button class="no" id="shx">Back to the sale</button></div></div>`);
+    el.querySelector("#shx").onclick = () => el.remove();
+    el.querySelectorAll("[data-g]").forEach(b => b.onclick = () => {
+      const g = b.dataset.g; el.remove();
+      if (g === "ret") return toggleReturn();
+      if (g === "lock") return lock();
+      go(g);
+    });
+  },
   cat(i) { SH_CAT = i; FILTER = ""; refreshSale(); },
   ring(id) { ring(byId(CFG.plus, id)); },
   drop(i) { CART.splice(i, 1); SEL = null; refreshSale(); },

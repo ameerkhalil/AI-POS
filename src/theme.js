@@ -57,6 +57,7 @@ function themeFromConfig(){
     THEME.nav=L.nav;
     THEME.tapeStyle=L.tapeStyle;
     THEME.font=L.font;THEME.mono=L.mono;THEME.shell=L.shell||"panels";
+    THEME.chrome=L.chrome||"shared";
     THEME.bg=L.bg;THEME.panel=L.panel;THEME.line=L.line;THEME.key=L.key;
     if(CFG.theme?.radius==null)THEME.radius=L.radius;
     if(CFG.theme?.fontScale==null)THEME.fontScale=L.fs;
@@ -95,6 +96,7 @@ function applyTheme(){
   document.body.classList.toggle("searchlead",THEME.searchLeads!==false);
   /* Where the receipt sits and how sections are reached are the two things that
      actually make one trade's register look unlike another's. */
+  document.body.classList.toggle("own-chrome",THEME.chrome==="own"&&VIEW==="sale");
   const sale=$("vSale");
   if(sale){
     ["classic","menu","terminal","catalogue","pad","panels"].forEach(s=>

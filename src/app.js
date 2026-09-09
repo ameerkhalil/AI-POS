@@ -96,27 +96,27 @@ const TYPES=TYPE_GROUPS.flatMap(g=>g[1]);
    different typeface, different palette. Somebody shown two of these would not
    guess they were the same software. */
 const LAYOUTS=[
- {k:"classic",n:"Classic",tag:"Convenience, liquor, hardware",
+ {k:"classic",chrome:"own",n:"Classic",tag:"Convenience, liquor, hardware",
   shell:"classic",font:"Archivo",mono:"Azeret Mono",mode:"dark",accent:"#5CE0A8",
   bg:"#141819",panel:"#1C2123",line:"#2E3639",key:"#262C2F",radius:3,
   why:"A keypad, department keys and a line display. No product grid at all — type a price and press a department, or scan. What a Verifone or an NCR looks like, and what most counters have actually run for thirty years."},
 
- {k:"menu",n:"Menu",tag:"Cafés, pizzerias, bars, food trucks",
+ {k:"menu",chrome:"own",n:"Menu",tag:"Cafés, pizzerias, bars, food trucks",
   shell:"menu",font:"Space Grotesk",mono:"Space Mono",mode:"dark",accent:"#FF7A45",
   bg:"#17110E",panel:"#231A15",line:"#3B2B22",key:"#2E211A",radius:18,
   why:"Products edge to edge, as big and colourful as the screen allows. No order panel taking up room — it lives behind one button and slides up over the top when you want it."},
 
- {k:"terminal",n:"Terminal",tag:"Parts counters, pharmacy, wholesale",
+ {k:"terminal",chrome:"own",n:"Terminal",tag:"Parts counters, pharmacy, wholesale",
   shell:"terminal",font:"IBM Plex Mono",mono:"IBM Plex Mono",mode:"contrast",accent:"#FFB000",
   bg:"#000000",panel:"#080A08",line:"#3A3320",key:"#141208",radius:0,
   why:"A command line. Type a barcode, or three-times-a-code, and press enter. Amber on black, no pictures, function keys down the side. Nobody needs to lift a hand off the keyboard."},
 
- {k:"catalogue",n:"Catalogue",tag:"Clothing, jewellery, furniture",
+ {k:"catalogue",chrome:"own",n:"Catalogue",tag:"Clothing, jewellery, furniture",
   shell:"catalogue",font:"Fraunces",mono:"Azeret Mono",mode:"light",accent:"#7B5EA7",
   bg:"#F5F2ED",panel:"#FDFBF8",line:"#E2DBD1",key:"#EFEAE2",radius:14,
   why:"Browse first. Large cards with room for sizes, categories set in a serif down the side, and the order along the bottom where it isn't competing for attention."},
 
- {k:"pad",n:"Pad",tag:"Market stalls, pop-ups, tablets",
+ {k:"pad",chrome:"own",n:"Pad",tag:"Market stalls, pop-ups, tablets",
   shell:"pad",font:"Space Grotesk",mono:"Space Mono",mode:"light",accent:"#0E9B8E",
   bg:"#F1F5F4",panel:"#FFFFFF",line:"#DCE5E3",key:"#E8EFED",radius:20,
   why:"One column, everything oversized, order as a sheet you pull up from the bottom. Built for a tablet held in one hand."}
@@ -1304,6 +1304,10 @@ function drawRail(){
 }
 function go(v){
   VIEW=v;drawRail();
+  /* Only the sale screen is handed over to a shell. Office, Reports and Config
+     stay in the shared chrome, or there'd be four of everything. */
+  document.body.classList.toggle("own-chrome",
+    typeof THEME!=="undefined"&&THEME.chrome==="own"&&v==="sale");
   ["vSale","vOffice","vReports","vConfig"].forEach(id=>$(id).classList.remove("on"));
   $({sale:"vSale",office:"vOffice",reports:"vReports",config:"vConfig"}[v]).classList.add("on");
   if(v==="office")drawOffice();
@@ -1917,6 +1921,14 @@ function finish(pays,roundAdj,reason,cid){
   if(held&&!TRAIN)capturePayment(held.intent);
   if(typeof printReceipt==="function"&&!RETURN)
     printReceipt(sale,{kick:pays.some(p=>{const m=CFG.mops.find(x=>x.n===p.mop);return m&&m.drawer})});
+  /* A shell can take over what happens after a sale. Menu shows a ticket
+     number rather than a receipt, because that's what a café hands over. */
+  if(typeof THEME!=="undefined"&&THEME.shell==="menu"&&typeof mnFinished==="function"){
+    mnFinished(sale);
+    if(typeof printReceipt==="function"&&!wasRet)printReceipt(sale,{kick:pays.some(p=>{
+      const m=CFG.mops.find(x=>x.n===p.mop);return m&&m.drawer})});
+    return;
+  }
   window.__rcpt=n=>receipt(SHIFT.sales.find(s=>s.n===n)||sale);
   toast(`${wasRet?"Refunded":"Paid"} <b>${money(Math.abs(t.tot))}</b> · ${esc(paid)}${ch?` · change <b>${money(ch.change)}</b>`:""}
     &nbsp;<button class="act" onclick="__rcpt(${sale.n})">Receipt</button>`);
