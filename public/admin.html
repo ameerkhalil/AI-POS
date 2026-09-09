@@ -256,6 +256,9 @@ function draw() {
       r => `<td><b>${esc(r.name)}</b></td><td style="color:var(--txt2)">${esc(r.email)}</td>
             <td style="color:var(--txt3)">open since ${ago(r.opened_at)}</td>`)}
 
+    <h2>Registers</h2>
+    <div class="card" id="healthBox"><div class="empty">Loading…</div></div>
+
     <h2>Model usage — last 30 days</h2>
     <div class="card" id="aiBox"><div class="empty">Loading…</div></div>
 
@@ -273,6 +276,7 @@ function draw() {
       expires on its own and is written into their activity log where they can see it.
     </div>`;
   drawMail();
+  drawHealth();
   drawAI();
   drawStorage();
   selChanged();
@@ -402,6 +406,55 @@ async function toggleOp(id, on) {
   if (!confirm(on ? "Give this account operator access?" : "Remove operator access?")) return;
   try { await api("/api/admin/operator", { method: "POST", body: { account: id, on } }); load(); }
   catch (e) { alert(e.message); }
+}
+
+/* ------------------------------ register health --------------------------
+   The thing you actually want at 8am: which tills are alive, what they're
+   running, and whether any of them are holding sales they couldn't send. */
+async function drawHealth() {
+  const box = document.getElementById("healthBox");
+  if (!box) return;
+  let d;
+  try { d = await api("/api/admin/health"); }
+  catch (e) { box.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+
+  if (!d.terminals.length) {
+    box.innerHTML = `<div class="empty">No registers have opened yet.</div>`;
+    return;
+  }
+
+  const problems = d.terminals.filter(t => t.state === "gone" || t.queued > 0);
+  box.innerHTML = `
+    <div class="aitop">
+      <div><span>Registers</span><b>${d.terminals.length}</b></div>
+      <div><span>Live now</span><b style="color:var(--ok)">${d.live}</b></div>
+      <div><span>Not seen in an hour</span><b style="${d.gone ? "color:var(--bad)" : ""}">${d.gone}</b></div>
+      <div><span>Holding sales</span><b style="${d.queued ? "color:var(--warn)" : ""}">${d.queued}</b></div>
+    </div>
+    ${d.builds.length > 1 ? `<div class="warnbox" style="margin:14px">Running ${d.builds.length}
+      different builds: ${d.builds.map(b => esc(b)).join(", ")}. A register on an old build may
+      behave differently from the rest.</div>` : ""}
+    <table><thead><tr><th>Store</th><th>Register</th><th>State</th><th>Build</th>
+      <th>Agent</th><th>Queued</th></tr></thead><tbody>
+      ${d.terminals.map(t => `<tr>
+        <td style="color:var(--txt2)">${esc(t.store)}</td>
+        <td><b>${esc(t.name)}</b> <span class="sub">lane ${t.number}</span></td>
+        <td><span class="pill ${t.state === "live" ? "ok" : t.state === "idle" ? ""
+          : "bad"}">${t.state === "live" ? "live" : t.state === "idle" ? "idle"
+          : t.state === "never" ? "never seen" : "gone"}</span>
+          ${t.minsAgo != null && t.state !== "live"
+            ? `<span class="sub">${ago(t.lastSeen)}</span>` : ""}</td>
+        <td class="num" style="color:var(--txt2)">${esc(t.build || "—")}</td>
+        <td>${t.agent ? "yes" : `<span style="color:var(--txt3)">no</span>`}</td>
+        <td class="num" style="${t.queued ? "color:var(--warn)" : "color:var(--txt3)"}">
+          ${t.queued || "—"}</td>
+      </tr>`).join("")}
+    </tbody></table>
+    ${problems.length ? `<div class="note" style="padding:0 14px 14px">
+      ${problems.length} worth a look: ${problems.map(p =>
+        `${esc(p.store)} ${esc(p.name)}${p.queued ? ` (${p.queued} unsent)` : ""}`).join(", ")}.</div>`
+      : `<div class="note" style="padding:0 14px 14px">Everything checked in recently and nothing is
+         holding unsent sales.</div>`}`;
 }
 
 /* ------------------------------ model usage ------------------------------ */

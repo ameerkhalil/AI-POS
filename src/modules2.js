@@ -812,3 +812,115 @@ function drawJournal(){
           </div>`).join("")}
       </div>`:`<div class="note" style="margin-top:16px">Nothing matches that search.</div>`}`}`;
 }
+
+
+/* ============================ REGISTERS IN THIS STORE =======================
+   A shop with two lanes needs one shift across both and two drawers under it,
+   because there are physically two tills and two people counting them. */
+let TERMS = null;
+
+async function tTerminals(){
+  $("cfgBody").innerHTML=`<p class="lede">Reading registers…</p>`;
+  try{
+    const [t,s]=await Promise.all([
+      api("/api/terminals?store="+STORE_ID),
+      api("/api/shift?store="+STORE_ID)
+    ]);
+    TERMS={list:t.terminals,shift:s.summary};
+  }catch(e){
+    $("cfgBody").innerHTML=`<div class="finding"><b>Couldn't load registers</b>
+      <span>${esc(e.message)}</span></div>`;return;
+  }
+  drawTerminals();
+}
+
+function drawTerminals(){
+  const {list,shift}=TERMS;
+  const live=list.filter(t=>!t.retired);
+
+  W.tRename=async(id,name)=>{
+    try{ await api("/api/terminals/"+id+"?store="+STORE_ID,{method:"PUT",
+      body:{store:STORE_ID,name}}); }catch(e){ toast(e.message,true) }
+  };
+  W.tRetire=async id=>{
+    const t=list.find(x=>x.id===id);
+    const el=veil(`<div class="card"><h3>Retire ${esc(t.name)}?</h3>
+      <p>It stops appearing as a register here. Its past sales are kept, so reports from before
+        today still read correctly — that's why this retires rather than deletes.</p>
+      <div class="row"><button class="no" id="rx">Keep it</button>
+        <button class="danger" id="ry">Retire it</button></div></div>`);
+    el.querySelector("#rx").onclick=()=>el.remove();
+    el.querySelector("#ry").onclick=async()=>{
+      el.remove();
+      try{ await api("/api/terminals/"+id+"/retire?store="+STORE_ID,{method:"POST",
+        body:{store:STORE_ID}}); toast("Retired."); tTerminals(); }
+      catch(e){ toast(e.message,true) }
+    };
+  };
+
+  const state=t=>{
+    if(t.retired)return `<span class="tstate off">retired</span>`;
+    if(!t.last_seen)return `<span class="tstate off">never seen</span>`;
+    const mins=Math.round((Date.now()-Date.parse(String(t.last_seen).replace(" ","T")+"Z"))/60000);
+    if(mins<5)return `<span class="tstate live">here now</span>`;
+    if(mins<60)return `<span class="tstate idle">${mins}m ago</span>`;
+    if(mins<1440)return `<span class="tstate gone">${Math.round(mins/60)}h ago</span>`;
+    return `<span class="tstate gone">${Math.round(mins/1440)}d ago</span>`;
+  };
+
+  $("cfgBody").innerHTML=`
+    <p class="lede">Every device that opens this store registers itself as a lane. They all ring
+      into one shift, so a Z read covers the whole shop — but each keeps its own drawer, because
+      two cashiers can't count the same till.</p>
+
+    <table class="tbl"><thead><tr><th style="width:28%">Register</th><th>Last seen</th>
+      <th>Running</th><th>Agent</th><th>Waiting to sync</th><th></th></tr></thead><tbody>
+      ${list.map(t=>`<tr ${t.retired?'style="opacity:.5"':""}>
+        <td><input value="${esc(t.name)}" ${t.retired?"readonly":""}
+          onchange="__w.tRename(${t.id},this.value)">
+          <em style="display:block;font-size:11px;color:var(--txt-3);padding-left:9px">
+            lane ${t.number}${t.id===TERM_ID?" · this device":""}</em></td>
+        <td style="padding-left:9px">${state(t)}</td>
+        <td style="padding-left:9px;color:var(--txt-2)" class="num">${esc(t.build||"—")}</td>
+        <td style="padding-left:9px">${t.agent
+          ?`<span style="color:var(--vfd)">yes</span>`:`<span style="color:var(--txt-3)">no</span>`}</td>
+        <td style="padding-left:9px" class="num" style="${t.queued?"color:var(--warn)":""}">
+          ${t.queued||"—"}</td>
+        <td>${t.retired?"":`<button class="del" onclick="__w.tRetire(${t.id})">×</button>`}</td>
+      </tr>`).join("")}
+    </tbody></table>
+    <div class="note">A register appears here the first time it opens the store. Rename them to
+      match what's written on the front of the till — it's what shows on the shift report.</div>
+
+    ${shift?`
+      <div class="sect">The shift that's open</div>
+      <div class="cbar"><span class="cdot" style="background:var(--vfd)"></span>
+        Opened ${esc(String(shift.shift.opened_at).slice(0,16))} ·
+        <b>${shift.totals.n}</b> sale${shift.totals.n===1?"":"s"} ·
+        <b>${money(shift.totals.total)}</b> taken</div>
+
+      <table class="tbl" style="margin-top:10px"><thead><tr><th>Drawer</th><th>Opened with</th>
+        <th>Cash taken</th><th>In/out</th><th>Should hold</th><th>Counted</th><th>Over</th>
+      </tr></thead><tbody>
+        ${shift.drawers.map(d=>`<tr>
+          <td style="padding-left:9px"><b>${esc(d.name)}</b></td>
+          <td style="padding-left:9px" class="num">${money(d.start_cash)}</td>
+          <td style="padding-left:9px" class="num">${money(d.cash)}</td>
+          <td style="padding-left:9px" class="num" style="color:var(--txt-2)">
+            ${d.paid_in||d.paid_out||d.drops
+              ? `+${money(d.paid_in)} −${money(d.paid_out+d.drops)}` : "—"}</td>
+          <td style="padding-left:9px" class="num"><b>${money(d.expected)}</b></td>
+          <td style="padding-left:9px" class="num">${d.counted==null
+            ?`<span style="color:var(--warn)">not yet</span>`:money(d.counted)}</td>
+          <td style="padding-left:9px" class="num" style="${d.over==null?"":d.over<0
+            ?"color:var(--void)":d.over>0?"color:var(--warn)":"color:var(--txt-3)"}">
+            ${d.over==null?"—":(d.over>0?"+":"")+money(d.over)}</td>
+        </tr>`).join("")}
+      </tbody></table>
+      ${shift.byTerminal.length>1?`<div class="note">Taken by lane: ${shift.byTerminal
+        .map(b=>`${esc(b.name||"unassigned")} ${money(b.total)}`).join(" · ")}</div>`:""}
+      <div class="note">The shift can only be closed once every drawer has been counted — otherwise
+        the store total is missing a till.</div>`
+      :`<div class="note" style="margin-top:16px">No shift is open. One starts when the first
+        register opens its drawer.</div>`}`;
+}

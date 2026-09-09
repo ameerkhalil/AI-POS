@@ -19,6 +19,12 @@ const LEARN = require("./lib/learn");
 const RET = require("./lib/retention");
 const TANKS = require("./lib/tanks");
 const ADMIN = require("./lib/admin");
+const STOCK = require("./lib/stock");
+const TERM = require("./lib/terminals");
+const REP = require("./lib/reports");
+const PUR = require("./lib/purchasing");
+const LOY = require("./lib/loyalty");
+const TOB = require("./lib/tobacco");
 const MAIL = require("./lib/mail");
 
 const app = express();
@@ -245,17 +251,53 @@ app.get("/api/shifts", auth, ownStore, (req, res) => {
 /* Sales carry a client-generated id so a queued sale replayed after a
    reconnection lands exactly once. Without this, a flaky connection during
    tender turns into a double charge on the report. */
-function insertSale(storeId, shiftId, s) {
+function insertSale(storeId, shiftId, s, terminalId) {
   const cid = String(s.cid || "").slice(0, 40) || null;
   if (cid) {
     const seen = db.prepare("SELECT id FROM sales WHERE store_id = ? AND client_id = ?").get(storeId, cid);
     if (seen) return { duplicate: true, cid };
   }
   db.prepare(
-    "INSERT INTO sales (store_id, shift_id, seq, at, cashier, total, is_return, client_id, json) " +
-    "VALUES (?,?,?,?,?,?,?,?,?)")
-    .run(storeId, shiftId || null, Number(s.n) || 0, s.at || new Date().toISOString(),
-         s.by || null, Number(s.tot) || 0, s.ret ? 1 : 0, cid, JSON.stringify(s));
+    "INSERT INTO sales (store_id, shift_id, terminal_id, seq, at, cashier, total, is_return, " +
+    "client_id, json) VALUES (?,?,?,?,?,?,?,?,?,?)")
+    .run(storeId, shiftId || null, terminalId || null, Number(s.n) || 0,
+         s.at || new Date().toISOString(), s.by || null, Number(s.tot) || 0,
+         s.ret ? 1 : 0, cid, JSON.stringify(s));
+  if (s.customer)
+    db.prepare("UPDATE sales SET customer_id = ? WHERE store_id = ? AND client_id IS ?")
+      .run(Number(s.customer), storeId, cid);
+
+  /* Stock and points follow the money, and only for a sale that was actually
+     new. The offline queue replays whatever it couldn't confirm, so moving
+     either before the duplicate check would count the same sale twice. */
+  try {
+    const set = STOCK.settings(storeId);
+    STOCK.applySale(storeId,
+      { seq: Number(s.n) || 0, cashier: s.by || null, ret: !!s.ret, lines: s.lines || [] },
+      id => (set[id] || { tracked: 1 }).tracked);
+  } catch (e) {
+    /* A stock write must never lose a recorded sale. */
+    console.log("  stock not updated for sale " + (s.n || "?") + " — " + e.message);
+  }
+
+  try {
+    if (s.customer) LOY.applySale(storeId,
+      Number(s.customer), { seq: Number(s.n) || 0, cashier: s.by || null,
+        ret: !!s.ret, lines: s.lines || [] });
+  } catch (e) {
+    console.log("  points not updated for sale " + (s.n || "?") + " — " + e.message);
+  }
+
+  /* Scan data is captured at the moment of sale and never recomputed. A price
+     edited next month must not change what was reported last month. */
+  try {
+    TOB.applySale(storeId, { seq: Number(s.n) || 0, at: s.at || new Date().toISOString(),
+      cashier: s.by || null, terminalId: terminalId || null, ret: !!s.ret,
+      lines: s.lines || [] });
+  } catch (e) {
+    console.log("  scan data not captured for sale " + (s.n || "?") + " — " + e.message);
+  }
+
   return { duplicate: false, cid };
 }
 
@@ -268,10 +310,17 @@ app.get("/api/ping", (req, res) => res.json({ ok: true, t: Date.now() }));
    terminal only clears those — anything not confirmed stays queued. */
 app.post("/api/sync", auth, ownStore, (req, res) => {
   const sales = Array.isArray(req.body.sales) ? req.body.sales.slice(0, 500) : [];
+  const syncTerm = TERM.byToken(req.body.token);
   const accepted = [], failed = [];
   const tx = db.transaction(() => {
     sales.forEach(s => {
-      try { const r = insertSale(req.store.id, req.body.shiftId, s); accepted.push(r.cid || s.cid); }
+      /* The queue is flushed by the terminal that took the sales, so they keep
+         their lane rather than arriving anonymous. */
+      try {
+        const r = insertSale(req.store.id, req.body.shiftId, s,
+          syncTerm && syncTerm.store_id === req.store.id ? syncTerm.id : null);
+        accepted.push(r.cid || s.cid);
+      }
       catch (e) { failed.push(s.cid); }
     });
   });
@@ -282,7 +331,9 @@ app.post("/api/sync", auth, ownStore, (req, res) => {
 app.post("/api/sales", auth, ownStore, (req, res) => {
   const s = req.body.sale;
   if (!s) return res.status(400).json({ error: "No sale supplied" });
-  const r = insertSale(req.store.id, req.body.shiftId, s);
+  const t = TERM.byToken(req.body.token);
+  const r = insertSale(req.store.id, req.body.shiftId, s,
+    t && t.store_id === req.store.id ? t.id : null);
   res.json({ ok: true, duplicate: r.duplicate });
 });
 
@@ -499,6 +550,388 @@ function resetOnBoot() {
   console.log(`  ADMIN_RESET applied to ${a.email} — sign in, then REMOVE the variable`);
 }
 
+/* -------------------------------- tobacco ---------------------------------- */
+app.get("/api/tobacco", auth, ownStore, (req, res) => res.json({
+  settings: TOB.settings(req.store.id),
+  buydowns: TOB.buydowns(req.store.id),
+  makers: TOB.MAKERS,
+  columns: TOB.COLUMNS
+}));
+
+app.put("/api/tobacco", auth, ownStore, (req, res) => {
+  TOB.setSettings(req.store.id, req.body.settings || {});
+  res.json({ ok: true, settings: TOB.settings(req.store.id) });
+});
+
+app.post("/api/tobacco/buydown", auth, ownStore, (req, res) => {
+  try { res.json({ ok: true, id: TOB.saveBuydown(req.store.id, req.body.buydown || {}) }); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.delete("/api/tobacco/buydown/:id", auth, ownStore, (req, res) => {
+  TOB.deleteBuydown(req.store.id, +req.params.id);
+  res.json({ ok: true });
+});
+
+/* What deal applies to this item, for the cashier. */
+app.get("/api/tobacco/offers", auth, ownStore, (req, res) =>
+  res.json({ offers: TOB.offersFor(req.store.id, String(req.query.plu || ""),
+    +req.query.qty || 1) }));
+
+app.get("/api/tobacco/claim", auth, ownStore, (req, res) => {
+  const from = String(req.query.from || "2000-01-01") + " 00:00:00";
+  const to = String(req.query.to || "2099-01-01") + " 23:59:59";
+  const maker = req.query.maker && req.query.maker !== "all" ? String(req.query.maker) : null;
+  res.json({ claim: TOB.claim(req.store.id, maker, from, to),
+    ready: TOB.checkReady(req.store.id, req.query.maker, from, to) });
+});
+
+app.get("/api/tobacco/export", auth, ownStore, (req, res) => {
+  const from = String(req.query.from || "2000-01-01") + " 00:00:00";
+  const to = String(req.query.to || "2099-01-01") + " 23:59:59";
+  const maker = String(req.query.maker || "all");
+  const rows = TOB.exportRows(req.store.id, maker, from, to);
+  P.audit(req.account.id, "tobacco-export", `${maker}, ${rows.length} lines`, req);
+  if (req.query.format === "csv") {
+    const name = `scan-${maker}-${String(req.query.from || "").slice(0, 10)}.csv`;
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename="${name}"`);
+    return res.send(TOB.toCSV(rows));
+  }
+  res.json({ rows, columns: TOB.COLUMNS });
+});
+
+/* --------------------------------- loyalty --------------------------------- */
+app.get("/api/loyalty", auth, ownStore, (req, res) => res.json({
+  settings: LOY.settings(req.store.id),
+  offers: LOY.offers(req.store.id)
+}));
+
+app.put("/api/loyalty", auth, ownStore, (req, res) => {
+  LOY.setSettings(req.store.id, req.body.settings || {});
+  res.json({ ok: true, settings: LOY.settings(req.store.id) });
+});
+
+app.get("/api/customers", auth, ownStore, (req, res) =>
+  res.json({ customers: LOY.find(req.store.id, req.query.q || "") }));
+
+app.get("/api/customers/:id", auth, ownStore, (req, res) => {
+  const c = LOY.customer(req.store.id, +req.params.id);
+  if (!c) return res.status(404).json({ error: "No such customer." });
+  res.json({ customer: c, points: LOY.pointHistory(c.id),
+    offers: LOY.progressFor(req.store.id, c.id), usual: LOY.usual(req.store.id, c.id) });
+});
+
+app.post("/api/customers", auth, ownStore, (req, res) => {
+  try { res.json({ ok: true, id: LOY.saveCustomer(req.store.id, req.body.customer || {}) }); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.post("/api/loyalty/quote", auth, ownStore, (req, res) =>
+  res.json(LOY.quote(req.store.id, +req.body.customer, req.body.total)));
+
+app.post("/api/loyalty/redeem", auth, ownStore, (req, res) => {
+  try {
+    res.json(LOY.redeem(req.store.id, +req.body.customer, req.body.points,
+      { who: req.body.who, ref: req.body.ref, saleTotal: req.body.total }));
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.post("/api/loyalty/adjust", auth, ownStore, (req, res) => {
+  try {
+    LOY.movePoints(req.store.id, +req.body.customer,
+      { amount: req.body.amount, kind: "adjusted", who: req.body.who, note: req.body.note });
+    P.audit(req.account.id, "points-adjusted",
+      `${req.body.amount} to customer ${req.body.customer}: ${req.body.note || ""}`, req);
+    res.json({ ok: true, balance: LOY.balance(+req.body.customer) });
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.post("/api/offers", auth, ownStore, (req, res) => {
+  try { res.json({ ok: true, id: LOY.saveOffer(req.store.id, req.body.offer || {}) }); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.delete("/api/offers/:id", auth, ownStore, (req, res) => {
+  LOY.deleteOffer(req.store.id, +req.params.id);
+  res.json({ ok: true });
+});
+
+app.post("/api/offers/:id/claim", auth, ownStore, (req, res) => {
+  try { res.json(LOY.claimOffer(req.store.id, +req.params.id, +req.body.customer, req.body.who)); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.get("/api/loyalty/customers", auth, ownStore, (req, res) => res.json({
+  top: LOY.topCustomers(req.store.id, +req.query.days || 90),
+  lapsed: LOY.lapsed(req.store.id, +req.query.lapsed || 60)
+}));
+
+/* ------------------------- vendors and purchase orders --------------------- */
+app.get("/api/vendors", auth, ownStore, (req, res) =>
+  res.json({ vendors: PUR.vendors(req.store.id, req.query.all === "1") }));
+
+app.post("/api/vendors", auth, ownStore, (req, res) => {
+  try { res.json({ ok: true, id: PUR.saveVendor(req.store.id, req.body.vendor || {}) }); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.post("/api/vendors/:id/archive", auth, ownStore, (req, res) => {
+  PUR.archiveVendor(req.store.id, +req.params.id, req.body.on !== false);
+  res.json({ ok: true });
+});
+
+app.get("/api/po", auth, ownStore, (req, res) => res.json({
+  orders: PUR.list(req.store.id, req.query.state || null),
+  outstanding: PUR.outstanding(req.store.id),
+  onOrder: PUR.onOrder(req.store.id)
+}));
+
+app.get("/api/po/:id", auth, ownStore, (req, res) => {
+  const o = PUR.order(req.store.id, +req.params.id);
+  o ? res.json(o) : res.status(404).json({ error: "No such order." });
+});
+
+app.post("/api/po", auth, ownStore, (req, res) => {
+  try {
+    const id = PUR.createOrder(req.store.id, { ...req.body, who: req.body.who });
+    res.json({ ok: true, id });
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.put("/api/po/:id", auth, ownStore, (req, res) => {
+  try { PUR.setLines(req.store.id, +req.params.id, req.body.lines || []); res.json({ ok: true }); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.post("/api/po/:id/send", auth, ownStore, (req, res) => {
+  try { res.json(PUR.send(req.store.id, +req.params.id, req.body.who)); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.post("/api/po/:id/cancel", auth, ownStore, (req, res) => {
+  try { PUR.cancel(req.store.id, +req.params.id); res.json({ ok: true }); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.post("/api/po/:id/receive", auth, ownStore, (req, res) => {
+  try {
+    const r = PUR.receiveOrder(req.store.id, +req.params.id, req.body);
+    P.audit(req.account.id, "po-received",
+      `PO ${req.params.id}: ${r.unitsReceived} of ${r.unitsOrdered} units`, req);
+    res.json(r);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.get("/api/vendors/:id/summary", auth, ownStore, (req, res) =>
+  res.json(PUR.vendorSummary(req.store.id, +req.params.id, +req.query.days || 180)));
+
+app.post("/api/po/from-reorder", auth, ownStore, (req, res) => {
+  try { res.json({ created: PUR.fromReorder(req.store.id, req.body) }); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+/* --------------------------------- reports --------------------------------
+   Department names live in the pricebook, which is the browser's, so they come
+   in with the request rather than the server guessing at them. */
+app.post("/api/reports", auth, ownStore, (req, res) => {
+  const days = +req.body.days || 30;
+  const names = req.body.deptNames || {};
+  const want = Array.isArray(req.body.want) ? req.body.want : ["overview"];
+  const out = {};
+  try {
+    if (want.includes("overview")) out.overview = REP.overview(req.store.id, days);
+    if (want.includes("byDay")) out.byDay = REP.byDay(req.store.id, days);
+    if (want.includes("busy")) out.busy = REP.busy(req.store.id, days);
+    if (want.includes("products")) out.products = REP.products(req.store.id, days, req.body.limit);
+    if (want.includes("departments")) out.departments = REP.departments(req.store.id, days, names);
+    if (want.includes("staff")) out.staff = REP.staff(req.store.id, days);
+    if (want.includes("tenders")) out.tenders = REP.tenders(req.store.id, days);
+    if (want.includes("exceptions")) out.exceptions = REP.exceptions(req.store.id, days);
+    res.json(out);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post("/api/reports/day", auth, ownStore, (req, res) => {
+  const d = String(req.body.date || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return res.status(400).json({ error: "Bad date." });
+  res.json(REP.day(req.store.id, d, req.body.deptNames || {}));
+});
+
+/* -------------------------------- terminals -------------------------------
+   A register identifies itself with a token it keeps. The session still proves
+   which account you are; the token only says which of that store's lanes this
+   is, so a stolen token can't reach anything on its own. */
+app.post("/api/terminals", auth, ownStore, (req, res) => {
+  const t = TERM.register(req.store.id, { name: req.body.name,
+    ua: req.headers["user-agent"], ip: req.headers["x-forwarded-for"] || req.ip });
+  P.audit(req.account.id, "terminal-registered", `${t.name} (#${t.number})`, req);
+  res.json(t);
+});
+
+app.get("/api/terminals", auth, ownStore, (req, res) =>
+  res.json({ terminals: TERM.list(req.store.id) }));
+
+app.put("/api/terminals/:id", auth, ownStore, (req, res) => {
+  TERM.rename(req.store.id, +req.params.id, req.body.name);
+  res.json({ ok: true });
+});
+
+app.post("/api/terminals/:id/retire", auth, ownStore, (req, res) => {
+  try { TERM.retire(req.store.id, +req.params.id); res.json({ ok: true }); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+/* Cheap and frequent: the terminal says it's alive and what it's running. */
+app.post("/api/heartbeat", auth, ownStore, (req, res) => {
+  const t = TERM.byToken(req.body.token);
+  if (!t || t.store_id !== req.store.id) return res.json({ ok: false, unknown: true });
+  TERM.heartbeat(t.id, { build: req.body.build, agent: req.body.agent,
+    queued: req.body.queued, ip: req.headers["x-forwarded-for"] || req.ip });
+  res.json({ ok: true, id: t.id, number: t.number, name: t.name });
+});
+
+/* ---------------------------- shifts and drawers -------------------------- */
+app.post("/api/shift/join", auth, ownStore, (req, res) => {
+  const t = TERM.byToken(req.body.token);
+  if (!t || t.store_id !== req.store.id)
+    return res.status(400).json({ error: "This register isn't registered to that store." });
+  try {
+    const r = TERM.joinShift(req.store.id, t.id,
+      { who: req.body.who, startCash: req.body.startCash });
+    res.json(r);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.get("/api/shift", auth, ownStore, (req, res) => {
+  const open = TERM.openShift(req.store.id);
+  res.json({ shift: open, summary: open ? TERM.shiftSummary(req.store.id, open.id) : null });
+});
+
+app.get("/api/shift/:id", auth, ownStore, (req, res) =>
+  res.json(TERM.shiftSummary(req.store.id, +req.params.id) || { error: "No such shift" }));
+
+app.post("/api/drawer/move", auth, ownStore, (req, res) => {
+  const t = TERM.byToken(req.body.token);
+  const open = TERM.openShift(req.store.id);
+  if (!t || !open) return res.status(400).json({ error: "No open shift on this register." });
+  const d = TERM.drawerExpected(open.id, t.id);
+  if (!d) return res.status(400).json({ error: "No drawer open on this register." });
+  try { TERM.drawerMovement(d.id, req.body.kind, req.body.amount); res.json({ ok: true }); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.post("/api/drawer/close", auth, ownStore, (req, res) => {
+  const t = TERM.byToken(req.body.token);
+  const open = TERM.openShift(req.store.id);
+  if (!t || !open) return res.status(400).json({ error: "No open shift." });
+  try {
+    const r = TERM.closeDrawer(open.id, t.id, { counted: req.body.counted, who: req.body.who });
+    P.audit(req.account.id, "drawer-closed",
+      `${t.name}: counted ${r.counted}, expected ${r.expected}, over ${r.over}`, req);
+    res.json(r);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.post("/api/shift/close", auth, ownStore, (req, res) => {
+  const open = TERM.openShift(req.store.id);
+  if (!open) return res.status(400).json({ error: "No shift is open." });
+  try {
+    const r = TERM.closeShift(req.store.id, open.id, req.body.who);
+    P.audit(req.account.id, "shift-closed",
+      `expected ${r.expected}, counted ${r.counted}, over ${r.over}`, req);
+    res.json(r);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+/* -------------------------------- inventory -------------------------------
+   The pricebook lives in the browser, so anything needing product names takes
+   them from the request rather than the server guessing. Quantities, movements
+   and counts are the server's. */
+app.get("/api/stock", auth, ownStore, (req, res) => {
+  res.json({ onHand: STOCK.allOnHand(req.store.id), settings: STOCK.settings(req.store.id) });
+});
+
+app.get("/api/stock/history", auth, ownStore, (req, res) => {
+  res.json({ moves: STOCK.history(req.store.id, String(req.query.plu || ""),
+    +req.query.limit || 100) });
+});
+
+app.put("/api/stock/settings", auth, ownStore, (req, res) => {
+  const list = Array.isArray(req.body.items) ? req.body.items : [];
+  list.slice(0, 5000).forEach(i => {
+    if (i && i.pluId) STOCK.setSettings(req.store.id, i.pluId, i);
+  });
+  res.json({ ok: true, saved: list.length });
+});
+
+app.post("/api/stock/receive", auth, ownStore, (req, res) => {
+  try {
+    const r = STOCK.receive(req.store.id, { who: req.body.who, ref: req.body.ref,
+      lines: req.body.lines, note: req.body.note });
+    P.audit(req.account.id, "stock-received", `${r.received} lines, ${r.units} units`, req);
+    res.json(r);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.post("/api/stock/adjust", auth, ownStore, (req, res) => {
+  try {
+    const n = STOCK.move(req.store.id, (req.body.moves || []).map(m => ({
+      ...m, kind: m.kind === "waste" ? "waste" : "adjust", who: req.body.who })));
+    res.json({ ok: true, moves: n });
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.post("/api/stock/count", auth, ownStore, (req, res) => {
+  const id = STOCK.openCount(req.store.id, { who: req.body.who, scope: req.body.scope,
+    note: req.body.note });
+  res.json({ ok: true, id });
+});
+
+app.put("/api/stock/count/:id", auth, ownStore, (req, res) => {
+  try {
+    const out = (req.body.lines || []).map(l =>
+      ({ pluId: l.pluId, ...STOCK.countLine(req.store.id, +req.params.id, l.pluId, l.counted, l.cost) }));
+    res.json({ ok: true, lines: out });
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.post("/api/stock/count/:id/close", auth, ownStore, (req, res) => {
+  try {
+    const r = STOCK.closeCount(req.store.id, +req.params.id, req.body.who);
+    P.audit(req.account.id, "stock-count-closed",
+      `${r.adjusted} adjusted, shrink ${r.shrinkUnits} units`, req);
+    res.json(r);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.get("/api/stock/count/:id", auth, ownStore, (req, res) =>
+  res.json(STOCK.countDetail(req.store.id, +req.params.id)));
+
+app.get("/api/stock/counts", auth, ownStore, (req, res) =>
+  res.json({ counts: STOCK.recentCounts(req.store.id) }));
+
+app.post("/api/stock/reorder", auth, ownStore, (req, res) => {
+  /* Subtract what's already on its way, or the list tells you to order the same
+     pallet again every day until it turns up. */
+  const coming = PUR.onOrder(req.store.id);
+  const items = STOCK.reorder(req.store.id, req.body.plus || []).map(i => {
+    const due = coming[i.pluId] || 0;
+    const need = Math.max(0, i.need - due);
+    return { ...i, onOrder: due,
+      need: i.caseQty > 1 && need > 0 ? Math.ceil(need / i.caseQty) * i.caseQty : need,
+      cases: i.caseQty > 1 && need > 0 ? Math.ceil(need / i.caseQty) : null,
+      covered: due > 0 && need === 0 };
+  });
+  res.json({ items });
+});
+
+app.post("/api/stock/valuation", auth, ownStore, (req, res) =>
+  res.json(STOCK.valuation(req.store.id, req.body.plus || [])));
+
+app.get("/api/stock/shrink", auth, ownStore, (req, res) =>
+  res.json(STOCK.shrink(req.store.id, +req.query.days || 30)));
+
 /* ---------------------------- operator console ----------------------------
    Guarded by a flag on the account row, checked on every request. Not by an
    email match, not by a header — a row, so revoking it is a database change. */
@@ -557,6 +990,15 @@ app.post("/api/admin/accounts/delete", auth, operator, (req, res) => {
 app.post("/api/admin/operator", auth, operator, (req, res) => {
   try { res.json(ADMIN.setOperator(req.account.id, +req.body.account, !!req.body.on)); }
   catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.get("/api/admin/health", auth, operator, (req, res) => {
+  const rows = TERM.health();
+  res.json({ terminals: rows,
+    live: rows.filter(t => t.state === "live").length,
+    gone: rows.filter(t => t.state === "gone").length,
+    queued: rows.filter(t => t.queued > 0).length,
+    builds: [...new Set(rows.map(t => t.build).filter(Boolean))] });
 });
 
 app.get("/api/admin/log", auth, operator, (req, res) =>

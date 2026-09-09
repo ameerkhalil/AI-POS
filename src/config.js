@@ -18,7 +18,9 @@ const CGROUPS=[
         ["promos","Deals","Mix-and-match and automatic discounts"]]},
  {n:"Getting products in",d:"Load a pricebook or read it off an invoice",
   tabs:[["import","Import a file","CSV, spreadsheet or NAXML from another system"],
-        ["invoice","Invoice intake","Photograph an invoice and pull costs off it"]]},
+        ["invoice","Invoice intake","Photograph an invoice and pull costs off it"],
+        ["stock","Stock","What's on hand, receiving, counts and what to order"],
+        ["purchasing","Vendors & orders","Who you buy from, and what's on its way"]]},
  {n:"The register",d:"What the cashier sees and can do",
   tabs:[["menus","Menu designer","Arrange the keys, sizes and colours"],
         ["look","Appearance","Layout, colours, spacing"],
@@ -26,7 +28,11 @@ const CGROUPS=[
         ["restricts","Age & time rules","ID checks and hours when things can't be sold",
           ()=>CFG.caps.includes("age")||CFG.restricts.length>0],
         ["reasons","Reason codes","Why a void, a refund or a payout happened"],
-        ["journal","Electronic journal","Search every sale this store has ever taken"]]},
+        ["terminals","Registers","Every lane in this store, and the drawers under the shift"],
+        ["loyalty","Loyalty","Points, offers and who keeps coming back"],
+        ["tobacco","Tobacco scan data","Buydowns, and what the manufacturers owe you"],
+        ["journal","Electronic journal","Search every sale this store has ever taken"],
+        ["reports2","Reports","When you're busy, what makes money, who's selling it"]]},
  {n:"Your people",d:"Who can do what",
   tabs:[["people","Staff & permissions","Names, codes and what each role can reach"]]},
  {n:"The business",d:"Tax, receipts and your data",
@@ -125,7 +131,8 @@ function drawBody(){
     mod_records:tRecords,mod_expiry:tExpiry,mod_staff:tStaff,
     mod_customers:tCustomers,mod_tips:tTips,mod_giftcards:tGiftcards,mod_waste:tWaste,
     mod_commission:tCommission,mod_jobs:tJobs,mod_service:tService,mod_tanks:tTanks,
-    journal:tJournal};
+    journal:tJournal,stock:tStock,terminals:tTerminals,reports2:tReports2,
+    purchasing:tPurchasing,loyalty:tLoyalty,tobacco:tTobacco};
   (views[TAB]||cfgHome)();
 }
 

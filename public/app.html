@@ -2685,6 +2685,55 @@ body.tp-plain .grand .amt{font-size:40px}
 .opescape a{color:var(--vfd,#5CE0A8);text-decoration:none;font-weight:500;white-space:nowrap}
 .opescape a:hover{text-decoration:underline}
 
+/* ---- inventory ---- */
+.stktabs{display:flex;gap:3px;margin:16px 0 4px;border-bottom:1px solid var(--line);
+  overflow-x:auto;flex-wrap:nowrap}
+.stktabs button{padding:10px 16px;font-size:13.5px;color:var(--txt-2);white-space:nowrap;
+  border-bottom:2px solid transparent;margin-bottom:-1px}
+.stktabs button:hover{color:var(--txt)}
+.stktabs button.on{color:var(--txt);border-bottom-color:var(--vfd);font-weight:500}
+
+/* ---- registers ---- */
+.tstate{font-size:12px;padding:3px 10px;border-radius:99px;border:1px solid var(--line-2);
+  color:var(--txt-2)}
+.tstate.live{border-color:rgba(92,224,168,.5);color:var(--vfd)}
+.tstate.idle{border-color:var(--line-2);color:var(--txt-2)}
+.tstate.gone{border-color:rgba(224,178,85,.45);color:var(--warn)}
+.tstate.off{color:var(--txt-3)}
+
+/* ---- reports ---- */
+.rhead{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;
+  margin-top:8px}
+.rbig span{display:block;font-size:12px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--txt-3)}
+.rbig b{display:block;font-size:38px;font-weight:600;letter-spacing:-.025em;margin-top:5px;
+  font-family:var(--fm),monospace}
+.rbig em{display:block;font-style:normal;font-size:13px;color:var(--txt-3);margin-top:5px}
+.rbig em.up{color:var(--vfd)}
+.rbig em.down{color:var(--void)}
+.rwindow{font-size:12px;color:var(--txt-3)}
+.rwindow select{margin-top:6px;min-width:160px}
+.rtiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px;
+  margin-top:16px}
+.rtiles div{border:1px solid var(--line);border-radius:var(--r2);padding:14px 16px;
+  background:rgba(255,255,255,.02)}
+.rtiles span{display:block;font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--txt-3)}
+.rtiles b{display:block;font-size:24px;font-weight:600;margin-top:5px;letter-spacing:-.02em}
+.rtiles em{display:block;font-style:normal;font-size:12px;color:var(--txt-2);margin-top:3px}
+.rbars{display:flex;align-items:flex-end;gap:3px;height:110px;margin-top:12px;
+  padding-bottom:18px;position:relative}
+.rbars.tall{height:150px}
+.rbar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;
+  position:relative;min-width:4px}
+.rbar i{display:block;width:100%;background:var(--vfd);border-radius:2px 2px 0 0;min-height:2px;
+  opacity:.75;transition:opacity .12s}
+.rbar:hover i{opacity:1}
+.rbar span{position:absolute;bottom:-17px;left:0;right:0;text-align:center;font-size:10px;
+  color:var(--txt-3);white-space:nowrap;overflow:hidden}
+
+.cbar b{color:var(--txt);font-weight:600}
+
 .tchip.save{transition:color .2s,border-color .2s}
 .tchip.save.pending{color:var(--warn);border-color:rgba(224,178,85,.4)}
 .tchip.save.saving{color:var(--txt-2)}
@@ -6069,7 +6118,7 @@ function health(){
   themeIssues().forEach(i=>f.push({sev:i.t==="warn"?"warn":"info",t:"Appearance",d:i.m,fix:null}));
   return f;
 }
-const BUILD="db38691a33";
+const BUILD="e6d3eacfc8";
 function tHealth(){
   const f=health();
   window.__fix=i=>{f[i].fix&&f[i].fix();reload();drawConfig()};
@@ -8129,6 +8178,118 @@ function drawJournal(){
       </div>`:`<div class="note" style="margin-top:16px">Nothing matches that search.</div>`}`}`;
 }
 
+
+/* ============================ REGISTERS IN THIS STORE =======================
+   A shop with two lanes needs one shift across both and two drawers under it,
+   because there are physically two tills and two people counting them. */
+let TERMS = null;
+
+async function tTerminals(){
+  $("cfgBody").innerHTML=`<p class="lede">Reading registers…</p>`;
+  try{
+    const [t,s]=await Promise.all([
+      api("/api/terminals?store="+STORE_ID),
+      api("/api/shift?store="+STORE_ID)
+    ]);
+    TERMS={list:t.terminals,shift:s.summary};
+  }catch(e){
+    $("cfgBody").innerHTML=`<div class="finding"><b>Couldn't load registers</b>
+      <span>${esc(e.message)}</span></div>`;return;
+  }
+  drawTerminals();
+}
+
+function drawTerminals(){
+  const {list,shift}=TERMS;
+  const live=list.filter(t=>!t.retired);
+
+  W.tRename=async(id,name)=>{
+    try{ await api("/api/terminals/"+id+"?store="+STORE_ID,{method:"PUT",
+      body:{store:STORE_ID,name}}); }catch(e){ toast(e.message,true) }
+  };
+  W.tRetire=async id=>{
+    const t=list.find(x=>x.id===id);
+    const el=veil(`<div class="card"><h3>Retire ${esc(t.name)}?</h3>
+      <p>It stops appearing as a register here. Its past sales are kept, so reports from before
+        today still read correctly — that's why this retires rather than deletes.</p>
+      <div class="row"><button class="no" id="rx">Keep it</button>
+        <button class="danger" id="ry">Retire it</button></div></div>`);
+    el.querySelector("#rx").onclick=()=>el.remove();
+    el.querySelector("#ry").onclick=async()=>{
+      el.remove();
+      try{ await api("/api/terminals/"+id+"/retire?store="+STORE_ID,{method:"POST",
+        body:{store:STORE_ID}}); toast("Retired."); tTerminals(); }
+      catch(e){ toast(e.message,true) }
+    };
+  };
+
+  const state=t=>{
+    if(t.retired)return `<span class="tstate off">retired</span>`;
+    if(!t.last_seen)return `<span class="tstate off">never seen</span>`;
+    const mins=Math.round((Date.now()-Date.parse(String(t.last_seen).replace(" ","T")+"Z"))/60000);
+    if(mins<5)return `<span class="tstate live">here now</span>`;
+    if(mins<60)return `<span class="tstate idle">${mins}m ago</span>`;
+    if(mins<1440)return `<span class="tstate gone">${Math.round(mins/60)}h ago</span>`;
+    return `<span class="tstate gone">${Math.round(mins/1440)}d ago</span>`;
+  };
+
+  $("cfgBody").innerHTML=`
+    <p class="lede">Every device that opens this store registers itself as a lane. They all ring
+      into one shift, so a Z read covers the whole shop — but each keeps its own drawer, because
+      two cashiers can't count the same till.</p>
+
+    <table class="tbl"><thead><tr><th style="width:28%">Register</th><th>Last seen</th>
+      <th>Running</th><th>Agent</th><th>Waiting to sync</th><th></th></tr></thead><tbody>
+      ${list.map(t=>`<tr ${t.retired?'style="opacity:.5"':""}>
+        <td><input value="${esc(t.name)}" ${t.retired?"readonly":""}
+          onchange="__w.tRename(${t.id},this.value)">
+          <em style="display:block;font-size:11px;color:var(--txt-3);padding-left:9px">
+            lane ${t.number}${t.id===TERM_ID?" · this device":""}</em></td>
+        <td style="padding-left:9px">${state(t)}</td>
+        <td style="padding-left:9px;color:var(--txt-2)" class="num">${esc(t.build||"—")}</td>
+        <td style="padding-left:9px">${t.agent
+          ?`<span style="color:var(--vfd)">yes</span>`:`<span style="color:var(--txt-3)">no</span>`}</td>
+        <td style="padding-left:9px" class="num" style="${t.queued?"color:var(--warn)":""}">
+          ${t.queued||"—"}</td>
+        <td>${t.retired?"":`<button class="del" onclick="__w.tRetire(${t.id})">×</button>`}</td>
+      </tr>`).join("")}
+    </tbody></table>
+    <div class="note">A register appears here the first time it opens the store. Rename them to
+      match what's written on the front of the till — it's what shows on the shift report.</div>
+
+    ${shift?`
+      <div class="sect">The shift that's open</div>
+      <div class="cbar"><span class="cdot" style="background:var(--vfd)"></span>
+        Opened ${esc(String(shift.shift.opened_at).slice(0,16))} ·
+        <b>${shift.totals.n}</b> sale${shift.totals.n===1?"":"s"} ·
+        <b>${money(shift.totals.total)}</b> taken</div>
+
+      <table class="tbl" style="margin-top:10px"><thead><tr><th>Drawer</th><th>Opened with</th>
+        <th>Cash taken</th><th>In/out</th><th>Should hold</th><th>Counted</th><th>Over</th>
+      </tr></thead><tbody>
+        ${shift.drawers.map(d=>`<tr>
+          <td style="padding-left:9px"><b>${esc(d.name)}</b></td>
+          <td style="padding-left:9px" class="num">${money(d.start_cash)}</td>
+          <td style="padding-left:9px" class="num">${money(d.cash)}</td>
+          <td style="padding-left:9px" class="num" style="color:var(--txt-2)">
+            ${d.paid_in||d.paid_out||d.drops
+              ? `+${money(d.paid_in)} −${money(d.paid_out+d.drops)}` : "—"}</td>
+          <td style="padding-left:9px" class="num"><b>${money(d.expected)}</b></td>
+          <td style="padding-left:9px" class="num">${d.counted==null
+            ?`<span style="color:var(--warn)">not yet</span>`:money(d.counted)}</td>
+          <td style="padding-left:9px" class="num" style="${d.over==null?"":d.over<0
+            ?"color:var(--void)":d.over>0?"color:var(--warn)":"color:var(--txt-3)"}">
+            ${d.over==null?"—":(d.over>0?"+":"")+money(d.over)}</td>
+        </tr>`).join("")}
+      </tbody></table>
+      ${shift.byTerminal.length>1?`<div class="note">Taken by lane: ${shift.byTerminal
+        .map(b=>`${esc(b.name||"unassigned")} ${money(b.total)}`).join(" · ")}</div>`:""}
+      <div class="note">The shift can only be closed once every drawer has been counted — otherwise
+        the store total is missing a till.</div>`
+      :`<div class="note" style="margin-top:16px">No shift is open. One starts when the first
+        register opens its drawer.</div>`}`;
+}
+
 /* ===========================================================================
    Choosing a register.
 
@@ -9666,6 +9827,1728 @@ function onLicence(lic) {
   AGE_GATE.scanned(lic);
 }
 
+/* ===========================================================================
+   The inventory screens.
+
+   Four things a shop actually does: look at what's on hand, receive a delivery,
+   count a shelf, and see what to order. Everything else is a view over the
+   ledger underneath.
+   =========================================================================== */
+
+let STK = null, STK_TAB = "onhand", STK_Q = "", STK_DEPT = "";
+let RECV = { ref: "", lines: [] };
+let COUNT = { id: null, scope: "all", lines: {}, saved: 0 };
+
+async function stkLoad() {
+  const d = await api("/api/stock?store=" + STORE_ID);
+  STK = { onHand: d.onHand || {}, set: d.settings || {} };
+}
+
+const stkQty = id => (STK && STK.onHand[id]) || 0;
+const stkSet = id => (STK && STK.set[id]) || { tracked: 1, par: null, target: null, case_qty: null };
+const stkTracked = id => !!stkSet(id).tracked;
+
+/* Sold-by-weight and open rings can't be counted, so they're never offered. */
+const stkItems = () => CFG.plus.filter(p => !p.weighed);
+
+async function tStock() {
+  $("cfgBody").innerHTML = `<p class="lede">Reading stock…</p>`;
+  try { await stkLoad(); }
+  catch (e) {
+    $("cfgBody").innerHTML = `<div class="finding"><b>Couldn't load stock</b>
+      <span>${esc(e.message)}</span></div>`;
+    return;
+  }
+  drawStock();
+}
+
+function drawStock() {
+  W.stkTab = t => { STK_TAB = t; drawStock(); };
+  W.stkQ = v => {
+    STK_Q = v;
+    /* Filter in place rather than redraw — retyping into a box that rebuilds
+       itself loses the cursor, which we already fixed once in Config. */
+    const q = v.trim().toLowerCase();
+    document.querySelectorAll("#stkRows tr").forEach(tr => {
+      const hit = !q || (tr.dataset.k || "").includes(q);
+      tr.style.display = hit ? "" : "none";
+    });
+  };
+  W.stkDept = v => { STK_DEPT = v; drawStock(); };
+
+  const tabs = [["onhand", "On hand"], ["receive", "Receive"], ["count", "Count"],
+                ["order", "To order"], ["shrink", "Shrink"]];
+
+  $("cfgBody").innerHTML = `
+    <p class="lede">Every movement is recorded — sold, received, counted, wasted — and the quantity
+      on hand is the sum of them. That's why any number here can be explained.</p>
+    <div class="stktabs">${tabs.map(([k, l]) =>
+      `<button class="${STK_TAB === k ? "on" : ""}" onclick="__w.stkTab('${k}')">${l}</button>`).join("")}</div>
+    <div id="stkBody"></div>`;
+
+  ({ onhand: stkOnHand, receive: stkReceive, count: stkCount,
+     order: stkOrder, shrink: stkShrink })[STK_TAB]();
+}
+
+/* ------------------------------- on hand -------------------------------- */
+function stkOnHand() {
+  const depts = CFG.depts.filter(d => !d.fuel);
+  const items = stkItems().filter(p => !STK_DEPT || p.deptId === STK_DEPT);
+
+  W.stkSave = async () => {
+    const rows = [...document.querySelectorAll("#stkRows tr")].map(tr => ({
+      pluId: tr.dataset.p,
+      par: tr.querySelector(".spar").value,
+      target: tr.querySelector(".starg").value,
+      case_qty: tr.querySelector(".scase").value,
+      tracked: tr.querySelector(".strack").checked
+    }));
+    try {
+      await api("/api/stock/settings?store=" + STORE_ID, { method: "PUT",
+        body: { store: STORE_ID, items: rows } });
+      toast(`Saved <b>${rows.length}</b> item${rows.length === 1 ? "" : "s"}.`);
+      await stkLoad();
+    } catch (e) { toast(e.message, true); }
+  };
+
+  W.stkHist = async id => {
+    const p = byId(CFG.plus, id);
+    const el = veil(`<div class="card tall"><h3>${esc(p.n)}</h3>
+      <p>On hand <b>${stkQty(id)}</b>. Every movement, newest first.</p>
+      <div class="edwrap" id="histBody"><p class="note">Loading…</p></div>
+      <div class="row"><button class="no" id="hx">Close</button></div></div>`);
+    el.querySelector("#hx").onclick = () => el.remove();
+    try {
+      const d = await api(`/api/stock/history?store=${STORE_ID}&plu=${encodeURIComponent(id)}`);
+      let run = stkQty(id);
+      el.querySelector("#histBody").innerHTML = d.moves.length
+        ? `<table class="tbl"><thead><tr><th>When</th><th>What</th><th>Change</th>
+             <th>After</th><th>Who</th><th>Ref</th></tr></thead><tbody>
+           ${d.moves.map(m => {
+             const after = run; run = +(run - m.qty).toFixed(3);
+             return `<tr>
+               <td style="padding-left:9px;color:var(--txt-2);font-size:12.5px">${esc(String(m.at).slice(0, 16))}</td>
+               <td style="padding-left:9px">${esc(m.kind)}</td>
+               <td style="padding-left:9px" class="num" style="color:${m.qty < 0 ? "var(--void)" : "var(--vfd)"}">
+                 ${m.qty > 0 ? "+" : ""}${m.qty}</td>
+               <td style="padding-left:9px" class="num">${after}</td>
+               <td style="padding-left:9px;color:var(--txt-2)">${esc(m.who || "—")}</td>
+               <td style="padding-left:9px;color:var(--txt-3);font-size:12px">${esc(m.ref || "")}</td>
+             </tr>`;
+           }).join("")}</tbody></table>`
+        : `<p class="note">Nothing recorded for this product yet.</p>`;
+    } catch (e) {
+      el.querySelector("#histBody").innerHTML = `<p class="note">${esc(e.message)}</p>`;
+    }
+  };
+
+  const neg = items.filter(p => stkTracked(p.id) && stkQty(p.id) < 0);
+  const noPar = items.filter(p => stkTracked(p.id) && stkSet(p.id).par == null).length;
+
+  $("stkBody").innerHTML = `
+    ${neg.length ? `<div class="finding"><b>${neg.length} item${neg.length === 1 ? " is" : "s are"}
+      below zero</b><span>That means they sold before they were received. Receive the delivery, or
+      correct them with a count — ${esc(neg.slice(0, 3).map(p => p.n).join(", "))}${
+      neg.length > 3 ? ` and ${neg.length - 3} more` : ""}.</span></div>` : ""}
+
+    <div class="frm" style="margin-top:14px">
+      <label style="flex:2">Find<input placeholder="Name or barcode" value="${esc(STK_Q)}"
+        oninput="__w.stkQ(this.value)"></label>
+      <label>Section<select onchange="__w.stkDept(this.value)">
+        <option value="">All sections</option>
+        ${depts.map(d => `<option value="${d.id}" ${STK_DEPT === d.id ? "selected" : ""}>${esc(d.n)}</option>`).join("")}
+      </select></label>
+    </div>
+
+    <table class="tbl"><thead><tr>
+      <th style="width:32%">Product</th><th>On hand</th><th>Par</th><th>Up to</th>
+      <th>Per case</th><th>Track</th><th></th></tr></thead><tbody id="stkRows">
+      ${items.map(p => {
+        const s = stkSet(p.id), q = stkQty(p.id);
+        return `<tr data-p="${p.id}" data-k="${esc((p.n + " " + (p.upc || "")).toLowerCase())}">
+          <td style="padding-left:9px">${esc(p.n)}
+            ${p.upc ? `<em style="display:block;font-size:11px;color:var(--txt-3)">${esc(p.upc)}</em>` : ""}</td>
+          <td style="padding-left:9px" class="num"><b style="${q < 0 ? "color:var(--void)"
+            : q === 0 ? "color:var(--txt-3)" : ""}">${q}</b></td>
+          <td><input class="n spar" value="${s.par ?? ""}" placeholder="—"></td>
+          <td><input class="n starg" value="${s.target ?? ""}" placeholder="—"></td>
+          <td><input class="n scase" value="${s.case_qty ?? ""}" placeholder="—"></td>
+          <td><input type="checkbox" class="strack" ${s.tracked ? "checked" : ""} style="width:auto"></td>
+          <td><button class="del" onclick="__w.stkHist('${p.id}')" title="History">⋯</button></td>
+        </tr>`;
+      }).join("")}
+    </tbody></table>
+    <button class="mini" onclick="__w.stkSave()">Save par levels</button>
+    <div class="note">Par is the level that triggers a reorder; <b>up to</b> is how much to bring it
+      back to. Per case rounds an order to whole cases. Untick <b>track</b> for anything you don't
+      want counted — services, or a department key.${noPar ? ` ${noPar} tracked item${
+      noPar === 1 ? " has" : "s have"} no par set, so ${noPar === 1 ? "it" : "they"} will never
+      appear in the order list.` : ""}</div>`;
+}
+
+/* ------------------------------- receiving ------------------------------- */
+function stkReceive() {
+  W.rcvRef = v => { RECV.ref = v; };
+  W.rcvAdd = id => {
+    if (!id) return;
+    if (!RECV.lines.find(l => l.pluId === id)) {
+      const p = byId(CFG.plus, id);
+      RECV.lines.push({ pluId: id, qty: 1, caseQty: stkSet(id).case_qty || "", cost: p.cost || "" });
+    }
+    drawStock();
+  };
+  W.rcvSet = (i, k, v) => { RECV.lines[i][k] = v; };
+  W.rcvDel = i => { RECV.lines.splice(i, 1); drawStock(); };
+  W.rcvClear = () => { RECV = { ref: "", lines: [] }; drawStock(); };
+
+  W.rcvSave = async () => {
+    const lines = RECV.lines
+      .map(l => ({ ...l, qty: parseFloat(l.qty) || 0, caseQty: parseFloat(l.caseQty) || 1,
+        cost: l.cost === "" ? null : parseFloat(l.cost) }))
+      .filter(l => l.qty > 0);
+    if (!lines.length) return toast("Nothing to receive.", true);
+    try {
+      const r = await api("/api/stock/receive?store=" + STORE_ID, { method: "POST",
+        body: { store: STORE_ID, who: ME.n, ref: RECV.ref, lines } });
+      /* Cost on the invoice is the truth, so the pricebook follows it. */
+      lines.forEach(l => {
+        if (l.cost > 0) { const p = byId(CFG.plus, l.pluId); if (p) p.cost = l.cost; }
+      });
+      queueSave();
+      toast(`Received <b>${r.units}</b> unit${r.units === 1 ? "" : "s"} across ${r.received} line${
+        r.received === 1 ? "" : "s"}.`);
+      RECV = { ref: "", lines: [] };
+      await stkLoad();
+      drawStock();
+    } catch (e) { toast(e.message, true); }
+  };
+
+  const units = RECV.lines.reduce((a, l) =>
+    a + (parseFloat(l.qty) || 0) * (parseFloat(l.caseQty) || 1), 0);
+  const value = RECV.lines.reduce((a, l) =>
+    a + (parseFloat(l.qty) || 0) * (parseFloat(l.caseQty) || 1) * (parseFloat(l.cost) || 0), 0);
+
+  $("stkBody").innerHTML = `
+    <p class="lede" style="margin-top:14px">Put a delivery in. Quantity is how many you received —
+      if it came in cases, put the units per case beside it and it multiplies out.</p>
+
+    <div class="frm">
+      <label style="flex:1">Invoice or delivery note<input value="${esc(RECV.ref)}"
+        placeholder="INV-4482" oninput="__w.rcvRef(this.value)"></label>
+      <label style="flex:2">Add a product<select onchange="__w.rcvAdd(this.value);this.value=''">
+        <option value="">Choose…</option>
+        ${stkItems().map(p => `<option value="${p.id}">${esc(p.n)}${
+          p.upc ? " · " + esc(p.upc) : ""}</option>`).join("")}
+      </select></label>
+    </div>
+
+    ${RECV.lines.length ? `
+      <table class="tbl"><thead><tr><th style="width:38%">Product</th><th>Quantity</th>
+        <th>Units per case</th><th>Unit cost</th><th>Units in</th><th></th></tr></thead><tbody>
+        ${RECV.lines.map((l, i) => {
+          const p = byId(CFG.plus, l.pluId);
+          const inUnits = (parseFloat(l.qty) || 0) * (parseFloat(l.caseQty) || 1);
+          return `<tr>
+            <td style="padding-left:9px">${esc(p ? p.n : "(missing)")}
+              <em style="display:block;font-size:11px;color:var(--txt-3)">on hand ${stkQty(l.pluId)}</em></td>
+            <td><input class="n" value="${esc(String(l.qty))}"
+              oninput="__w.rcvSet(${i},'qty',this.value)"></td>
+            <td><input class="n" value="${esc(String(l.caseQty))}" placeholder="1"
+              oninput="__w.rcvSet(${i},'caseQty',this.value)"></td>
+            <td><input class="n" value="${esc(String(l.cost))}" placeholder="—"
+              oninput="__w.rcvSet(${i},'cost',this.value)"></td>
+            <td style="padding-left:9px" class="num">${inUnits}</td>
+            <td><button class="del" onclick="__w.rcvDel(${i})">×</button></td>
+          </tr>`;
+        }).join("")}
+      </tbody></table>
+      <div class="cbar" style="margin-top:12px">
+        <b>${units}</b> units${value ? ` · ${money(value)} at cost` : ""}</div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="mini" style="margin:0" onclick="__w.rcvSave()">Receive it</button>
+        <button class="mini" style="margin:0" onclick="__w.rcvClear()">Clear</button>
+      </div>
+      <div class="note">A unit cost here updates the product's cost, because the invoice is the
+        truth about what you paid. The old cost stays on past movements, so last month's margin
+        doesn't change retrospectively.</div>`
+      : `<div class="note" style="margin-top:16px">Add products above to build the delivery.</div>`}`;
+}
+
+/* -------------------------------- counting ------------------------------- */
+function stkCount() {
+  W.cntScope = v => { COUNT.scope = v; drawStock(); };
+  W.cntStart = async () => {
+    try {
+      const r = await api("/api/stock/count?store=" + STORE_ID, { method: "POST",
+        body: { store: STORE_ID, who: ME.n, scope: COUNT.scope } });
+      COUNT.id = r.id; COUNT.lines = {}; COUNT.saved = 0;
+      toast("Count started. Nothing changes until you close it.");
+      drawStock();
+    } catch (e) { toast(e.message, true); }
+  };
+  W.cntSet = (id, v) => { COUNT.lines[id] = v; };
+  W.cntSave = async () => {
+    const lines = Object.entries(COUNT.lines)
+      .filter(([, v]) => String(v).trim() !== "")
+      .map(([pluId, v]) => ({ pluId, counted: parseFloat(v) || 0,
+        cost: byId(CFG.plus, pluId)?.cost ?? null }));
+    if (!lines.length) return toast("Nothing counted yet.", true);
+    try {
+      const r = await api(`/api/stock/count/${COUNT.id}?store=${STORE_ID}`, { method: "PUT",
+        body: { store: STORE_ID, lines } });
+      COUNT.saved = r.lines.length;
+      toast(`Saved <b>${r.lines.length}</b> line${r.lines.length === 1 ? "" : "s"}.`);
+      drawStock();
+    } catch (e) { toast(e.message, true); }
+  };
+  W.cntClose = async () => {
+    const el = veil(`<div class="card"><h3>Close the count?</h3>
+      <p>Anything you counted that differs from what was expected becomes an adjustment, and the
+        difference is recorded as shrink. Lines you didn't count are left alone.</p>
+      <div class="row"><button class="no" id="cx">Not yet</button>
+        <button class="ok" id="cy">Close it</button></div></div>`);
+    el.querySelector("#cx").onclick = () => el.remove();
+    el.querySelector("#cy").onclick = async () => {
+      el.remove();
+      try {
+        const r = await api(`/api/stock/count/${COUNT.id}/close?store=${STORE_ID}`,
+          { method: "POST", body: { store: STORE_ID, who: ME.n } });
+        toast(`Closed. <b>${r.adjusted}</b> adjusted${r.shrinkUnits
+          ? `, shrink ${r.shrinkUnits} units worth ${money(r.shrinkValue)}` : ", nothing missing"}.`);
+        COUNT = { id: null, scope: "all", lines: {}, saved: 0 };
+        await stkLoad();
+        drawStock();
+      } catch (e) { toast(e.message, true); }
+    };
+  };
+
+  const depts = CFG.depts.filter(d => !d.fuel);
+
+  if (!COUNT.id) {
+    $("stkBody").innerHTML = `
+      <p class="lede" style="margin-top:14px">A count records what you actually see on the shelf.
+        Nothing moves until you close it, so you can start one, get interrupted, and come back.</p>
+      <div class="frm">
+        <label>What are you counting<select onchange="__w.cntScope(this.value)">
+          <option value="all">Everything</option>
+          ${depts.map(d => `<option value="${d.id}" ${COUNT.scope === d.id ? "selected" : ""}>${esc(d.n)}</option>`).join("")}
+        </select></label>
+      </div>
+      <button class="mini" onclick="__w.cntStart()">Start a count</button>
+      <div class="note">Counting a section at a time is usually more accurate than counting
+        everything at once, and you can do several across a week.</div>`;
+    return;
+  }
+
+  const items = stkItems().filter(p => stkTracked(p.id) &&
+    (COUNT.scope === "all" || p.deptId === COUNT.scope));
+  const entered = Object.values(COUNT.lines).filter(v => String(v).trim() !== "").length;
+
+  $("stkBody").innerHTML = `
+    <div class="cbar" style="margin-top:14px">
+      <span class="cdot" style="background:var(--warn)"></span>
+      Count open · ${entered} of ${items.length} entered${COUNT.saved
+        ? ` · ${COUNT.saved} saved` : ""}</div>
+
+    <table class="tbl"><thead><tr><th style="width:44%">Product</th><th>Expected</th>
+      <th>Counted</th><th>Difference</th></tr></thead><tbody>
+      ${items.map(p => {
+        const exp = stkQty(p.id);
+        const v = COUNT.lines[p.id];
+        const has = String(v ?? "").trim() !== "";
+        const diff = has ? (parseFloat(v) || 0) - exp : null;
+        return `<tr>
+          <td style="padding-left:9px">${esc(p.n)}</td>
+          <td style="padding-left:9px" class="num" style="color:var(--txt-2)">${exp}</td>
+          <td><input class="n" value="${esc(String(v ?? ""))}" placeholder="—"
+            oninput="__w.cntSet('${p.id}',this.value)"></td>
+          <td style="padding-left:9px" class="num" style="${diff == null ? "color:var(--txt-3)"
+            : diff < 0 ? "color:var(--void)" : diff > 0 ? "color:var(--warn)" : "color:var(--txt-3)"}">
+            ${diff == null ? "—" : (diff > 0 ? "+" : "") + diff}</td>
+        </tr>`;
+      }).join("")}
+    </tbody></table>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="mini" style="margin:0" onclick="__w.cntSave()">Save what's counted</button>
+      <button class="mini" style="margin:0" onclick="__w.cntClose()">Close the count</button>
+    </div>
+    <div class="note">Expected is what the ledger says right now. Save as you go — a saved line
+      keeps the expected figure from the moment you counted it, so a sale halfway through the
+      count doesn't turn into shrink.</div>`;
+}
+
+/* -------------------------------- to order -------------------------------- */
+async function stkOrder() {
+  $("stkBody").innerHTML = `<p class="note" style="margin-top:16px">Working it out…</p>`;
+  let d;
+  try {
+    d = await api("/api/stock/reorder?store=" + STORE_ID, { method: "POST",
+      body: { store: STORE_ID, plus: CFG.plus.map(p =>
+        ({ id: p.id, n: p.n, upc: p.upc, deptId: p.deptId, cost: p.cost })) } });
+  } catch (e) {
+    $("stkBody").innerHTML = `<div class="finding"><b>Couldn't work that out</b>
+      <span>${esc(e.message)}</span></div>`;
+    return;
+  }
+
+  W.ordCopy = () => {
+    const text = d.items.map(i =>
+      `${i.name}\t${i.upc || ""}\t${i.cases ? i.cases + " cases" : i.need}`).join("\n");
+    navigator.clipboard?.writeText(text)
+      .then(() => toast("Order list copied."))
+      .catch(() => toast("Couldn't copy — select the table instead.", true));
+  };
+
+  /* Items fully covered by an order already on its way aren't worth listing. */
+  d.items = d.items.filter(i => i.need > 0);
+  const value = d.items.reduce((a, i) => a + (i.value || 0), 0);
+  const byDept = {};
+  d.items.forEach(i => (byDept[i.dept] = byDept[i.dept] || []).push(i));
+
+  $("stkBody").innerHTML = d.items.length ? `
+    <div class="cbar" style="margin-top:14px"><b>${d.items.length}</b> item${
+      d.items.length === 1 ? "" : "s"} at or below par${value ? ` · ${money(value)} at cost` : ""}</div>
+    ${Object.entries(byDept).map(([did, list]) => {
+      const dept = byId(CFG.depts, did);
+      return `<div class="sect">${esc(dept ? dept.n : "Other")}</div>
+      <table class="tbl"><thead><tr><th style="width:34%">Product</th><th>On hand</th>
+        <th>Par</th><th>On order</th><th>Order</th><th>At cost</th></tr></thead><tbody>
+        ${list.map(i => `<tr>
+          <td style="padding-left:9px">${esc(i.name)}
+            ${i.upc ? `<em style="display:block;font-size:11px;color:var(--txt-3)">${esc(i.upc)}</em>` : ""}</td>
+          <td style="padding-left:9px" class="num" style="${i.have <= 0 ? "color:var(--void)" : ""}">${i.have}</td>
+          <td style="padding-left:9px" class="num" style="color:var(--txt-2)">${i.par}</td>
+          <td style="padding-left:9px" class="num" style="color:var(--txt-2)">${
+            i.onOrder ? i.onOrder : "—"}</td>
+          <td style="padding-left:9px" class="num"><b>${i.need}</b>${i.cases
+            ? `<em style="font-style:normal;color:var(--txt-3);font-size:11.5px"> · ${i.cases} case${
+              i.cases === 1 ? "" : "s"}</em>` : ""}</td>
+          <td style="padding-left:9px" class="num">${i.value ? money(i.value) : "—"}</td>
+        </tr>`).join("")}
+      </tbody></table>`;
+    }).join("")}
+    <button class="mini" onclick="__w.ordCopy()">Copy the list</button>
+    <div class="note">Anything at or below its par, brought back up to its target and rounded up to
+      whole cases where a case size is set. Anything already on a sent order is subtracted first, so
+      the list doesn't tell you to order the same pallet again every day until it turns up.</div>`
+    : `<div class="note" style="margin-top:16px">Nothing is at or below its par level. If that seems
+       wrong, check that par levels are set under <b>On hand</b> — an item with no par never
+       appears here.</div>`;
+}
+
+/* --------------------------------- shrink --------------------------------- */
+async function stkShrink() {
+  $("stkBody").innerHTML = `<p class="note" style="margin-top:16px">Loading…</p>`;
+  let d, counts;
+  try {
+    [d, counts] = await Promise.all([
+      api("/api/stock/shrink?store=" + STORE_ID + "&days=90"),
+      api("/api/stock/counts?store=" + STORE_ID)
+    ]);
+  } catch (e) {
+    $("stkBody").innerHTML = `<div class="finding"><b>Couldn't load that</b>
+      <span>${esc(e.message)}</span></div>`;
+    return;
+  }
+
+  const rows = d.byPlu.map(r => {
+    const p = byId(CFG.plus, r.pluId);
+    const cost = p?.cost || 0;
+    return { ...r, name: p ? p.n : "(deleted product)",
+      value: +((r.counted + r.waste) * cost).toFixed(2) };
+  }).sort((a, b) => b.value - a.value);
+  const total = rows.reduce((a, r) => a + r.value, 0);
+
+  $("stkBody").innerHTML = `
+    <div class="cbar" style="margin-top:14px">
+      Last ${d.days} days · <b>${d.countedUnits}</b> units unaccounted for,
+      <b>${d.wasteUnits}</b> written off${total ? ` · ${money(total)} at cost` : ""}</div>
+
+    ${rows.length ? `<table class="tbl"><thead><tr><th style="width:44%">Product</th>
+      <th>Unaccounted</th><th>Written off</th><th>At cost</th></tr></thead><tbody>
+      ${rows.map(r => `<tr>
+        <td style="padding-left:9px">${esc(r.name)}</td>
+        <td style="padding-left:9px" class="num" style="${r.counted ? "color:var(--void)" : "color:var(--txt-3)"}">
+          ${r.counted || "—"}</td>
+        <td style="padding-left:9px" class="num" style="color:var(--txt-2)">${r.waste || "—"}</td>
+        <td style="padding-left:9px" class="num">${r.value ? money(r.value) : "—"}</td>
+      </tr>`).join("")}</tbody></table>`
+      : `<div class="note">Nothing missing in that window. Shrink only appears once you've closed a
+         count — until then there's nothing to compare against.</div>`}
+
+    <div class="sect">Counts</div>
+    ${counts.counts.length ? `<table class="tbl"><thead><tr><th>Started</th><th>Who</th>
+      <th>Scope</th><th>Lines</th><th>State</th></tr></thead><tbody>
+      ${counts.counts.map(c => `<tr>
+        <td style="padding-left:9px;color:var(--txt-2)">${esc(String(c.started_at).slice(0, 16))}</td>
+        <td style="padding-left:9px">${esc(c.who || "—")}</td>
+        <td style="padding-left:9px;color:var(--txt-2)">${c.scope === "all" ? "Everything"
+          : esc(byId(CFG.depts, c.scope)?.n || c.scope)}</td>
+        <td style="padding-left:9px" class="num">${c.lines}</td>
+        <td style="padding-left:9px">${c.closed_at
+          ? `<span style="color:var(--txt-3)">closed</span>`
+          : `<span style="color:var(--warn)">still open</span>`}</td>
+      </tr>`).join("")}</tbody></table>`
+      : `<div class="note">No counts yet.</div>`}
+
+    <div class="note"><b>Unaccounted</b> is what a count found missing — theft, breakage nobody
+      wrote down, or a receiving error. <b>Written off</b> is waste somebody recorded on purpose.
+      They're different problems and worth reading separately.</div>`;
+}
+
+/* ===========================================================================
+   The reports screen.
+
+   Six views over the same window. The window is chosen once at the top and
+   applies to all of them, because "last 30 days" meaning different things on
+   different tabs is how people end up quoting the wrong number in a meeting.
+   =========================================================================== */
+
+let RPT = { days: 30, tab: "overview", data: null, day: null };
+
+async function tReports2() {
+  $("cfgBody").innerHTML = `<p class="lede">Working it out…</p>`;
+  await rptLoad();
+  drawReports2();
+}
+
+const deptNames = () => {
+  const o = {};
+  CFG.depts.forEach(d => { o[d.id] = d.n; });
+  return o;
+};
+
+async function rptLoad() {
+  try {
+    RPT.data = await api("/api/reports?store=" + STORE_ID, { method: "POST", body: {
+      store: STORE_ID, days: RPT.days, deptNames: deptNames(), limit: 150,
+      want: ["overview", "byDay", "busy", "products", "departments", "staff",
+             "tenders", "exceptions"]
+    }});
+  } catch (e) { RPT.data = { error: e.message }; }
+}
+
+/* A small inline bar chart. Deliberately not a charting library: a bar is a div
+   with a height, and shipping 90kb to draw one would be silly. */
+function bars(rows, label, value, opts = {}) {
+  const peak = Math.max(1, ...rows.map(value));
+  return `<div class="rbars ${opts.tall ? "tall" : ""}">${rows.map(r => {
+    const v = value(r);
+    const h = Math.round(v / peak * 100);
+    return `<div class="rbar" title="${esc(label(r))}: ${opts.money ? money(v) : v}">
+      <i style="height:${h}%;${opts.colour && opts.colour(r) ? `background:${opts.colour(r)}` : ""}"></i>
+      <span>${esc(opts.short ? opts.short(r) : label(r))}</span>
+    </div>`;
+  }).join("")}</div>`;
+}
+
+function drawReports2() {
+  const d = RPT.data;
+
+  W.rptDays = async v => { RPT.days = +v; await rptLoad(); drawReports2(); };
+  W.rptTab = t => { RPT.tab = t; drawReports2(); };
+
+  if (!d || d.error) {
+    $("cfgBody").innerHTML = `<div class="finding"><b>Couldn't build the reports</b>
+      <span>${esc(d?.error || "No data came back.")}</span></div>`;
+    return;
+  }
+
+  const tabs = [["overview", "Overview"], ["busy", "When it's busy"],
+    ["products", "Products"], ["departments", "Sections"], ["staff", "Staff"],
+    ["exceptions", "Worth a look"]];
+
+  const o = d.overview;
+  const dir = o.change == null ? "" : o.change > 0 ? "up" : o.change < 0 ? "down" : "";
+
+  $("cfgBody").innerHTML = `
+    <div class="rhead">
+      <div class="rbig">
+        <span>Taken over ${o.days} days</span>
+        <b>${money(o.taken)}</b>
+        ${o.change == null ? `<em>no earlier period to compare with</em>`
+          : `<em class="${dir}">${o.change > 0 ? "▲" : o.change < 0 ? "▼" : "–"}
+             ${Math.abs(o.change)}% against the ${o.days} days before</em>`}
+      </div>
+      <label class="rwindow">Window
+        <select onchange="__w.rptDays(this.value)">
+          ${[7, 14, 30, 90, 180, 365].map(n =>
+            `<option value="${n}" ${RPT.days === n ? "selected" : ""}>Last ${n} days</option>`).join("")}
+        </select></label>
+    </div>
+
+    <div class="stktabs">${tabs.map(([k, l]) =>
+      `<button class="${RPT.tab === k ? "on" : ""}" onclick="__w.rptTab('${k}')">${l}</button>`).join("")}</div>
+    <div id="rptBody"></div>`;
+
+  ({ overview: rptOverview, busy: rptBusy, products: rptProducts,
+     departments: rptDepts, staff: rptStaff, exceptions: rptExceptions })[RPT.tab]();
+}
+
+/* ------------------------------- overview -------------------------------- */
+function rptOverview() {
+  const d = RPT.data, o = d.overview;
+  const days = d.byDay;
+  const best = days.slice().sort((a, b) => b.total - a.total)[0];
+
+  $("rptBody").innerHTML = `
+    <div class="rtiles">
+      <div><span>Sales</span><b>${o.sales.toLocaleString()}</b></div>
+      <div><span>Average basket</span><b>${money(o.basket)}</b></div>
+      <div><span>Refunds</span><b>${o.returns}</b>
+        ${o.refunded ? `<em>${money(o.refunded)}</em>` : ""}</div>
+      <div><span>Busiest day</span><b>${best ? money(best.total) : "—"}</b>
+        ${best ? `<em>${esc(best.d)}</em>` : ""}</div>
+    </div>
+
+    <div class="sect">Day by day</div>
+    ${days.length ? bars(days, r => r.d, r => r.total,
+      { money: true, tall: true, short: r => r.d.slice(8) })
+      : `<div class="note">Nothing in this window.</div>`}
+
+    <div class="sect">How they paid</div>
+    ${d.tenders.length ? `<table class="tbl"><thead><tr><th style="width:40%">Method</th>
+      <th>Count</th><th>Total</th><th>Share</th></tr></thead><tbody>
+      ${d.tenders.map(t => `<tr>
+        <td style="padding-left:9px">${esc(t.mop)}</td>
+        <td style="padding-left:9px" class="num">${t.n}</td>
+        <td style="padding-left:9px" class="num">${money(t.total)}</td>
+        <td style="padding-left:9px" class="num" style="color:var(--txt-2)">${t.share}%</td>
+      </tr>`).join("")}</tbody></table>` : `<div class="note">No payments recorded.</div>`}`;
+}
+
+/* -------------------------------- busy ----------------------------------- */
+function rptBusy() {
+  const b = RPT.data.busy;
+  const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const peakHour = b.hours.slice().sort((a, x) => x.n - a.n)[0];
+  const quiet = b.hours.filter(h => h.n > 0).sort((a, x) => a.n - x.n)[0];
+  const peakDay = b.weekdays.slice().sort((a, x) => x.total - a.total)[0];
+
+  $("rptBody").innerHTML = `
+    <div class="rtiles">
+      <div><span>Busiest hour</span><b>${peakHour.hour}:00</b>
+        <em>${peakHour.perDay} sales a day</em></div>
+      <div><span>Quietest trading hour</span><b>${quiet ? quiet.hour + ":00" : "—"}</b>
+        ${quiet ? `<em>${quiet.perDay} a day</em>` : ""}</div>
+      <div><span>Best day of the week</span><b>${DAYS[peakDay.day].slice(0, 3)}</b>
+        <em>${money(peakDay.total)}</em></div>
+      <div><span>Days open</span><b>${b.openDays}</b></div>
+    </div>
+
+    <div class="sect">Sales by hour, averaged over ${b.openDays} trading day${
+      b.openDays === 1 ? "" : "s"}</div>
+    ${bars(b.hours, h => `${h.hour}:00`, h => h.n,
+      { tall: true, short: h => h.hour % 3 === 0 ? String(h.hour) : "" })}
+
+    <div class="sect">Takings by day of the week</div>
+    ${bars(b.weekdays, w => DAYS[w.day], w => w.total,
+      { money: true, short: w => DAYS[w.day].slice(0, 2) })}
+
+    <div class="note">Averaged over days the shop actually traded, not calendar days — otherwise a
+      long window makes every hour look quieter than it is.</div>`;
+}
+
+/* ------------------------------- products -------------------------------- */
+function rptProducts() {
+  const rows = RPT.data.products;
+  const noCost = rows.filter(r => r.margin == null).length;
+
+  $("rptBody").innerHTML = `
+    ${noCost ? `<div class="note" style="margin-top:14px">${noCost} of these have no cost recorded,
+      so their margin is shown as unknown rather than guessed at. Costs come in from
+      <b>Invoice intake</b> or can be typed under <b>Pricebook</b>.</div>` : ""}
+    <table class="tbl"><thead><tr><th style="width:34%">Product</th><th>Sold</th><th>Revenue</th>
+      <th>Cost</th><th>Profit</th><th>Margin</th></tr></thead><tbody>
+      ${rows.map(r => `<tr>
+        <td style="padding-left:9px">${esc(r.name || "(unnamed)")}</td>
+        <td style="padding-left:9px" class="num">${r.qty}</td>
+        <td style="padding-left:9px" class="num">${money(r.revenue)}</td>
+        <td style="padding-left:9px" class="num" style="color:var(--txt-2)">${
+          r.cost ? money(r.cost) : "—"}</td>
+        <td style="padding-left:9px" class="num">${r.profit == null ? "—" : money(r.profit)}</td>
+        <td style="padding-left:9px" class="num" style="${r.margin == null ? "color:var(--txt-3)"
+          : r.margin < 10 ? "color:var(--warn)" : ""}">${
+          r.margin == null ? (r.partial ? "partly costed" : "unknown") : r.margin + "%"}</td>
+      </tr>`).join("") || `<tr><td colspan="6" style="padding:14px;color:var(--txt-3)">
+        Nothing sold in this window.</td></tr>`}
+    </tbody></table>`;
+}
+
+/* ------------------------------ departments ------------------------------ */
+function rptDepts() {
+  const rows = RPT.data.departments;
+  $("rptBody").innerHTML = `
+    ${rows.length ? bars(rows, r => r.name, r => r.revenue,
+      { money: true, short: r => r.name.slice(0, 8) }) : ""}
+    <table class="tbl" style="margin-top:14px"><thead><tr><th style="width:34%">Section</th>
+      <th>Items</th><th>Revenue</th><th>Share</th><th>Margin</th></tr></thead><tbody>
+      ${rows.map(r => `<tr>
+        <td style="padding-left:9px">${esc(r.name)}</td>
+        <td style="padding-left:9px" class="num">${r.qty}</td>
+        <td style="padding-left:9px" class="num">${money(r.revenue)}</td>
+        <td style="padding-left:9px" class="num" style="color:var(--txt-2)">${r.share}%</td>
+        <td style="padding-left:9px" class="num" style="${r.margin == null ? "color:var(--txt-3)" : ""}">
+          ${r.margin == null ? (r.partial ? "partly costed" : "unknown") : r.margin + "%"}</td>
+      </tr>`).join("") || `<tr><td colspan="5" style="padding:14px;color:var(--txt-3)">
+        Nothing sold in this window.</td></tr>`}
+    </tbody></table>
+    <div class="note">A section only gets a margin when every item sold in it had a cost recorded.
+      One missing cost makes the whole figure a guess, so it says so instead.</div>`;
+}
+
+/* --------------------------------- staff --------------------------------- */
+function rptStaff() {
+  const rows = RPT.data.staff;
+  /* Flagging is relative to the rest of the team rather than an absolute, so a
+     shop that discounts a lot doesn't light up entirely red. */
+  const avgDisc = rows.length
+    ? rows.reduce((a, r) => a + r.discountRate, 0) / rows.length : 0;
+  const avgRet = rows.length
+    ? rows.reduce((a, r) => a + r.returnRate, 0) / rows.length : 0;
+
+  $("rptBody").innerHTML = `
+    <table class="tbl"><thead><tr><th style="width:22%">Who</th><th>Sales</th><th>Taken</th>
+      <th>Basket</th><th>Items a sale</th><th>Discounted</th><th>Refunds</th>
+      <th>Hours active</th></tr></thead><tbody>
+      ${rows.map(r => {
+        const hotDisc = rows.length > 1 && r.discountRate > avgDisc * 2 && r.discountRate > 5;
+        const hotRet = rows.length > 1 && r.returnRate > avgRet * 2 && r.returnRate > 3;
+        return `<tr>
+          <td style="padding-left:9px"><b>${esc(r.who)}</b></td>
+          <td style="padding-left:9px" class="num">${r.sales}</td>
+          <td style="padding-left:9px" class="num">${money(r.taken)}</td>
+          <td style="padding-left:9px" class="num">${money(r.basket)}</td>
+          <td style="padding-left:9px" class="num" style="color:var(--txt-2)">${r.itemsPerSale}</td>
+          <td style="padding-left:9px" class="num" style="${hotDisc ? "color:var(--warn)" : ""}">
+            ${r.discountRate}%</td>
+          <td style="padding-left:9px" class="num" style="${hotRet ? "color:var(--warn)" : ""}">
+            ${r.returnRate}%</td>
+          <td style="padding-left:9px" class="num" style="color:var(--txt-2)">${r.hoursActive}</td>
+        </tr>`;
+      }).join("") || `<tr><td colspan="8" style="padding:14px;color:var(--txt-3)">
+        Nothing rung in this window.</td></tr>`}
+    </tbody></table>
+    <div class="note">Amber means well above this team's own average, not above some universal
+      figure — a shop that runs a lot of promotions shouldn't light up entirely. Treat it as
+      somewhere to look, not a conclusion: whoever works the busy shift will always sit at the top
+      of the takings column.</div>`;
+}
+
+/* ------------------------------ exceptions ------------------------------- */
+function rptExceptions() {
+  const e = RPT.data.exceptions;
+  const block = (title, rows, why, cols) => `
+    <div class="sect">${title} — ${rows.length}</div>
+    ${rows.length ? `<table class="tbl"><thead><tr>${cols.map(c =>
+      `<th>${c[0]}</th>`).join("")}</tr></thead><tbody>
+      ${rows.map(r => `<tr>${cols.map(c =>
+        `<td style="padding-left:9px">${c[1](r)}</td>`).join("")}</tr>`).join("")}
+    </tbody></table>` : `<div class="note" style="margin-top:0">None.</div>`}
+    <div class="note">${why}</div>`;
+
+  const when = r => esc(String(r.at).slice(0, 16));
+
+  $("rptBody").innerHTML =
+    block("Refunds with no original sale", e.refundsNoOriginal,
+      "A refund put through without finding the sale it came from. Sometimes unavoidable, but it's " +
+      "the easiest way to take money out of a till, so it's worth knowing how often it happens.",
+      [["When", when], ["Who", r => esc(r.who || "—")],
+       ["Amount", r => `<span class="num">${money(r.amount)}</span>`],
+       ["Sale", r => `<span class="num" style="color:var(--txt-3)">#${r.seq}</span>`]]) +
+
+    block("Discounts over a quarter of the sale", e.bigDiscounts,
+      "Large discounts are usually genuine. A pattern from one person on one shift is the thing " +
+      "to notice.",
+      [["When", when], ["Who", r => esc(r.who || "—")],
+       ["Discount", r => `<span class="num">${money(r.discount)}</span>`],
+       ["Sale total", r => `<span class="num">${money(r.amount)}</span>`]]) +
+
+    block("Sales between 2am and 5am", e.afterHours,
+      "Normal for a 24-hour forecourt and odd for a shop that shuts at ten. Read it against your " +
+      "own opening hours.",
+      [["When", when], ["Who", r => esc(r.who || "—")],
+       ["Amount", r => `<span class="num">${money(r.amount)}</span>`]]);
+}
+
+/* ===========================================================================
+   Vendors and purchase orders.
+
+   Three views: who you buy from, what's on order, and one order open for
+   editing or receiving. Receiving is the screen that gets used daily, so it
+   pre-fills what's still outstanding and lets it be corrected — most of the
+   time a delivery matches, and the ones that don't are the point.
+   =========================================================================== */
+
+let PUR = { tab: "orders", vendors: [], orders: [], outstanding: [], onOrder: {},
+            open: null, draft: null, receiving: null };
+
+async function tPurchasing() {
+  $("cfgBody").innerHTML = `<p class="lede">Loading…</p>`;
+  try {
+    const [v, o] = await Promise.all([
+      api("/api/vendors?store=" + STORE_ID),
+      api("/api/po?store=" + STORE_ID)
+    ]);
+    PUR.vendors = v.vendors;
+    PUR.orders = o.orders;
+    PUR.outstanding = o.outstanding;
+    PUR.onOrder = o.onOrder;
+  } catch (e) {
+    $("cfgBody").innerHTML = `<div class="finding"><b>Couldn't load purchasing</b>
+      <span>${esc(e.message)}</span></div>`;
+    return;
+  }
+  drawPurchasing();
+}
+
+const vendorName = id => (PUR.vendors.find(v => v.id === id) || {}).name || "No vendor";
+
+function drawPurchasing() {
+  W.purTab = t => { PUR.tab = t; PUR.open = null; drawPurchasing(); };
+  const tabs = [["orders", "Orders"], ["vendors", "Vendors"]];
+
+  $("cfgBody").innerHTML = `
+    <p class="lede">An order is a promise about stock that hasn't arrived. It doesn't touch your
+      counts until something turns up — and then it goes through the same ledger as any other
+      delivery.</p>
+    <div class="stktabs">${tabs.map(([k, l]) =>
+      `<button class="${PUR.tab === k ? "on" : ""}" onclick="__w.purTab('${k}')">${l}</button>`).join("")}</div>
+    <div id="purBody"></div>`;
+
+  if (PUR.open) return purOrder();
+  (PUR.tab === "vendors" ? purVendors : purOrders)();
+}
+
+/* -------------------------------- vendors -------------------------------- */
+function purVendors() {
+  W.venEdit = id => {
+    const v = id ? PUR.vendors.find(x => x.id === id) : {};
+    const el = veil(`<div class="card tall"><h3>${id ? "Edit" : "Add"} a vendor</h3>
+      <p>Only the name is required. The rest is so whoever needs to chase a delivery doesn't have
+        to go looking for a phone number.</p>
+      <div class="edwrap"><div class="frm">
+        <label>Name<input id="vn" value="${esc(v.name || "")}"></label>
+        <label>Rep<input id="vr" value="${esc(v.rep || "")}"></label>
+        <label>Phone<input id="vp" value="${esc(v.phone || "")}"></label>
+        <label>Email<input id="ve" value="${esc(v.email || "")}"></label>
+        <label>Account number<input id="va" value="${esc(v.account || "")}"></label>
+        <label>Terms<input id="vt" value="${esc(v.terms || "")}" placeholder="Net 14"></label>
+        <label>Delivery days<input id="vd" value="${esc(v.delivers || "")}" placeholder="Tue, Fri"></label>
+      </div>
+      <label style="font-size:12.5px;color:var(--txt-2);display:block;margin-top:12px">Notes
+        <textarea id="vnote" style="margin-top:6px">${esc(v.note || "")}</textarea></label></div>
+      <div class="row"><button class="no" id="vx">Cancel</button>
+        <button class="ok" id="vy">Save</button></div></div>`);
+    el.querySelector("#vx").onclick = () => el.remove();
+    el.querySelector("#vy").onclick = async () => {
+      const body = { id, name: el.querySelector("#vn").value, rep: el.querySelector("#vr").value,
+        phone: el.querySelector("#vp").value, email: el.querySelector("#ve").value,
+        account: el.querySelector("#va").value, terms: el.querySelector("#vt").value,
+        delivers: el.querySelector("#vd").value, note: el.querySelector("#vnote").value };
+      try {
+        await api("/api/vendors?store=" + STORE_ID, { method: "POST",
+          body: { store: STORE_ID, vendor: body } });
+        el.remove();
+        toast("Saved.");
+        tPurchasing();
+      } catch (e) { toast(e.message, true); }
+    };
+    setTimeout(() => el.querySelector("#vn").focus(), 40);
+  };
+
+  W.venArchive = async (id, on) => {
+    await api(`/api/vendors/${id}/archive?store=${STORE_ID}`, { method: "POST",
+      body: { store: STORE_ID, on } });
+    tPurchasing();
+  };
+
+  W.venStats = async id => {
+    const el = veil(`<div class="card"><h3>${esc(vendorName(id))}</h3>
+      <div id="vsBody"><p class="note">Working it out…</p></div>
+      <div class="row"><button class="no" id="vsx">Close</button></div></div>`);
+    el.querySelector("#vsx").onclick = () => el.remove();
+    try {
+      const s = await api(`/api/vendors/${id}/summary?store=${STORE_ID}&days=180`);
+      el.querySelector("#vsBody").innerHTML = `
+        <p>Last ${s.days} days.</p>
+        <div class="rtiles" style="margin-top:12px">
+          <div><span>Orders</span><b>${s.orders}</b></div>
+          <div><span>Spent</span><b>${money(s.spend)}</b></div>
+          <div><span>Fill rate</span><b>${s.fillRate == null ? "—" : s.fillRate + "%"}</b>
+            <em>${s.unitsReceived} of ${s.unitsOrdered} units</em></div>
+          <div><span>Short deliveries</span><b style="${s.shortOrders ? "color:var(--warn)" : ""}">
+            ${s.shortOrders}</b></div>
+        </div>
+        <div class="note">Fill rate is how much of what you ordered actually turned up. Below about
+          95% consistently is worth raising with the rep.</div>`;
+    } catch (e) {
+      el.querySelector("#vsBody").innerHTML = `<p class="note">${esc(e.message)}</p>`;
+    }
+  };
+
+  $("purBody").innerHTML = `
+    <button class="mini" onclick="__w.venEdit(0)">Add a vendor</button>
+    ${PUR.vendors.length ? `<table class="tbl" style="margin-top:10px"><thead><tr>
+      <th style="width:24%">Vendor</th><th>Rep</th><th>Phone</th><th>Terms</th><th>Delivers</th>
+      <th></th></tr></thead><tbody>
+      ${PUR.vendors.map(v => `<tr>
+        <td style="padding-left:9px"><b>${esc(v.name)}</b>
+          ${v.account ? `<em style="display:block;font-size:11px;color:var(--txt-3)">acct ${
+            esc(v.account)}</em>` : ""}</td>
+        <td style="padding-left:9px;color:var(--txt-2)">${esc(v.rep || "—")}</td>
+        <td style="padding-left:9px;color:var(--txt-2)" class="num">${esc(v.phone || "—")}</td>
+        <td style="padding-left:9px;color:var(--txt-2)">${esc(v.terms || "—")}</td>
+        <td style="padding-left:9px;color:var(--txt-2)">${esc(v.delivers || "—")}</td>
+        <td style="text-align:right;white-space:nowrap;padding-right:9px">
+          <button class="mini" style="margin:0" onclick="__w.venStats(${v.id})">How they do</button>
+          <button class="mini" style="margin:0" onclick="__w.venEdit(${v.id})">Edit</button>
+          <button class="del" onclick="__w.venArchive(${v.id},true)" title="Archive">×</button></td>
+      </tr>`).join("")}
+    </tbody></table>` : `<div class="note">No vendors yet. Adding one lets an order be addressed to
+      somebody, and gives you a fill rate to hold them to.</div>`}`;
+}
+
+/* -------------------------------- orders --------------------------------- */
+function purOrders() {
+  W.poOpen = async id => {
+    try { PUR.open = await api(`/api/po/${id}?store=${STORE_ID}`); drawPurchasing(); }
+    catch (e) { toast(e.message, true); }
+  };
+
+  W.poNew = async () => {
+    try {
+      const r = await api("/api/po?store=" + STORE_ID, { method: "POST",
+        body: { store: STORE_ID, who: ME.n, lines: [] } });
+      W.poOpen(r.id);
+    } catch (e) { toast(e.message, true); }
+  };
+
+  W.poFromReorder = async () => {
+    try {
+      const ro = await api("/api/stock/reorder?store=" + STORE_ID, { method: "POST",
+        body: { store: STORE_ID, plus: CFG.plus.map(p =>
+          ({ id: p.id, n: p.n, upc: p.upc, deptId: p.deptId, cost: p.cost })) } });
+      const items = ro.items.filter(i => i.need > 0);
+      if (!items.length) return toast("Nothing is below par that isn't already on order.", true);
+      const r = await api("/api/po/from-reorder?store=" + STORE_ID, { method: "POST",
+        body: { store: STORE_ID, who: ME.n, items, vendorOf: {} } });
+      toast(`Made <b>${r.created.length}</b> draft order${r.created.length === 1 ? "" : "s"} from
+        ${items.length} item${items.length === 1 ? "" : "s"}.`);
+      tPurchasing();
+    } catch (e) { toast(e.message, true); }
+  };
+
+  const STATES = { draft: ["draft", "var(--txt-3)"], sent: ["sent", "var(--warn)"],
+    part: ["part delivered", "var(--warn)"], received: ["received", "var(--vfd)"],
+    cancelled: ["cancelled", "var(--txt-3)"] };
+
+  $("purBody").innerHTML = `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+      <button class="mini" style="margin:0" onclick="__w.poNew()">New order</button>
+      <button class="mini" style="margin:0" onclick="__w.poFromReorder()">Build from the reorder list</button>
+    </div>
+
+    ${PUR.outstanding.length ? `
+      <div class="sect">Waiting on delivery — ${PUR.outstanding.length}</div>
+      <table class="tbl"><thead><tr><th style="width:24%">Vendor</th><th>Reference</th>
+        <th>Ordered</th><th>Arrived</th><th>Still short</th><th>Due</th><th></th></tr></thead><tbody>
+        ${PUR.outstanding.map(p => `<tr>
+          <td style="padding-left:9px"><b>${esc(p.vendor_name || "No vendor")}</b></td>
+          <td style="padding-left:9px;color:var(--txt-2)">${esc(p.ref || "#" + p.id)}</td>
+          <td style="padding-left:9px" class="num">${p.unitsOrdered}</td>
+          <td style="padding-left:9px" class="num">${p.unitsReceived}</td>
+          <td style="padding-left:9px" class="num" style="color:var(--warn)">${p.shortLines} line${
+            p.shortLines === 1 ? "" : "s"}</td>
+          <td style="padding-left:9px;color:${p.overdue ? "var(--void)" : "var(--txt-2)"}">
+            ${p.due_at ? esc(p.due_at) + (p.overdue ? " · overdue" : "") : "—"}</td>
+          <td style="text-align:right;padding-right:9px">
+            <button class="mini" style="margin:0" onclick="__w.poOpen(${p.id})">Open</button></td>
+        </tr>`).join("")}
+      </tbody></table>` : ""}
+
+    <div class="sect">All orders</div>
+    ${PUR.orders.length ? `<table class="tbl"><thead><tr><th>Created</th><th style="width:22%">Vendor</th>
+      <th>Reference</th><th>Lines</th><th>Value</th><th>State</th><th></th></tr></thead><tbody>
+      ${PUR.orders.map(p => {
+        const st = STATES[p.state] || [p.state, "var(--txt-2)"];
+        return `<tr>
+          <td style="padding-left:9px;color:var(--txt-2)">${esc(String(p.created_at).slice(0, 10))}</td>
+          <td style="padding-left:9px">${esc(p.vendor_name || "No vendor")}</td>
+          <td style="padding-left:9px;color:var(--txt-2)">${esc(p.ref || "#" + p.id)}</td>
+          <td style="padding-left:9px" class="num">${p.lines}</td>
+          <td style="padding-left:9px" class="num">${p.value ? money(p.value) : "—"}</td>
+          <td style="padding-left:9px"><span style="color:${st[1]}">${st[0]}</span></td>
+          <td style="text-align:right;padding-right:9px">
+            <button class="mini" style="margin:0" onclick="__w.poOpen(${p.id})">Open</button></td>
+        </tr>`;
+      }).join("")}
+    </tbody></table>` : `<div class="note">No orders yet.</div>`}`;
+}
+
+/* ------------------------------- one order ------------------------------- */
+function purOrder() {
+  const o = PUR.open;
+  const editable = o.state === "draft";
+
+  W.poBack = () => { PUR.open = null; drawPurchasing(); };
+  W.poField = (k, v) => { o[k] = v; };
+  W.poAddLine = id => {
+    if (!id || o.lines.find(l => l.plu_id === id)) return;
+    const p = byId(CFG.plus, id);
+    o.lines.push({ plu_id: id, name: p.n, ordered: 1, received: 0,
+      case_qty: null, cost: p.cost ?? null, outstanding: 1 });
+    drawPurchasing();
+  };
+  W.poSetLine = (i, k, v) => { o.lines[i][k] = v; };
+  W.poDelLine = i => {
+    if (o.lines[i].received > 0) return toast("Some of that has already arrived.", true);
+    o.lines.splice(i, 1);
+    drawPurchasing();
+  };
+
+  W.poSave = async () => {
+    try {
+      await api(`/api/po/${o.id}?store=${STORE_ID}`, { method: "PUT", body: {
+        store: STORE_ID, lines: o.lines.map(l => ({ pluId: l.plu_id, name: l.name,
+          ordered: parseFloat(l.ordered) || 0,
+          caseQty: l.case_qty === "" ? null : parseFloat(l.case_qty) || null,
+          cost: l.cost === "" ? null : parseFloat(l.cost) })) } });
+      toast("Saved.");
+      W.poOpen(o.id);
+    } catch (e) { toast(e.message, true); }
+  };
+
+  W.poSend = async () => {
+    try {
+      await W.poSave();
+      await api(`/api/po/${o.id}/send?store=${STORE_ID}`, { method: "POST",
+        body: { store: STORE_ID, who: ME.n } });
+      toast("Marked as sent.");
+      W.poOpen(o.id);
+    } catch (e) { toast(e.message, true); }
+  };
+
+  W.poCancel = async () => {
+    try {
+      await api(`/api/po/${o.id}/cancel?store=${STORE_ID}`, { method: "POST",
+        body: { store: STORE_ID } });
+      toast("Cancelled.");
+      PUR.open = null;
+      tPurchasing();
+    } catch (e) { toast(e.message, true); }
+  };
+
+  /* Receiving pre-fills what's outstanding, because most deliveries match. */
+  W.poReceive = () => {
+    const rows = o.lines.filter(l => l.outstanding > 0)
+      .map(l => ({ pluId: l.plu_id, name: l.name, qty: l.outstanding,
+        cost: l.paid ?? l.cost ?? "" }));
+    if (!rows.length) return toast("Nothing outstanding on this order.", true);
+
+    const el = veil(`<div class="card wide tall"><h3>Receive a delivery</h3>
+      <p>Filled in with what's still outstanding. Change anything that came short, and leave a line
+        at zero if it didn't turn up at all.</p>
+      <div class="frm"><label>Invoice number<input id="rin" placeholder="INV-9001"></label></div>
+      <div class="edwrap"><table class="tbl"><thead><tr><th style="width:40%">Product</th>
+        <th>Outstanding</th><th>Arriving</th><th>Unit cost</th></tr></thead><tbody>
+        ${rows.map((r, i) => `<tr>
+          <td style="padding-left:9px">${esc(r.name || r.pluId)}</td>
+          <td style="padding-left:9px" class="num" style="color:var(--txt-2)">${r.qty}</td>
+          <td><input class="n rq" data-i="${i}" value="${r.qty}"></td>
+          <td><input class="n rc" data-i="${i}" value="${r.cost}" placeholder="—"></td>
+        </tr>`).join("")}
+      </tbody></table></div>
+      <div class="row"><button class="no" id="rx">Cancel</button>
+        <button class="ok" id="ry">Receive it</button></div></div>`);
+
+    el.querySelector("#rx").onclick = () => el.remove();
+    el.querySelector("#ry").onclick = async () => {
+      const lines = rows.map((r, i) => ({
+        pluId: r.pluId,
+        qty: parseFloat(el.querySelector(`.rq[data-i="${i}"]`).value) || 0,
+        cost: el.querySelector(`.rc[data-i="${i}"]`).value
+      })).filter(l => l.qty > 0);
+      if (!lines.length) return toast("Nothing to receive.", true);
+      try {
+        const r = await api(`/api/po/${o.id}/receive?store=${STORE_ID}`, { method: "POST",
+          body: { store: STORE_ID, who: ME.n,
+            invoice: el.querySelector("#rin").value, lines } });
+        /* An invoice price is the truth about what you paid. */
+        lines.forEach(l => {
+          const c = parseFloat(l.cost);
+          if (c > 0) { const p = byId(CFG.plus, l.pluId); if (p) p.cost = c; }
+        });
+        queueSave();
+        el.remove();
+        toast(r.state === "received" ? "Order complete."
+          : `Part received — ${r.unitsReceived} of ${r.unitsOrdered} units.`);
+        W.poOpen(o.id);
+      } catch (e) { toast(e.message, true); }
+    };
+  };
+
+  const short = o.lines.filter(l => l.received > 0 && l.outstanding > 0);
+
+  $("purBody").innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap">
+      <button class="mini" style="margin:0" onclick="__w.poBack()">← All orders</button>
+      <b style="font-size:16px">${esc(o.ref || "Order #" + o.id)}</b>
+      <span style="color:var(--txt-2);font-size:13px">${esc(o.vendor?.name || "No vendor")}</span>
+      <span style="margin-left:auto;font-size:13px;color:var(--txt-2)">${esc(o.state)}</span>
+    </div>
+
+    ${short.length ? `<div class="finding" style="margin-top:12px">
+      <b>${short.length} line${short.length === 1 ? " came" : "s came"} short</b>
+      <span>${esc(short.map(l => `${l.name}: ${l.received} of ${l.ordered}`).join(", "))}.
+        That's what to raise with the rep.</span></div>` : ""}
+
+    <table class="tbl" style="margin-top:12px"><thead><tr><th style="width:30%">Product</th>
+      <th>Ordered</th><th>Per case</th><th>Expected cost</th><th>Arrived</th><th>Paid</th>
+      ${editable ? "<th></th>" : ""}</tr></thead><tbody>
+      ${o.lines.map((l, i) => `<tr>
+        <td style="padding-left:9px">${esc(l.name || l.plu_id)}</td>
+        <td>${editable ? `<input class="n" value="${l.ordered}"
+          oninput="__w.poSetLine(${i},'ordered',this.value)">`
+          : `<span class="num" style="padding-left:9px">${l.ordered}</span>`}</td>
+        <td>${editable ? `<input class="n" value="${l.case_qty ?? ""}" placeholder="—"
+          oninput="__w.poSetLine(${i},'case_qty',this.value)">`
+          : `<span class="num" style="padding-left:9px">${l.case_qty ?? "—"}</span>`}</td>
+        <td>${editable ? `<input class="n" value="${l.cost ?? ""}" placeholder="—"
+          oninput="__w.poSetLine(${i},'cost',this.value)">`
+          : `<span class="num" style="padding-left:9px">${l.cost == null ? "—" : money(l.cost)}</span>`}</td>
+        <td style="padding-left:9px" class="num" style="${l.outstanding > 0 && l.received > 0
+          ? "color:var(--warn)" : ""}">${l.received}</td>
+        <td style="padding-left:9px" class="num" style="color:${
+          l.paid != null && l.cost != null && l.paid > l.cost ? "var(--warn)" : "var(--txt-2)"}">
+          ${l.paid == null ? "—" : money(l.paid)}</td>
+        ${editable ? `<td><button class="del" onclick="__w.poDelLine(${i})">×</button></td>` : ""}
+      </tr>`).join("") || `<tr><td colspan="7" style="padding:14px;color:var(--txt-3)">
+        Nothing on this order yet.</td></tr>`}
+    </tbody></table>
+
+    ${editable ? `
+      <div class="frm" style="margin-top:10px">
+        <label style="flex:2">Add a product<select onchange="__w.poAddLine(this.value);this.value=''">
+          <option value="">Choose…</option>
+          ${CFG.plus.map(p => `<option value="${p.id}">${esc(p.n)}</option>`).join("")}
+        </select></label>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button class="mini" style="margin:0" onclick="__w.poSave()">Save</button>
+        <button class="mini" style="margin:0" onclick="__w.poSend()">Mark as sent</button>
+        <button class="mini" style="margin:0" onclick="__w.poCancel()">Cancel the order</button>
+      </div>
+      <div class="note">An order does nothing to your stock until it's marked as sent and something
+        is received against it.</div>`
+    : o.state === "sent" || o.state === "part" ? `
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="mini" style="margin:0" onclick="__w.poReceive()">Receive a delivery</button>
+      </div>` : ""}
+
+    <div class="cbar" style="margin-top:14px">
+      <b>${o.unitsReceived}</b> of <b>${o.unitsOrdered}</b> units ·
+      expected ${money(o.expectedCost)}${o.chargedCost
+        ? ` · charged ${money(o.chargedCost)}` : ""}</div>
+
+    ${o.receipts.length ? `<div class="sect">Deliveries</div>
+      <table class="tbl"><thead><tr><th>When</th><th>Who</th><th>Invoice</th></tr></thead><tbody>
+        ${o.receipts.map(r => `<tr>
+          <td style="padding-left:9px;color:var(--txt-2)">${esc(String(r.at).slice(0, 16))}</td>
+          <td style="padding-left:9px">${esc(r.who || "—")}</td>
+          <td style="padding-left:9px;color:var(--txt-2)">${esc(r.invoice || "—")}</td>
+        </tr>`).join("")}
+      </tbody></table>` : ""}`;
+}
+
+/* ===========================================================================
+   Loyalty: the settings, the offers, and who's actually coming in.
+
+   The till-side lookup lives in the register shells; this is the back office
+   view — how the scheme works, what offers are running, and which customers
+   are worth knowing about.
+   =========================================================================== */
+
+let LOY = { tab: "scheme", settings: null, offers: [], top: [], lapsed: [] };
+
+async function tLoyalty() {
+  $("cfgBody").innerHTML = `<p class="lede">Loading…</p>`;
+  try {
+    const [a, b] = await Promise.all([
+      api("/api/loyalty?store=" + STORE_ID),
+      api("/api/loyalty/customers?store=" + STORE_ID)
+    ]);
+    LOY.settings = a.settings;
+    LOY.offers = a.offers;
+    LOY.top = b.top;
+    LOY.lapsed = b.lapsed;
+  } catch (e) {
+    $("cfgBody").innerHTML = `<div class="finding"><b>Couldn't load loyalty</b>
+      <span>${esc(e.message)}</span></div>`;
+    return;
+  }
+  drawLoyalty();
+}
+
+function drawLoyalty() {
+  W.loyTab = t => { LOY.tab = t; drawLoyalty(); };
+  const tabs = [["scheme", "How it works"], ["offers", "Offers"], ["people", "Customers"]];
+
+  $("cfgBody").innerHTML = `
+    <p class="lede">Points are a promise to hand over money later, so they're kept as a ledger of
+      every movement rather than a number somebody can edit. The balance is the sum of it.</p>
+    <div class="stktabs">${tabs.map(([k, l]) =>
+      `<button class="${LOY.tab === k ? "on" : ""}" onclick="__w.loyTab('${k}')">${l}</button>`).join("")}</div>
+    <div id="loyBody"></div>`;
+
+  ({ scheme: loyScheme, offers: loyOffers, people: loyPeople })[LOY.tab]();
+}
+
+/* ------------------------------ how it works ------------------------------ */
+function loyScheme() {
+  const s = LOY.settings;
+  const depts = CFG.depts.filter(d => !d.fuel);
+
+  W.loySet = (k, v) => { s[k] = v; };
+  W.loyExc = (id, on) => {
+    s.excluded = on ? [...new Set([...s.excluded, id])] : s.excluded.filter(x => x !== id);
+  };
+  W.loySave = async () => {
+    try {
+      const r = await api("/api/loyalty?store=" + STORE_ID, { method: "PUT",
+        body: { store: STORE_ID, settings: {
+          on: !!s.on, per_pound: parseFloat(s.per_pound) || 0,
+          point_value: parseFloat(s.point_value) || 0,
+          block: parseInt(s.block) || 1, excluded: s.excluded } } });
+      LOY.settings = r.settings;
+      toast("Saved.");
+      drawLoyalty();
+    } catch (e) { toast(e.message, true); }
+  };
+
+  /* Worked through with real numbers, because "1 point per pound at 0.01" is
+     not a sentence anyone can price a scheme from. */
+  const per = parseFloat(s.per_pound) || 0;
+  const val = parseFloat(s.point_value) || 0;
+  const block = parseInt(s.block) || 1;
+  const spend100 = per * 100;
+  const worth = +(spend100 * val).toFixed(2);
+  const pct = per && val ? +(per * val * 100).toFixed(2) : 0;
+
+  $("loyBody").innerHTML = `
+    <label class="chk" style="margin-top:16px;display:flex;gap:10px;align-items:center">
+      <input type="checkbox" ${s.on ? "checked" : ""} onchange="__w.loySet('on',this.checked)"
+        style="width:auto">
+      <span>Run a points scheme</span></label>
+
+    <div class="frm" style="margin-top:14px">
+      <label>Points earned per ${esc(CFG.site.currency || "$")}1 spent
+        <input class="n" value="${s.per_pound}" oninput="__w.loySet('per_pound',this.value)"></label>
+      <label>What one point is worth
+        <input class="n" value="${s.point_value}" oninput="__w.loySet('point_value',this.value)"></label>
+      <label>Spent in blocks of
+        <input class="n" value="${s.block}" oninput="__w.loySet('block',this.value)"></label>
+    </div>
+
+    <div class="cbar" style="margin-top:12px">
+      Spend <b>${money(100)}</b> → earn <b>${spend100}</b> points → worth <b>${money(worth)}</b>
+      &nbsp;·&nbsp; that's <b>${pct}%</b> back
+    </div>
+    ${pct > 5 ? `<div class="finding"><b>That's ${pct}% of your takings</b>
+      <span>Most schemes sit between 1 and 3%. At this rate the scheme costs more than most
+        convenience margins earn.</span></div>` : ""}
+
+    <div class="sect">Sections that earn nothing</div>
+    <div class="chips">${depts.map(d => `
+      <label class="chip ${s.excluded.includes(d.id) ? "on" : ""}">
+        <input type="checkbox" ${s.excluded.includes(d.id) ? "checked" : ""} style="display:none"
+          onchange="__w.loyExc('${d.id}',this.checked);this.closest('label').classList.toggle('on',this.checked)">
+        ${esc(d.n)}</label>`).join("")}</div>
+    <div class="note">Tick anything you make almost nothing on — fuel, lottery, phone cards. Giving
+      points on a product with a 2% margin costs you money on every sale.</div>
+
+    <button class="mini" onclick="__w.loySave()">Save</button>`;
+}
+
+/* --------------------------------- offers --------------------------------- */
+function loyOffers() {
+  W.offEdit = id => {
+    const o = id ? LOY.offers.find(x => x.id === id) : { kind: "stamp", need: 10, pluIds: [] };
+    const el = veil(`<div class="card tall"><h3>${id ? "Edit" : "New"} offer</h3>
+      <p>A stamp card counts products. A spend card counts money. Either way it's the customer's
+        running total, and it survives a refund by counting back down.</p>
+      <div class="edwrap">
+      <div class="frm">
+        <label>Name<input id="on" value="${esc(o.name || "")}" placeholder="Coffee card"></label>
+        <label>Kind<select id="ok">
+          <option value="stamp" ${o.kind === "stamp" ? "selected" : ""}>Stamps — count products</option>
+          <option value="spend" ${o.kind === "spend" ? "selected" : ""}>Spend — count money</option>
+        </select></label>
+        <label id="needWrap">How many<input class="n" id="one" value="${o.need || 10}"></label>
+      </div>
+      <label style="font-size:12.5px;color:var(--txt-2);display:block;margin-top:12px">
+        What they get<input id="orw" value="${esc(o.reward || "")}"
+          placeholder="A free coffee" style="margin-top:6px"></label>
+      <div id="pluWrap" style="margin-top:12px">
+        <div class="sect" style="margin-top:0">Which products count</div>
+        <div class="chips" id="offPlus">${CFG.plus.slice(0, 200).map(p => `
+          <label class="chip ${(o.pluIds || []).includes(p.id) ? "on" : ""}">
+            <input type="checkbox" value="${p.id}" ${(o.pluIds || []).includes(p.id) ? "checked" : ""}
+              style="display:none"
+              onchange="this.closest('label').classList.toggle('on',this.checked)">
+            ${esc(p.n)}</label>`).join("")}</div>
+      </div></div>
+      <div class="row"><button class="no" id="ox">Cancel</button>
+        <button class="ok" id="oy">Save</button></div></div>`);
+
+    const sync = () => {
+      const stamp = el.querySelector("#ok").value === "stamp";
+      el.querySelector("#pluWrap").style.display = stamp ? "" : "none";
+      el.querySelector("#needWrap").querySelector("span, input");
+    };
+    el.querySelector("#ok").onchange = sync;
+    sync();
+
+    el.querySelector("#ox").onclick = () => el.remove();
+    el.querySelector("#oy").onclick = async () => {
+      const pluIds = [...el.querySelectorAll("#offPlus input:checked")].map(i => i.value);
+      try {
+        await api("/api/offers?store=" + STORE_ID, { method: "POST", body: { store: STORE_ID,
+          offer: { id, name: el.querySelector("#on").value, kind: el.querySelector("#ok").value,
+            need: el.querySelector("#one").value, reward: el.querySelector("#orw").value,
+            pluIds } } });
+        el.remove();
+        toast("Saved.");
+        tLoyalty();
+      } catch (e) { toast(e.message, true); }
+    };
+    setTimeout(() => el.querySelector("#on").focus(), 40);
+  };
+
+  W.offDel = async id => {
+    if (!confirm("Delete this offer? Anybody part way through loses their progress.")) return;
+    await api(`/api/offers/${id}?store=${STORE_ID}`, { method: "DELETE" });
+    tLoyalty();
+  };
+
+  $("loyBody").innerHTML = `
+    <button class="mini" onclick="__w.offEdit(0)">New offer</button>
+    ${LOY.offers.length ? `<table class="tbl" style="margin-top:10px"><thead><tr>
+      <th style="width:26%">Offer</th><th>Kind</th><th>Target</th><th>Reward</th>
+      <th>Products</th><th></th></tr></thead><tbody>
+      ${LOY.offers.map(o => `<tr ${o.active ? "" : 'style="opacity:.5"'}>
+        <td style="padding-left:9px"><b>${esc(o.name)}</b></td>
+        <td style="padding-left:9px;color:var(--txt-2)">${o.kind === "stamp" ? "Stamps" : "Spend"}</td>
+        <td style="padding-left:9px" class="num">${o.need}</td>
+        <td style="padding-left:9px;color:var(--txt-2)">${esc(o.reward || "—")}</td>
+        <td style="padding-left:9px;color:var(--txt-3)">${o.kind === "stamp"
+          ? o.pluIds.length + " item" + (o.pluIds.length === 1 ? "" : "s") : "any"}</td>
+        <td style="text-align:right;padding-right:9px">
+          <button class="mini" style="margin:0" onclick="__w.offEdit(${o.id})">Edit</button>
+          <button class="del" onclick="__w.offDel(${o.id})">×</button></td>
+      </tr>`).join("")}
+    </tbody></table>` : `<div class="note">No offers yet. A stamp card is the simplest one that
+      works: pick a product, set a number, say what they get.</div>`}`;
+}
+
+/* -------------------------------- customers ------------------------------- */
+function loyPeople() {
+  W.custOpen = async id => {
+    const el = veil(`<div class="card wide tall"><h3>Customer</h3>
+      <div class="edwrap" id="custBody"><p class="note">Loading…</p></div>
+      <div class="row"><button class="no" id="cx">Close</button></div></div>`);
+    el.querySelector("#cx").onclick = () => el.remove();
+    try {
+      const d = await api(`/api/customers/${id}?store=${STORE_ID}`);
+      const c = d.customer;
+      el.querySelector("h3").textContent = c.name || c.phone || "Customer";
+      el.querySelector("#custBody").innerHTML = `
+        <div class="rtiles">
+          <div><span>Points</span><b>${c.balance}</b></div>
+          <div><span>Joined</span><b style="font-size:15px">${esc(String(c.joined_at).slice(0, 10))}</b></div>
+          <div><span>Last in</span><b style="font-size:15px">${c.last_seen
+            ? esc(String(c.last_seen).slice(0, 10)) : "never"}</b></div>
+        </div>
+        ${c.phone ? `<div class="note">${esc(c.phone)}${c.email ? " · " + esc(c.email) : ""}</div>` : ""}
+
+        ${d.usual.length ? `<div class="sect">What they buy</div>
+          <div class="chips">${d.usual.map(u =>
+            `<span class="chip">${esc(u.name)} <em style="font-style:normal;color:var(--txt-3)">
+              ×${u.times}</em></span>`).join("")}</div>` : ""}
+
+        ${d.offers.length ? `<div class="sect">Offers</div>
+          <table class="tbl"><tbody>${d.offers.map(o => `<tr>
+            <td style="padding-left:9px">${esc(o.name)}</td>
+            <td style="padding-left:9px" class="num">${o.count} of ${o.need}</td>
+            <td style="padding-left:9px">${o.ready
+              ? `<span style="color:var(--vfd)">ready — ${esc(o.reward || "reward due")}</span>`
+              : `<span style="color:var(--txt-3)">in progress</span>`}</td>
+          </tr>`).join("")}</tbody></table>` : ""}
+
+        <div class="sect">Points history</div>
+        <table class="tbl"><thead><tr><th>When</th><th>What</th><th>Change</th><th>Who</th>
+        </tr></thead><tbody>
+          ${d.points.map(p => `<tr>
+            <td style="padding-left:9px;color:var(--txt-2);font-size:12.5px">${
+              esc(String(p.at).slice(0, 16))}</td>
+            <td style="padding-left:9px">${esc(p.kind)}${p.note
+              ? ` <em style="font-style:normal;color:var(--txt-3)">${esc(p.note)}</em>` : ""}</td>
+            <td style="padding-left:9px" class="num" style="color:${p.amount < 0
+              ? "var(--void)" : "var(--vfd)"}">${p.amount > 0 ? "+" : ""}${p.amount}</td>
+            <td style="padding-left:9px;color:var(--txt-2)">${esc(p.who || "—")}</td>
+          </tr>`).join("") || `<tr><td colspan="4" style="padding:12px;color:var(--txt-3)">
+            Nothing yet.</td></tr>`}
+        </tbody></table>`;
+    } catch (e) {
+      el.querySelector("#custBody").innerHTML = `<p class="note">${esc(e.message)}</p>`;
+    }
+  };
+
+  $("loyBody").innerHTML = `
+    <div class="sect">Best customers, last 90 days</div>
+    ${LOY.top.length ? `<table class="tbl"><thead><tr><th style="width:26%">Who</th><th>Visits</th>
+      <th>Spent</th><th>Points</th><th>Last in</th><th></th></tr></thead><tbody>
+      ${LOY.top.map(c => `<tr>
+        <td style="padding-left:9px"><b>${esc(c.name || c.phone || "#" + c.id)}</b></td>
+        <td style="padding-left:9px" class="num">${c.visits}</td>
+        <td style="padding-left:9px" class="num">${money(c.spend)}</td>
+        <td style="padding-left:9px" class="num">${c.balance}</td>
+        <td style="padding-left:9px;color:var(--txt-2)">${esc(String(c.last_visit).slice(0, 10))}</td>
+        <td style="text-align:right;padding-right:9px">
+          <button class="mini" style="margin:0" onclick="__w.custOpen(${c.id})">Open</button></td>
+      </tr>`).join("")}
+    </tbody></table>` : `<div class="note">Nobody has been attached to a sale yet. A customer is
+      looked up at the till by phone number or card.</div>`}
+
+    ${LOY.lapsed.length ? `<div class="sect">Haven't been in for a while</div>
+      <table class="tbl"><thead><tr><th style="width:26%">Who</th><th>Visits</th><th>Points left</th>
+        <th>Last in</th><th></th></tr></thead><tbody>
+        ${LOY.lapsed.map(c => `<tr>
+          <td style="padding-left:9px">${esc(c.name || c.phone || "#" + c.id)}</td>
+          <td style="padding-left:9px" class="num">${c.visits}</td>
+          <td style="padding-left:9px" class="num" style="${c.balance
+            ? "color:var(--warn)" : ""}">${c.balance}</td>
+          <td style="padding-left:9px;color:var(--txt-2)">${esc(String(c.last_seen).slice(0, 10))}</td>
+          <td style="text-align:right;padding-right:9px">
+            <button class="mini" style="margin:0" onclick="__w.custOpen(${c.id})">Open</button></td>
+        </tr>`).join("")}
+      </tbody></table>
+      <div class="note">Regulars who've stopped coming. Points still sitting on the account are the
+        obvious reason to get in touch.</div>` : ""}`;
+}
+
+/* ===========================================================================
+   Tobacco scan data.
+
+   Deliberately honest about what this is: the capture is complete and correct,
+   the export is a documented generic layout, and the manufacturer's real format
+   has to come from your rep. Pretending otherwise would produce a file that
+   gets rejected a month after you started relying on it.
+   =========================================================================== */
+
+let TOB = { tab: "setup", settings: null, buydowns: [], makers: [], columns: [],
+            claim: null, from: "", to: "", maker: "altria" };
+
+const MAKER_NAMES = { altria: "Altria", reynolds: "Reynolds", itg: "ITG", other: "Other" };
+
+async function tTobacco() {
+  $("cfgBody").innerHTML = `<p class="lede">Loading…</p>`;
+  try {
+    const d = await api("/api/tobacco?store=" + STORE_ID);
+    TOB.settings = d.settings;
+    TOB.buydowns = d.buydowns;
+    TOB.makers = d.makers;
+    TOB.columns = d.columns;
+  } catch (e) {
+    $("cfgBody").innerHTML = `<div class="finding"><b>Couldn't load this</b>
+      <span>${esc(e.message)}</span></div>`;
+    return;
+  }
+  if (!TOB.from) {
+    /* Last calendar month, because that's the period these are claimed for. */
+    const now = new Date();
+    const first = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const last = new Date(now.getFullYear(), now.getMonth(), 0);
+    TOB.from = first.toISOString().slice(0, 10);
+    TOB.to = last.toISOString().slice(0, 10);
+  }
+  drawTobacco();
+}
+
+function drawTobacco() {
+  W.tobTab = t => { TOB.tab = t; drawTobacco(); };
+  const tabs = [["setup", "Enrolment"], ["buydowns", "Buydowns"], ["claim", "What you're owed"]];
+
+  $("cfgBody").innerHTML = `
+    <p class="lede">Manufacturers pay for a monthly file of what you sold and which promotions you
+      applied. This records all of it as it happens — a month with no buydown captured is a month
+      you can't claim for, and that can't be fixed afterwards.</p>
+    <div class="stktabs">${tabs.map(([k, l]) =>
+      `<button class="${TOB.tab === k ? "on" : ""}" onclick="__w.tobTab('${k}')">${l}</button>`).join("")}</div>
+    <div id="tobBody"></div>`;
+
+  ({ setup: tobSetup, buydowns: tobBuydowns, claim: tobClaim })[TOB.tab]();
+}
+
+/* ------------------------------- enrolment ------------------------------- */
+function tobSetup() {
+  const s = TOB.settings;
+  const depts = CFG.depts.filter(d => !d.fuel);
+
+  W.tobSet = (k, v) => { s[k] = v; };
+  W.tobOutlet = (m, v) => { s.outlets = { ...s.outlets, [m]: v }; };
+  W.tobDept = (id, on) => {
+    s.deptIds = on ? [...new Set([...s.deptIds, id])] : s.deptIds.filter(x => x !== id);
+  };
+  W.tobSave = async () => {
+    try {
+      const r = await api("/api/tobacco?store=" + STORE_ID, { method: "PUT",
+        body: { store: STORE_ID, settings: { on: !!s.on, outlets: s.outlets,
+          deptIds: s.deptIds, note: s.note } } });
+      TOB.settings = r.settings;
+      toast("Saved.");
+      drawTobacco();
+    } catch (e) { toast(e.message, true); }
+  };
+
+  const anyOutlet = Object.values(s.outlets || {}).some(v => v && String(v).trim());
+
+  $("tobBody").innerHTML = `
+    <label class="chk" style="margin-top:16px;display:flex;gap:10px;align-items:center">
+      <input type="checkbox" ${s.on ? "checked" : ""} onchange="__w.tobSet('on',this.checked)"
+        style="width:auto">
+      <span>Capture tobacco scan data</span></label>
+    ${!s.on ? `<div class="note">Switch this on before you enrol, not after. Nothing is recorded
+      while it's off, and there's no way to reconstruct a month of promotions later.</div>` : ""}
+
+    <div class="sect">Outlet numbers</div>
+    <div class="frm">
+      ${TOB.makers.filter(m => m !== "other").map(m => `
+        <label>${esc(MAKER_NAMES[m] || m)}<input value="${esc((s.outlets || {})[m] || "")}"
+          placeholder="not enrolled" oninput="__w.tobOutlet('${m}',this.value)"></label>`).join("")}
+    </div>
+    <div class="note">Each manufacturer issues you a number when you enrol. It goes on every row of
+      the file and a file without it gets rejected. Your rep has it; so does whoever signed your
+      current contract.</div>
+    ${!anyOutlet ? `<div class="finding"><b>No outlet numbers yet</b>
+      <span>If you're not enrolled with anyone, that's money you're not collecting — a busy store
+        can see several hundred a month in buydown reimbursement. Ask your Altria and Reynolds reps
+        what you're signed up for.</span></div>` : ""}
+
+    <div class="sect">Which sections are tobacco</div>
+    <div class="chips">${depts.map(d => `
+      <label class="chip ${s.deptIds.includes(d.id) ? "on" : ""}">
+        <input type="checkbox" ${s.deptIds.includes(d.id) ? "checked" : ""} style="display:none"
+          onchange="__w.tobDept('${d.id}',this.checked);this.closest('label').classList.toggle('on',this.checked)">
+        ${esc(d.n)}</label>`).join("")}</div>
+    <div class="note">Everything sold from these sections is captured, whether or not a promotion
+      applied — the manufacturers want the whole picture, not just the discounted lines.</div>
+
+    <button class="mini" onclick="__w.tobSave()">Save</button>`;
+}
+
+/* -------------------------------- buydowns -------------------------------- */
+function tobBuydowns() {
+  W.buyEdit = id => {
+    const b = id ? TOB.buydowns.find(x => x.id === id)
+      : { maker: "altria", kind: "per_unit", pluIds: [], amount: 0.75, qty: 2, price: 8 };
+    const el = veil(`<div class="card tall"><h3>${id ? "Edit" : "New"} buydown</h3>
+      <p>A funded discount: you take money off at the till and the manufacturer pays it back. Get
+        the amount and the dates from the letter or the portal — guessing means claiming for
+        something they didn't fund.</p>
+      <div class="edwrap">
+      <div class="frm">
+        <label>Name<input id="bn" value="${esc(b.name || "")}" placeholder="Marlboro 0.75 off"></label>
+        <label>Manufacturer<select id="bm">${TOB.makers.map(m =>
+          `<option value="${m}" ${b.maker === m ? "selected" : ""}>${esc(MAKER_NAMES[m] || m)}</option>`).join("")}
+        </select></label>
+        <label>Kind<select id="bk">
+          <option value="per_unit" ${b.kind === "per_unit" ? "selected" : ""}>So much off each pack</option>
+          <option value="multipack" ${b.kind === "multipack" ? "selected" : ""}>Multipack — buy two for a price</option>
+        </select></label>
+      </div>
+      <div class="frm" id="perWrap">
+        <label>Funded per pack<input class="n" id="ba" value="${b.amount || ""}"></label>
+      </div>
+      <div class="frm" id="mulWrap">
+        <label>Buy this many<input class="n" id="bq" value="${b.qty || 2}"></label>
+        <label>For this price<input class="n" id="bp" value="${b.price || ""}"></label>
+      </div>
+      <div class="frm">
+        <label>Starts<input type="date" id="bs" value="${esc(b.starts || "")}"></label>
+        <label>Ends<input type="date" id="be" value="${esc(b.ends || "")}"></label>
+      </div>
+      <div class="note">Leave the dates blank to run it until you switch it off. Filling them in is
+        better — a buydown that ended stops applying by itself, and nobody ever remembers.</div>
+      <div class="sect">Which products</div>
+      <div class="chips" id="buyPlus">${CFG.plus.slice(0, 300).map(p => `
+        <label class="chip ${(b.pluIds || []).includes(p.id) ? "on" : ""}">
+          <input type="checkbox" value="${p.id}" ${(b.pluIds || []).includes(p.id) ? "checked" : ""}
+            style="display:none"
+            onchange="this.closest('label').classList.toggle('on',this.checked)">
+          ${esc(p.n)}</label>`).join("")}</div>
+      </div>
+      <div class="row"><button class="no" id="bx">Cancel</button>
+        <button class="ok" id="by">Save</button></div></div>`);
+
+    const sync = () => {
+      const per = el.querySelector("#bk").value === "per_unit";
+      el.querySelector("#perWrap").style.display = per ? "" : "none";
+      el.querySelector("#mulWrap").style.display = per ? "none" : "";
+    };
+    el.querySelector("#bk").onchange = sync;
+    sync();
+
+    el.querySelector("#bx").onclick = () => el.remove();
+    el.querySelector("#by").onclick = async () => {
+      const pluIds = [...el.querySelectorAll("#buyPlus input:checked")].map(i => i.value);
+      try {
+        await api("/api/tobacco/buydown?store=" + STORE_ID, { method: "POST",
+          body: { store: STORE_ID, buydown: { id, name: el.querySelector("#bn").value,
+            maker: el.querySelector("#bm").value, kind: el.querySelector("#bk").value,
+            amount: el.querySelector("#ba").value, qty: el.querySelector("#bq").value,
+            price: el.querySelector("#bp").value, starts: el.querySelector("#bs").value,
+            ends: el.querySelector("#be").value, pluIds } } });
+        el.remove();
+        toast("Saved.");
+        tTobacco();
+      } catch (e) { toast(e.message, true); }
+    };
+    setTimeout(() => el.querySelector("#bn").focus(), 40);
+  };
+
+  W.buyDel = async id => {
+    if (!confirm("Delete this buydown? Lines already captured against it keep their funding.")) return;
+    await api(`/api/tobacco/buydown/${id}?store=${STORE_ID}`, { method: "DELETE" });
+    tTobacco();
+  };
+
+  const today = new Date().toISOString().slice(0, 10);
+  const state = b => {
+    if (!b.active) return ["off", "var(--txt-3)"];
+    if (b.starts && b.starts > today) return ["starts " + b.starts, "var(--txt-2)"];
+    if (b.ends && b.ends < today) return ["ended " + b.ends, "var(--txt-3)"];
+    return ["running", "var(--vfd)"];
+  };
+
+  $("tobBody").innerHTML = `
+    <button class="mini" onclick="__w.buyEdit(0)">New buydown</button>
+    ${TOB.buydowns.length ? `<table class="tbl" style="margin-top:10px"><thead><tr>
+      <th style="width:24%">Buydown</th><th>Maker</th><th>Terms</th><th>Products</th>
+      <th>Runs</th><th>State</th><th></th></tr></thead><tbody>
+      ${TOB.buydowns.map(b => {
+        const st = state(b);
+        return `<tr>
+          <td style="padding-left:9px"><b>${esc(b.name)}</b></td>
+          <td style="padding-left:9px;color:var(--txt-2)">${esc(MAKER_NAMES[b.maker] || b.maker)}</td>
+          <td style="padding-left:9px">${b.kind === "multipack"
+            ? `${b.qty} for ${money(b.price)}` : `${money(b.amount)} off each`}</td>
+          <td style="padding-left:9px;color:var(--txt-3)">${b.pluIds.length}</td>
+          <td style="padding-left:9px;color:var(--txt-2);font-size:12.5px">${
+            b.starts || b.ends ? `${esc(b.starts || "any")} → ${esc(b.ends || "open")}` : "open"}</td>
+          <td style="padding-left:9px"><span style="color:${st[1]}">${esc(st[0])}</span></td>
+          <td style="text-align:right;padding-right:9px">
+            <button class="mini" style="margin:0" onclick="__w.buyEdit(${b.id})">Edit</button>
+            <button class="del" onclick="__w.buyDel(${b.id})">×</button></td>
+        </tr>`;
+      }).join("")}
+    </tbody></table>
+    <div class="note">A multipack funds the gap between the shelf price and the deal price, per
+      whole set. Three packs on a two-for deal claims one set, not one and a half — that's how the
+      manufacturers calculate it, and claiming otherwise gets the file queried.</div>`
+      : `<div class="note">No buydowns yet. These are the funded discounts your rep tells you
+        about — until one is entered here, the discount comes out of your own margin.</div>`}`;
+}
+
+/* ---------------------------- what you're owed ---------------------------- */
+async function tobClaim() {
+  $("tobBody").innerHTML = `<p class="note" style="margin-top:16px">Working it out…</p>`;
+
+  W.claimSet = (k, v) => { TOB[k] = v; tobClaim(); };
+  W.claimCsv = () => {
+    const q = new URLSearchParams({ store: STORE_ID, maker: TOB.maker,
+      from: TOB.from, to: TOB.to, format: "csv" });
+    window.open("/api/tobacco/export?" + q, "_blank");
+  };
+
+  let d;
+  try {
+    const q = new URLSearchParams({ store: STORE_ID, maker: TOB.maker,
+      from: TOB.from, to: TOB.to });
+    d = await api("/api/tobacco/claim?" + q);
+  } catch (e) {
+    $("tobBody").innerHTML = `<div class="finding"><b>Couldn't work that out</b>
+      <span>${esc(e.message)}</span></div>`;
+    return;
+  }
+
+  const c = d.claim;
+
+  $("tobBody").innerHTML = `
+    <div class="frm" style="margin-top:14px">
+      <label>Manufacturer<select onchange="__w.claimSet('maker',this.value)">
+        <option value="all" ${TOB.maker === "all" ? "selected" : ""}>All</option>
+        ${TOB.makers.map(m => `<option value="${m}" ${TOB.maker === m ? "selected" : ""}>${
+          esc(MAKER_NAMES[m] || m)}</option>`).join("")}
+      </select></label>
+      <label>From<input type="date" value="${esc(TOB.from)}"
+        onchange="__w.claimSet('from',this.value)"></label>
+      <label>To<input type="date" value="${esc(TOB.to)}"
+        onchange="__w.claimSet('to',this.value)"></label>
+    </div>
+
+    <div class="rtiles">
+      <div><span>Units sold</span><b>${c.units}</b></div>
+      <div><span>Customers paid</span><b>${money(c.paid)}</b></div>
+      <div><span>Manufacturer owes</span><b style="color:var(--vfd)">${money(c.funded)}</b></div>
+      <div><span>Lines captured</span><b>${c.lines}</b></div>
+    </div>
+
+    ${d.ready.problems.length ? `<div class="finding" style="margin-top:14px">
+      <b>${d.ready.problems.length === 1 ? "One thing" : d.ready.problems.length + " things"}
+        would stop this being paid</b>
+      <span>${d.ready.problems.map(p => esc(p)).join("<br>")}</span></div>` : ""}
+
+    ${c.byBuydown.length ? `<div class="sect">By promotion</div>
+      <table class="tbl"><thead><tr><th style="width:34%">Buydown</th><th>Maker</th><th>Units</th>
+        <th>Funded</th></tr></thead><tbody>
+        ${c.byBuydown.map(b => `<tr>
+          <td style="padding-left:9px">${esc(b.name || "(deleted buydown)")}</td>
+          <td style="padding-left:9px;color:var(--txt-2)">${esc(MAKER_NAMES[b.maker] || b.maker || "—")}</td>
+          <td style="padding-left:9px" class="num">${b.units}</td>
+          <td style="padding-left:9px" class="num">${money(b.funded)}</td>
+        </tr>`).join("")}
+      </tbody></table>` : ""}
+
+    ${c.byItem.length ? `<div class="sect">By item</div>
+      <table class="tbl"><thead><tr><th style="width:30%">Item</th><th>Barcode</th><th>Units</th>
+        <th>Paid</th><th>Funded</th></tr></thead><tbody>
+        ${c.byItem.slice(0, 60).map(i => `<tr>
+          <td style="padding-left:9px">${esc(i.name || i.plu_id)}</td>
+          <td style="padding-left:9px" class="num" style="color:${i.upc
+            ? "var(--txt-2)" : "var(--void)"}">${esc(i.upc || "missing")}</td>
+          <td style="padding-left:9px" class="num">${i.units}</td>
+          <td style="padding-left:9px" class="num">${money(i.paid)}</td>
+          <td style="padding-left:9px" class="num">${i.funded ? money(i.funded) : "—"}</td>
+        </tr>`).join("")}
+      </tbody></table>` : `<div class="note">Nothing captured in that period.</div>`}
+
+    ${c.lines ? `<div style="display:flex;gap:8px;margin-top:12px">
+      <button class="mini" style="margin:0" onclick="__w.claimCsv()">Download the CSV</button>
+    </div>` : ""}
+
+    <div class="sect">About the file</div>
+    <div class="note" style="margin-top:0">
+      This exports a documented layout with every field the manufacturers ask for:
+      ${TOB.columns.map(c => `<b>${esc(c[0])}</b>`).join(", ")}.
+      <br><br>
+      It is deliberately <b>not</b> Altria's or Reynolds' own format, because those specifications
+      come from them and a wrong column means a rejected file you'd find out about a month later.
+      Ask your rep for the current layout and I'll map this to it — the data is all here, so it's a
+      rename rather than a rebuild.
+    </div>`;
+}
+
 /* ============================ CONFIGURATION CLIENT ============================
    Modelled on Commander's Config Client and Passport's Manager Workstation:
    every domain is its own form over its own table, and nothing here knows
@@ -9686,7 +11569,9 @@ const CGROUPS=[
         ["promos","Deals","Mix-and-match and automatic discounts"]]},
  {n:"Getting products in",d:"Load a pricebook or read it off an invoice",
   tabs:[["import","Import a file","CSV, spreadsheet or NAXML from another system"],
-        ["invoice","Invoice intake","Photograph an invoice and pull costs off it"]]},
+        ["invoice","Invoice intake","Photograph an invoice and pull costs off it"],
+        ["stock","Stock","What's on hand, receiving, counts and what to order"],
+        ["purchasing","Vendors & orders","Who you buy from, and what's on its way"]]},
  {n:"The register",d:"What the cashier sees and can do",
   tabs:[["menus","Menu designer","Arrange the keys, sizes and colours"],
         ["look","Appearance","Layout, colours, spacing"],
@@ -9694,7 +11579,11 @@ const CGROUPS=[
         ["restricts","Age & time rules","ID checks and hours when things can't be sold",
           ()=>CFG.caps.includes("age")||CFG.restricts.length>0],
         ["reasons","Reason codes","Why a void, a refund or a payout happened"],
-        ["journal","Electronic journal","Search every sale this store has ever taken"]]},
+        ["terminals","Registers","Every lane in this store, and the drawers under the shift"],
+        ["loyalty","Loyalty","Points, offers and who keeps coming back"],
+        ["tobacco","Tobacco scan data","Buydowns, and what the manufacturers owe you"],
+        ["journal","Electronic journal","Search every sale this store has ever taken"],
+        ["reports2","Reports","When you're busy, what makes money, who's selling it"]]},
  {n:"Your people",d:"Who can do what",
   tabs:[["people","Staff & permissions","Names, codes and what each role can reach"]]},
  {n:"The business",d:"Tax, receipts and your data",
@@ -9793,7 +11682,8 @@ function drawBody(){
     mod_records:tRecords,mod_expiry:tExpiry,mod_staff:tStaff,
     mod_customers:tCustomers,mod_tips:tTips,mod_giftcards:tGiftcards,mod_waste:tWaste,
     mod_commission:tCommission,mod_jobs:tJobs,mod_service:tService,mod_tanks:tTanks,
-    journal:tJournal};
+    journal:tJournal,stock:tStock,terminals:tTerminals,reports2:tReports2,
+    purchasing:tPurchasing,loyalty:tLoyalty,tobacco:tTobacco};
   (views[TAB]||cfgHome)();
 }
 
@@ -11434,7 +13324,8 @@ async function flush() {
   try {
     const sales = items.filter(i => i.kind === "sale").map(i => i.body);
     const d = await api("/api/sync?store=" + STORE_ID, { method: "POST", body: {
-      store: STORE_ID, sales, shiftId: SHIFT_ID } });
+      store: STORE_ID, sales, shiftId: SHIFT_ID,
+      token: typeof TERMINAL !== "undefined" ? TERMINAL : null } });
     const done = new Set(d.accepted || []);
     await dropQueued(items.filter(i => done.has(i.cid)).map(i => i.cid));
     await pushDirtyConfig();
@@ -11608,7 +13499,8 @@ async function postSale(sale) {
   if (!ONLINE) return;
   try {
     await api("/api/sales?store=" + STORE_ID,
-      { method: "POST", body: { store: STORE_ID, sale, shiftId: SHIFT_ID } });
+      { method: "POST", body: { store: STORE_ID, sale, shiftId: SHIFT_ID,
+        token: typeof TERMINAL !== "undefined" ? TERMINAL : null } });
     await dropQueued([sale.cid]);
   } catch (e) {
     ONLINE = false; paintConnection();
@@ -11692,6 +13584,7 @@ async function initApp() {
     CFG.pricing = CFG.pricing || { margin: 35, ending: "x9", dir: "nearest" };
     CFG.modGroups = CFG.modGroups || [];
     CFG.reminders = CFG.reminders || [];
+    ensureTerminal().then(startHeartbeat);
     document.getElementById("setup").classList.add("hide");
     boot();
   } else if (!ONLINE) {
@@ -11731,6 +13624,44 @@ function operatorEscape() {
   bar.innerHTML = `<span>You're signed in as an operator of this service, not a merchant.</span>
     <a href="/admin.html">Open the fleet console</a>`;
   document.getElementById("setup").prepend(bar);
+}
+
+/* ------------------------------- this terminal ----------------------------
+   A register identifies itself with a token kept on the device. It says which
+   lane this is — the session still proves who you are, so the token on its own
+   opens nothing. */
+let TERMINAL = null, TERM_ID = null;
+
+async function ensureTerminal() {
+  const key = "pos_terminal_" + STORE_ID;
+  TERMINAL = localStorage.getItem(key);
+  if (TERMINAL) return TERMINAL;
+  try {
+    const t = await api("/api/terminals?store=" + STORE_ID, { method: "POST",
+      body: { store: STORE_ID, name: "" } });
+    localStorage.setItem(key, t.token);
+    TERMINAL = t.token;
+    TERM_ID = t.id;
+    if (CFG && CFG.site) { CFG.site.register = String(t.number); queueSave(); }
+  } catch (e) { /* offline: it registers on the next connection */ }
+  return TERMINAL;
+}
+
+/* Frequent and cheap. Doubles as the fleet's "is that register alive" signal. */
+function startHeartbeat() {
+  const beat = async () => {
+    if (!TERMINAL || !ONLINE) return;
+    try {
+      const hb = await api("/api/heartbeat?store=" + STORE_ID, { method: "POST",
+        body: { store: STORE_ID, token: TERMINAL,
+          build: typeof BUILD !== "undefined" ? BUILD : null,
+          agent: typeof STATION !== "undefined" && !!STATION,
+          queued: typeof queuedCount === "function" ? await queuedCount() : 0 } });
+      if (hb && hb.id) TERM_ID = hb.id;
+    } catch (e) {}
+  };
+  beat();
+  setInterval(beat, 60000);
 }
 
 /* Account chip in the header: who you are, which store, and a way out. */
