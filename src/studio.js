@@ -49,7 +49,12 @@ function touchMock() {
   });
   touchKeys();
 }
+function touchSel() {
+  const el = document.getElementById("stSel");
+  if (el) el.innerHTML = selPanel();
+}
 function touchKeys() {
+  touchSel();
   const box = document.getElementById("skeys");
   if (!box) return drawStudio();
   const L = effL();
@@ -144,28 +149,67 @@ function studioKey(k, i) {
     `background:linear-gradient(180deg,${col} 0%,${col}CC 120%);`;
   return `<div class="sk ${L.keyStyle} ${sel ? "sel" : ""}" draggable="true" data-i="${i}"
     style="${span}${bg}border-radius:${L.keyStyle === "list" ? 0 : L.radius + 2}px"
-    onclick="__st.pick(${i})">${body}
-    ${sel ? `<span class="skt">
-      <button onclick="event.stopPropagation();__st.wider(${i})" title="Width">${(k.w || 1) === 2 ? "\u25E7" : "\u25EB"}</button>
-      <button onclick="event.stopPropagation();__st.taller(${i})" title="Height">${(k.h || 1) === 2 ? "\u25A4" : "\u25A5"}</button>
-      <button onclick="event.stopPropagation();__st.drop(${i})" title="Remove">\u00d7</button></span>
-      <span class="skc">${KEYC.map(c => `<i style="background:${c}"
-        onclick="event.stopPropagation();__st.colour(${i},'${c}')"></i>`).join("")}
-        <i class="x" onclick="event.stopPropagation();__st.colour(${i},'')">\u21ba</i></span>` : ""}</div>`;
+    onclick="__st.pick(${i})">${body}${sel ? `<span class="skpin"></span>` : ""}</div>`;
 }
+/* The controls live beside the board, not on top of the key. Overlaying them
+   meant selecting a key put a delete button under the cursor, and the next
+   click removed the thing you'd just picked. */
+function selPanel() {
+  const menus = CFG.menus.filter(m => !m.fuel);
+  const menu = menus[STUDIO_MENU] || menus[0];
+  if (!menu || STUDIO_SEL == null || !menu.keys[STUDIO_SEL])
+    return `<div class="stsec">Selected key</div>
+      <div class="selnone">Click a key on the board to change its size, colour or label.
+        Drag one to move it.</div>`;
+  const k = menu.keys[STUDIO_SEL];
+  const p = byId(CFG.plus, k.pluId);
+  const d = p ? byId(CFG.depts, p.deptId) : null;
+  return `<div class="stsec">Selected key</div>
+    <div class="selbox">
+      <div class="selname">${esc(k.label || p?.n || "(missing)")}</div>
+      <div class="selsub">${esc(d?.n || "")}${p ? " · " + money(p.price) : ""}</div>
+      <div class="stchips" style="margin-top:11px">
+        <button class="${(k.w || 1) === 2 ? "on" : ""}" onclick="__st.wider(${STUDIO_SEL})">Double width</button>
+        <button class="${(k.h || 1) === 2 ? "on" : ""}" onclick="__st.taller(${STUDIO_SEL})">Double height</button>
+      </div>
+      <div class="selsw">${KEYC.map(c => `<i style="background:${c}"
+        class="${k.color === c ? "on" : ""}" onclick="__st.colour(${STUDIO_SEL},'${c}')"></i>`).join("")}
+        <i class="x ${!k.color ? "on" : ""}" onclick="__st.colour(${STUDIO_SEL},'')"
+          title="Use the department colour">&#8634;</i></div>
+      <button class="selrename" onclick="__st.rename(${STUDIO_SEL})">Rename this key</button>
+      <button class="seldrop" onclick="__st.drop(${STUDIO_SEL})">Take it off this menu</button>
+    </div>`;
+}
+
+let DRAGGING = false;
 function wireKeys() {
   const box = document.getElementById("skeys");
   if (!box) return;
   let from = null;
   box.querySelectorAll(".sk").forEach(k => {
-    k.addEventListener("dragstart", e => { from = +k.dataset.i; k.classList.add("drag");
-      e.dataTransfer.effectAllowed = "move"; });
-    k.addEventListener("dragend", () => { k.classList.remove("drag");
-      box.querySelectorAll(".sk").forEach(x => x.classList.remove("over")); });
-    k.addEventListener("dragover", e => { e.preventDefault(); k.classList.add("over"); });
+    k.addEventListener("dragstart", e => {
+      DRAGGING = true; from = +k.dataset.i; k.classList.add("drag");
+      e.dataTransfer.effectAllowed = "move";
+      /* Firefox needs data set or the drag never starts. */
+      try { e.dataTransfer.setData("text/plain", String(from)); } catch (err) {}
+    });
+    k.addEventListener("dragend", () => {
+      k.classList.remove("drag");
+      box.querySelectorAll(".sk").forEach(x => x.classList.remove("over"));
+      /* A drag ends with a click event; swallow it so dropping doesn't also
+         select whatever it landed on. */
+      setTimeout(() => { DRAGGING = false; }, 60);
+    });
+    k.addEventListener("dragover", e => { e.preventDefault();
+      e.dataTransfer.dropEffect = "move"; k.classList.add("over"); });
     k.addEventListener("dragleave", () => k.classList.remove("over"));
-    k.addEventListener("drop", e => { e.preventDefault();
-      if (from != null) window.__st.move(from, +k.dataset.i); });
+    k.addEventListener("drop", e => {
+      e.preventDefault(); e.stopPropagation();
+      k.classList.remove("over");
+      const to = +k.dataset.i;
+      const src = from != null ? from : parseInt(e.dataTransfer.getData("text/plain"), 10);
+      if (!isNaN(src)) window.__st.move(src, to);
+    });
   });
 }
 
@@ -197,7 +241,7 @@ function drawStudio(again) {
     accent: a => { CFG.theme.accent = a; applyStudio(); touchMock(); touchTools();
       flash("Accent colour changed"); },
     menu: i => { STUDIO_MENU = i; STUDIO_SEL = null; drawStudio(true); },
-    pick: i => { STUDIO_SEL = STUDIO_SEL === i ? null : i; touchKeys(); },
+    pick: i => { if (DRAGGING) return; STUDIO_SEL = STUDIO_SEL === i ? null : i; touchKeys(); },
     wider: i => { const k = menu.keys[i]; k.w = (k.w || 1) === 2 ? 1 : 2; touchKeys();
       flash(k.w === 2 ? "Key made double width" : "Key back to single width"); },
     taller: i => { const k = menu.keys[i]; k.h = (k.h || 1) === 2 ? 1 : 2; touchKeys();
@@ -214,6 +258,23 @@ function drawStudio(again) {
     },
     reset: () => { CFG.layoutCustom = null; applyStudio(); drawStudio(true);
       toast("Back to the " + studioL().n + " arrangement."); },
+    rename: i => {
+      const menus = CFG.menus.filter(m => !m.fuel);
+      const menu = menus[STUDIO_MENU] || menus[0];
+      const k = menu.keys[i], p = byId(CFG.plus, k.pluId);
+      const el = veil(`<div class="card"><h3>Rename this key</h3>
+        <p>The product stays <b>${esc(p?.n || "—")}</b> in the pricebook. This only changes what's
+          printed on the button.</p>
+        <input id="rnv" class="big" style="text-align:left;font-size:18px"
+          value="${esc(k.label || p?.n || "")}">
+        <div class="row"><button class="no" id="rnn">Cancel</button>
+          <button class="ok" id="rny">Set it</button></div></div>`);
+      const inp = el.querySelector("#rnv"); inp.focus(); inp.select();
+      const go = () => { k.label = inp.value.trim() || null; el.remove(); touchKeys(); flash("Key renamed"); };
+      el.querySelector("#rnn").onclick = () => el.remove();
+      el.querySelector("#rny").onclick = go;
+      inp.onkeydown = e => { if (e.key === "Enter") go(); };
+    },
     guide: () => { STUDIO_GUIDE = !STUDIO_GUIDE;
       document.querySelector("#studio .stmock").classList.toggle("guide", STUDIO_GUIDE);
       const b = document.querySelector("#studio .stguide");
@@ -342,6 +403,8 @@ function drawStudio(again) {
           <label class="strange"><span>Rounding</span>
             <input type="range" min="0" max="20" value="${L.radius}"
               oninput="__st.radius(this.value)"><b>${L.radius}</b></label>
+
+          <div id="stSel">${selPanel()}</div>
 
           <div class="stsec">Colour</div>
           <div class="stchips">${[["dark", "Dark"], ["light", "Light"], ["contrast", "Contrast"]]

@@ -281,8 +281,10 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .task .tt{font-family:"Azeret Mono",monospace;font-size:12px;color:var(--txt-3)}
 
 /* ============================ OVERLAYS ============================ */
+/* Above the studio (50) and the lock screen (60), below the launch curtain (200).
+   At 40 the pre-flight panel opened behind the studio and looked like a dead button. */
 .veil{position:fixed;inset:0;background:rgba(9,12,13,.7);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
-  display:flex;align-items:center;justify-content:center;padding:20px;z-index:40;overflow-y:auto;
+  display:flex;align-items:center;justify-content:center;padding:20px;z-index:120;overflow-y:auto;
   animation:fadein .15s var(--ease)}
 .card{background:linear-gradient(180deg,#2A3134 0%,var(--panel) 100%);border:1px solid var(--line-2);
   border-radius:9px;padding:22px;width:100%;max-width:372px;
@@ -1279,7 +1281,7 @@ body.tp-plain .grand .amt{font-size:40px}
 #studio.on{display:block}
 .stwrap{max-width:1560px;margin:0 auto;padding:34px 34px 60px}
 .sthead{display:flex;gap:30px;align-items:flex-start;justify-content:space-between;
-  margin-bottom:26px;animation:qin .45s var(--ease) both}
+  margin-bottom:26px}
 .sthead h1{font-size:33px;font-weight:600;letter-spacing:-.025em;margin-bottom:9px}
 .sthead p{font-size:14.5px;color:var(--ink-soft);line-height:1.65;max-width:64ch}
 .launch{display:inline-flex;align-items:center;gap:11px;flex:none;background:var(--ink);
@@ -1293,7 +1295,7 @@ body.tp-plain .grand .amt{font-size:40px}
 
 .stbody{display:grid;grid-template-columns:270px minmax(0,1fr);gap:26px;align-items:start}
 .sttools{position:sticky;top:22px;background:rgba(255,255,255,.66);border:1px solid var(--paper-line);
-  border-radius:12px;padding:18px;animation:qin .45s var(--ease) .06s both}
+  border-radius:12px;padding:18px}
 .stsec{font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);
   margin:19px 0 9px}
 .stsec:first-child{margin-top:0}
@@ -1318,7 +1320,7 @@ body.tp-plain .grand .amt{font-size:40px}
 .stswatch i:hover{transform:scale(1.13)}
 .stswatch i.on{border-color:var(--ink)}
 
-.stcanvas{animation:qin .45s var(--ease) .12s both}
+.stcanvas{}
 .stmock{border-radius:13px;overflow:hidden;box-shadow:0 26px 70px rgba(18,22,24,.26);
   border:1px solid rgba(0,0,0,.18);transition:transform .7s cubic-bezier(.6,0,.2,1),opacity .7s}
 .stmock.zoom{transform:scale(1.9);opacity:0}
@@ -1395,14 +1397,6 @@ body.tp-plain .grand .amt{font-size:40px}
 .sk.card .sbody{display:block;padding:12px 13px 9px;flex:1}
 .sk.card .sn{text-shadow:none}
 .sk.card .sfoot{display:flex;padding:10px 13px;border-top:1px solid rgba(128,128,128,.22)}
-.skt{position:absolute;top:6px;right:6px;display:flex;gap:3px}
-.skt button{width:23px;height:23px;border-radius:5px;background:rgba(0,0,0,.55);color:#fff;
-  border:none;font-size:12px;cursor:pointer;display:grid;place-items:center}
-.skt button:hover{background:rgba(0,0,0,.8)}
-.skc{position:absolute;left:0;right:0;bottom:0;display:flex;height:13px;overflow:hidden}
-.skc i{flex:1;cursor:pointer}
-.skc i.x{background:rgba(255,255,255,.22);color:#fff;font-size:9px;display:grid;place-items:center;
-  font-style:normal}
 .sfk{display:flex;gap:6px;margin-top:auto;padding-top:11px;
   border-top:1px solid rgba(128,128,128,.22);cursor:pointer}
 .sfk span{flex:1;text-align:center;padding:8px 3px;border:1px solid rgba(128,128,128,.28);
@@ -1591,9 +1585,9 @@ body.tp-plain .grand .amt{font-size:40px}
 
 /* ---- studio: entrance animation only on the first open ---- */
 .stwrap>*{animation:none}
-.stwrap.enter .sthead{animation:qin .45s var(--ease) both}
-.stwrap.enter .sttools{animation:qin .45s var(--ease) .06s both}
-.stwrap.enter .stcanvas{animation:qin .45s var(--ease) .12s both}
+.stwrap.enter .sthead{}
+.stwrap.enter .sttools{}
+.stwrap.enter .stcanvas{}
 
 /* ---- pre-flight ---- */
 .pfcard{max-width:520px}
@@ -1618,6 +1612,43 @@ body.tp-plain .grand .amt{font-size:40px}
 .lv.stepping .lv-steps span{animation:stepIn .5s cubic-bezier(.16,1,.3,1) both}
 @keyframes stepIn{to{opacity:1;transform:none}}
 .lv-steps span:last-child{font-weight:600;color:rgba(11,18,20,.85);font-size:14px;margin-top:6px}
+
+/* ---- selection is an outline and a pin, never a button under the cursor ---- */
+.sk{user-select:none;-webkit-user-select:none}
+.sk.sel{outline:3px solid var(--vfd)!important;outline-offset:-1px;z-index:2}
+.skpin{position:absolute;top:-6px;right:-6px;width:15px;height:15px;border-radius:50%;
+  background:var(--vfd);box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.sk.drag{opacity:.3}
+.sk.over{outline:3px dashed var(--vfd)!important;outline-offset:2px}
+
+/* ---- the selected key's controls, beside the board ---- */
+.selnone{font-size:12.5px;color:var(--ink-soft);line-height:1.6;padding:10px 12px;
+  border:1px dashed var(--paper-line);border-radius:8px}
+.selbox{border:1px solid var(--paper-line);background:rgba(255,255,255,.7);border-radius:9px;
+  padding:13px}
+.selname{font-size:14px;font-weight:600;line-height:1.3}
+.selsub{font-size:12px;color:var(--ink-soft);margin-top:3px}
+.selsw{display:flex;gap:4px;flex-wrap:wrap;margin-top:11px}
+.selsw i{width:24px;height:24px;border-radius:6px;cursor:pointer;border:2px solid transparent;
+  transition:transform .12s var(--ease),border-color .14s}
+.selsw i:hover{transform:scale(1.12)}
+.selsw i.on{border-color:var(--ink)}
+.selsw i.x{background:rgba(18,22,24,.08);color:var(--ink-soft);display:grid;place-items:center;
+  font-size:12px;font-style:normal}
+.selrename,.seldrop{width:100%;margin-top:8px;border:1px solid var(--paper-line);
+  background:rgba(255,255,255,.8);border-radius:8px;padding:9px;font:inherit;font-size:12.5px;
+  cursor:pointer;transition:all .15s}
+.selrename:hover{border-color:var(--ink-soft)}
+.seldrop{border-color:rgba(200,80,60,.35);color:#B04A34}
+.seldrop:hover{background:rgba(200,80,60,.08);border-color:#B04A34}
+
+/* Re-rendering part of the studio must never replay an entrance animation —
+   that reads as the screen jumping on every click. Only the first open animates. */
+#studio .sthead,#studio .sttools,#studio .stcanvas,#studio .stmock,
+#studio .selbox,#studio .sk{animation:none}
+.stwrap.enter .sthead{animation:qin .45s var(--ease) both}
+.stwrap.enter .sttools{animation:qin .45s var(--ease) .06s both}
+.stwrap.enter .stcanvas{animation:qin .45s var(--ease) .12s both}
 
 .tchip.save{transition:color .2s,border-color .2s}
 .tchip.save.pending{color:var(--warn);border-color:rgba(224,178,85,.4)}
@@ -4579,7 +4610,7 @@ function health(){
   themeIssues().forEach(i=>f.push({sev:i.t==="warn"?"warn":"info",t:"Appearance",d:i.m,fix:null}));
   return f;
 }
-const BUILD="ff0a38756a";
+const BUILD="dd9b0cdb3f";
 function tHealth(){
   const f=health();
   window.__fix=i=>{f[i].fix&&f[i].fix();reload();drawConfig()};
@@ -6314,7 +6345,12 @@ function touchMock() {
   });
   touchKeys();
 }
+function touchSel() {
+  const el = document.getElementById("stSel");
+  if (el) el.innerHTML = selPanel();
+}
 function touchKeys() {
+  touchSel();
   const box = document.getElementById("skeys");
   if (!box) return drawStudio();
   const L = effL();
@@ -6409,28 +6445,67 @@ function studioKey(k, i) {
     `background:linear-gradient(180deg,${col} 0%,${col}CC 120%);`;
   return `<div class="sk ${L.keyStyle} ${sel ? "sel" : ""}" draggable="true" data-i="${i}"
     style="${span}${bg}border-radius:${L.keyStyle === "list" ? 0 : L.radius + 2}px"
-    onclick="__st.pick(${i})">${body}
-    ${sel ? `<span class="skt">
-      <button onclick="event.stopPropagation();__st.wider(${i})" title="Width">${(k.w || 1) === 2 ? "\u25E7" : "\u25EB"}</button>
-      <button onclick="event.stopPropagation();__st.taller(${i})" title="Height">${(k.h || 1) === 2 ? "\u25A4" : "\u25A5"}</button>
-      <button onclick="event.stopPropagation();__st.drop(${i})" title="Remove">\u00d7</button></span>
-      <span class="skc">${KEYC.map(c => `<i style="background:${c}"
-        onclick="event.stopPropagation();__st.colour(${i},'${c}')"></i>`).join("")}
-        <i class="x" onclick="event.stopPropagation();__st.colour(${i},'')">\u21ba</i></span>` : ""}</div>`;
+    onclick="__st.pick(${i})">${body}${sel ? `<span class="skpin"></span>` : ""}</div>`;
 }
+/* The controls live beside the board, not on top of the key. Overlaying them
+   meant selecting a key put a delete button under the cursor, and the next
+   click removed the thing you'd just picked. */
+function selPanel() {
+  const menus = CFG.menus.filter(m => !m.fuel);
+  const menu = menus[STUDIO_MENU] || menus[0];
+  if (!menu || STUDIO_SEL == null || !menu.keys[STUDIO_SEL])
+    return `<div class="stsec">Selected key</div>
+      <div class="selnone">Click a key on the board to change its size, colour or label.
+        Drag one to move it.</div>`;
+  const k = menu.keys[STUDIO_SEL];
+  const p = byId(CFG.plus, k.pluId);
+  const d = p ? byId(CFG.depts, p.deptId) : null;
+  return `<div class="stsec">Selected key</div>
+    <div class="selbox">
+      <div class="selname">${esc(k.label || p?.n || "(missing)")}</div>
+      <div class="selsub">${esc(d?.n || "")}${p ? " · " + money(p.price) : ""}</div>
+      <div class="stchips" style="margin-top:11px">
+        <button class="${(k.w || 1) === 2 ? "on" : ""}" onclick="__st.wider(${STUDIO_SEL})">Double width</button>
+        <button class="${(k.h || 1) === 2 ? "on" : ""}" onclick="__st.taller(${STUDIO_SEL})">Double height</button>
+      </div>
+      <div class="selsw">${KEYC.map(c => `<i style="background:${c}"
+        class="${k.color === c ? "on" : ""}" onclick="__st.colour(${STUDIO_SEL},'${c}')"></i>`).join("")}
+        <i class="x ${!k.color ? "on" : ""}" onclick="__st.colour(${STUDIO_SEL},'')"
+          title="Use the department colour">&#8634;</i></div>
+      <button class="selrename" onclick="__st.rename(${STUDIO_SEL})">Rename this key</button>
+      <button class="seldrop" onclick="__st.drop(${STUDIO_SEL})">Take it off this menu</button>
+    </div>`;
+}
+
+let DRAGGING = false;
 function wireKeys() {
   const box = document.getElementById("skeys");
   if (!box) return;
   let from = null;
   box.querySelectorAll(".sk").forEach(k => {
-    k.addEventListener("dragstart", e => { from = +k.dataset.i; k.classList.add("drag");
-      e.dataTransfer.effectAllowed = "move"; });
-    k.addEventListener("dragend", () => { k.classList.remove("drag");
-      box.querySelectorAll(".sk").forEach(x => x.classList.remove("over")); });
-    k.addEventListener("dragover", e => { e.preventDefault(); k.classList.add("over"); });
+    k.addEventListener("dragstart", e => {
+      DRAGGING = true; from = +k.dataset.i; k.classList.add("drag");
+      e.dataTransfer.effectAllowed = "move";
+      /* Firefox needs data set or the drag never starts. */
+      try { e.dataTransfer.setData("text/plain", String(from)); } catch (err) {}
+    });
+    k.addEventListener("dragend", () => {
+      k.classList.remove("drag");
+      box.querySelectorAll(".sk").forEach(x => x.classList.remove("over"));
+      /* A drag ends with a click event; swallow it so dropping doesn't also
+         select whatever it landed on. */
+      setTimeout(() => { DRAGGING = false; }, 60);
+    });
+    k.addEventListener("dragover", e => { e.preventDefault();
+      e.dataTransfer.dropEffect = "move"; k.classList.add("over"); });
     k.addEventListener("dragleave", () => k.classList.remove("over"));
-    k.addEventListener("drop", e => { e.preventDefault();
-      if (from != null) window.__st.move(from, +k.dataset.i); });
+    k.addEventListener("drop", e => {
+      e.preventDefault(); e.stopPropagation();
+      k.classList.remove("over");
+      const to = +k.dataset.i;
+      const src = from != null ? from : parseInt(e.dataTransfer.getData("text/plain"), 10);
+      if (!isNaN(src)) window.__st.move(src, to);
+    });
   });
 }
 
@@ -6462,7 +6537,7 @@ function drawStudio(again) {
     accent: a => { CFG.theme.accent = a; applyStudio(); touchMock(); touchTools();
       flash("Accent colour changed"); },
     menu: i => { STUDIO_MENU = i; STUDIO_SEL = null; drawStudio(true); },
-    pick: i => { STUDIO_SEL = STUDIO_SEL === i ? null : i; touchKeys(); },
+    pick: i => { if (DRAGGING) return; STUDIO_SEL = STUDIO_SEL === i ? null : i; touchKeys(); },
     wider: i => { const k = menu.keys[i]; k.w = (k.w || 1) === 2 ? 1 : 2; touchKeys();
       flash(k.w === 2 ? "Key made double width" : "Key back to single width"); },
     taller: i => { const k = menu.keys[i]; k.h = (k.h || 1) === 2 ? 1 : 2; touchKeys();
@@ -6479,6 +6554,23 @@ function drawStudio(again) {
     },
     reset: () => { CFG.layoutCustom = null; applyStudio(); drawStudio(true);
       toast("Back to the " + studioL().n + " arrangement."); },
+    rename: i => {
+      const menus = CFG.menus.filter(m => !m.fuel);
+      const menu = menus[STUDIO_MENU] || menus[0];
+      const k = menu.keys[i], p = byId(CFG.plus, k.pluId);
+      const el = veil(`<div class="card"><h3>Rename this key</h3>
+        <p>The product stays <b>${esc(p?.n || "—")}</b> in the pricebook. This only changes what's
+          printed on the button.</p>
+        <input id="rnv" class="big" style="text-align:left;font-size:18px"
+          value="${esc(k.label || p?.n || "")}">
+        <div class="row"><button class="no" id="rnn">Cancel</button>
+          <button class="ok" id="rny">Set it</button></div></div>`);
+      const inp = el.querySelector("#rnv"); inp.focus(); inp.select();
+      const go = () => { k.label = inp.value.trim() || null; el.remove(); touchKeys(); flash("Key renamed"); };
+      el.querySelector("#rnn").onclick = () => el.remove();
+      el.querySelector("#rny").onclick = go;
+      inp.onkeydown = e => { if (e.key === "Enter") go(); };
+    },
     guide: () => { STUDIO_GUIDE = !STUDIO_GUIDE;
       document.querySelector("#studio .stmock").classList.toggle("guide", STUDIO_GUIDE);
       const b = document.querySelector("#studio .stguide");
@@ -6607,6 +6699,8 @@ function drawStudio(again) {
           <label class="strange"><span>Rounding</span>
             <input type="range" min="0" max="20" value="${L.radius}"
               oninput="__st.radius(this.value)"><b>${L.radius}</b></label>
+
+          <div id="stSel">${selPanel()}</div>
 
           <div class="stsec">Colour</div>
           <div class="stchips">${[["dark", "Dark"], ["light", "Light"], ["contrast", "Contrast"]]
