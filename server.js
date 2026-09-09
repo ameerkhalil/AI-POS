@@ -419,7 +419,7 @@ app.post("/api/forgot", (req, res) => {
   });
 
   try {
-    db.prepare("INSERT INTO activity (account_id, action, detail, ip) VALUES (?,?,?,?)")
+    db.prepare("INSERT INTO audit (account_id, action, detail, ip) VALUES (?,?,?,?)")
       .run(a.id, "password-reset-requested", "A reset link was issued",
         req.headers["x-forwarded-for"] || req.ip || "");
   } catch (e) {}
@@ -456,7 +456,7 @@ app.post("/api/reset", (req, res) => {
   db.prepare("DELETE FROM sessions WHERE account_id = ?").run(r.account_id);
 
   try {
-    db.prepare("INSERT INTO activity (account_id, action, detail, ip) VALUES (?,?,?,?)")
+    db.prepare("INSERT INTO audit (account_id, action, detail, ip) VALUES (?,?,?,?)")
       .run(r.account_id, "password-reset", "Password changed via a reset link; all sessions signed out",
         req.headers["x-forwarded-for"] || req.ip || "");
   } catch (e) {}
@@ -491,7 +491,7 @@ function resetOnBoot() {
      not leave someone else still signed in. */
   db.prepare("DELETE FROM sessions WHERE account_id = ?").run(a.id);
   try {
-    db.prepare("INSERT INTO activity (account_id, action, detail, ip) VALUES (?,?,?,?)")
+    db.prepare("INSERT INTO audit (account_id, action, detail, ip) VALUES (?,?,?,?)")
       .run(a.id, "password-reset", "Reset from the server environment; all sessions signed out",
         "boot");
   } catch (e) {}
