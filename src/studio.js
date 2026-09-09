@@ -569,24 +569,31 @@ function runLaunch() {
     `${CFG.employees.length} ${CFG.employees.length === 1 ? "person" : "people"} on the register`,
     `${Object.values(CFG.modules || {}).filter(m => m.on).length} modules enabled`,
     `Offline queue ready`,
-    `${CFG.site.name} is open`
+    `Open for business`
   ];
 
   const veil = document.createElement("div");
   veil.className = "lv";
+  veil.style.setProperty("--a", accent);
+  /* A plate, not a flat wash. The mark, the name, the line under it, then the
+     machine reporting what it loaded. It's the first thing they'll show someone. */
   veil.innerHTML = `
-    <div class="lv-wash" style="background:${accent}"></div>
-    <div class="lv-rays">${Array.from({ length: 12 }, (_, i) =>
-      `<i style="transform:rotate(${i * 30}deg);background:linear-gradient(to top,${accent}00,${accent}AA)"></i>`).join("")}</div>
-    <div class="lv-core">
-      <div class="lv-ring" style="border-color:${accent}"></div>
-      <div class="lv-ring two" style="border-color:${accent}"></div>
-      <div class="lv-name">
-        <b>${esc(CFG.site.name)}</b>
-        <em>Register 1 &middot; now open</em>
-      </div>
+    <div class="lv-bg"></div>
+    <div class="lv-glow"></div>
+    <div class="lv-rays">${Array.from({ length: 16 }, (_, i) =>
+      `<i style="transform:rotate(${i * 22.5}deg)"></i>`).join("")}</div>
+    <div class="lv-plate">
+      <div class="lv-ring"></div>
+      <div class="lv-ring two"></div>
+      <div class="lv-mark">${CFG.site.logo
+        ? `<img src="${esc(CFG.site.logo)}" alt="">`
+        : `<span class="lv-initial">${esc((CFG.site.name || "?").trim()[0] || "?")}</span>`}</div>
+      <b class="lv-title">${esc(CFG.site.name)}</b>
+      ${CFG.site.slogan ? `<em class="lv-slogan">${esc(CFG.site.slogan)}</em>` : ""}
+      <div class="lv-rule"></div>
       <div class="lv-steps">${steps.map((t, i) =>
-        `<span style="animation-delay:${2800 + i * 260}ms">${esc(t)}</span>`).join("")}</div>
+        `<span style="animation-delay:${2700 + i * 240}ms"><i></i>${esc(t)}</span>`).join("")}</div>
+      <div class="lv-foot">Register 1 &middot; Store ${esc(CFG.site.store || "001")}</div>
     </div>`;
   document.body.appendChild(veil);
 

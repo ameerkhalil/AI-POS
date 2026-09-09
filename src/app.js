@@ -24,7 +24,8 @@ const hhmm=d=>d.toTimeString().slice(0,5);
 
 const A={type:"",typeOther:"",name:"",desc:"",caps:[],loc:"",margin:"35",ending:"x9",dir:"nearest",
   priceMode:"margin",trade:{},mods:[],
-  staff:[],layout:"",accent:"",mode:"dark",footer:"",policy:"",startCash:"200"};
+  staff:[],layout:"",accent:"",mode:"dark",footer:"",policy:"",startCash:"200",
+  logo:"",slogan:""};
 let TRADE_Q=[],REC_MODS=[],TRADE_ASKED=false,FLEET=null,FLEET_ASKED=false;
 
 /* What other stores of this trade already worked out. Structure only — the
@@ -105,8 +106,14 @@ const LAYOUTS=[
   tape:"bottom",depts:"tabs",keyStyle:"pad",nav:"top",tapeStyle:"plain",radius:18,fs:1.18,
   why:"Very large targets, almost no chrome, receipt along the bottom. For a tablet on a narrow counter, or anywhere the customer can see the screen."}
 ];
-const ACCENTS=[["#5CE0A8","Green"],["#6BA8D8","Blue"],["#E0B255","Amber"],["#D2664C","Rust"],
-  ["#B78BE0","Violet"],["#7FD858","Lime"],["#E08AB0","Pink"],["#4FD6D6","Teal"]];
+const ACCENTS=[
+ ["#5CE0A8","Mint"],["#3FBF8F","Jade"],["#2FA3A3","Teal"],["#4FD6D6","Aqua"],
+ ["#6BA8D8","Sky"],["#4A7FD4","Cobalt"],["#6C6CE0","Indigo"],["#9B7BE8","Violet"],
+ ["#C77BE0","Orchid"],["#E08AB0","Rose"],["#E56B6B","Coral"],["#D2664C","Rust"],
+ ["#E08A3C","Amber"],["#E0B255","Honey"],["#C9C24A","Citron"],["#8FCF4A","Lime"],
+ ["#5FB84A","Fern"],["#3E8E5A","Forest"],["#8A7A66","Clay"],["#9AA3A7","Steel"],
+ ["#D9CFC0","Bone"],["#B0453C","Brick"],["#7A3F6D","Plum"],["#2B5F8A","Denim"]
+];
 function suggestLayout(){
   const t=(A.type+" "+A.desc).toLowerCase();
   if(/bar|pub|brewery|taproom/.test(t))return "bar";
@@ -126,6 +133,25 @@ function suggestAccent(){
 }
 window.__acc=hex=>{A.accent=hex;draw()};
 window.__lay=k=>{A.layout=k;draw()};
+/* Scaled down before it's stored — a 4MB phone photo has no business being in
+   a config object that gets written on every keystroke. */
+function takeLogo(file){
+  if(!/^image\//.test(file.type))return;
+  const img=new Image(),url=URL.createObjectURL(file);
+  img.onload=()=>{
+    URL.revokeObjectURL(url);
+    const max=320,s=Math.min(1,max/Math.max(img.width,img.height));
+    const c=document.createElement("canvas");
+    c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
+    const cx=c.getContext("2d");
+    cx.imageSmoothingQuality="high";
+    cx.drawImage(img,0,0,c.width,c.height);
+    A.logo=c.toDataURL("image/png");
+    draw();
+  };
+  img.onerror=()=>URL.revokeObjectURL(url);
+  img.src=url;
+}
 const PALETTE=["#3E464A","#3A5A52","#57493B","#3D4D66","#573D4D","#485435","#4A3F5C","#2F4F55"];
 const PERMS=[["void","Void a line or sale"],["discount","Apply a discount"],["refund","Process a return"],
   ["payout","Pay in and pay out"],["nosale","Open the drawer with no sale"],["pricechange","Override a price"],
@@ -231,6 +257,37 @@ const STEPS=[
   },
   ok:()=>A.staff.length&&A.staff.every(s=>s.n.trim()&&/^\d{4}$/.test(s.pin))
     &&new Set(A.staff.map(s=>s.pin)).size===A.staff.length},
+
+ {q:"Your logo and your line",s:"Both show on the screen when the register opens, on the receipt, and in the corner of the terminal all day. Skip either if you'd rather.",
+  render:()=>`<div class="logodrop ${A.logo?"has":""}" id="logoDrop">
+      ${A.logo?`<img src="${A.logo}" alt="">`
+        :`<svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L8 8m4-4 4 4"/>
+           <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>`}
+      <div class="logotext">
+        <b>${A.logo?"Looking good":"Drop your logo here"}</b>
+        <span>${A.logo?"Click to replace it, or remove it below."
+          :"PNG or JPEG. A square or wide mark works best — it gets scaled, never stretched."}</span>
+      </div>
+      <input type="file" id="logoFile" accept="image/*" hidden>
+    </div>
+    ${A.logo?`<button class="logoclear" id="logoClear">Remove the logo</button>`:""}
+    <div class="field" style="margin-top:26px">
+      <input type="text" id="f9" placeholder="Your slogan, or what you're known for" value="${esc(A.slogan)}">
+    </div>
+    <div class="hint">Something short. "Open since 1994", "The best coffee on 103rd", or nothing at all.</div>`,
+  bind(){
+    const drop=$("logoDrop"),file=$("logoFile");
+    drop.onclick=()=>file.click();
+    file.onchange=e=>{const f=e.target.files[0];if(f)takeLogo(f)};
+    ["dragenter","dragover"].forEach(n=>drop.addEventListener(n,e=>{e.preventDefault();
+      drop.classList.add("over")}));
+    ["dragleave","drop"].forEach(n=>drop.addEventListener(n,e=>{e.preventDefault();
+      drop.classList.remove("over")}));
+    drop.addEventListener("drop",e=>{const f=e.dataTransfer.files[0];if(f)takeLogo(f)});
+    if($("logoClear"))$("logoClear").onclick=e=>{e.stopPropagation();A.logo="";draw()};
+    $("f9").oninput=e=>{A.slogan=e.target.value;softUpdate()};
+  },
+  ok:()=>true},
 
  {q:"What goes on the receipt?",s:"Printed at the bottom of every one. Most shops put their return policy here, because it's the only place a customer will ever read it.",
   render:()=>`<div class="field"><input type="text" id="f6" placeholder="Thanks for shopping with us"
@@ -405,7 +462,7 @@ function drawSide(){
   el.innerHTML=`
     <div class="sidecard">
       <div class="sidetop">
-        <span class="dot"></span>
+        ${A.logo?`<img class="sidelogo" src="${A.logo}" alt="">`:`<span class="dot"></span>`}
         <b>${esc(A.name||"Your store")}</b>
         <em>Register 1</em>
       </div>
@@ -851,7 +908,7 @@ function compile(gen){
   const taxFor=name=>keyToId[deptTax[name]]||generalId;
   const restricts=[];
   const c={site:{name:A.name||"Your Store",tagline:gen.tagline||"",addr:gen.addr||"",
-      store:"001",register:"1",loc:A.loc},
+      store:"001",register:"1",loc:A.loc,logo:A.logo||"",slogan:A.slogan||""},
     caps:[...A.caps],rounding:{nickel:false},bizType:A.type,
     layout:A.layout||suggestLayout(),
     theme:{mode:A.mode||"dark",accent:A.accent||suggestAccent()},
@@ -1042,6 +1099,9 @@ function signIn(){
 }
 function startShell(){
   $("lock").classList.remove("on");$("app").classList.add("on");
+  const mark=$("hdrMark");
+  if(mark)mark.innerHTML=CFG.site.logo
+    ?`<img src="${esc(CFG.site.logo)}" alt="">`:`<span class="dot"></span>`;
   $("hdrName").textContent=CFG.site.name;
   $("hdrMeta").textContent=`Reg ${CFG.site.register} · Store ${CFG.site.store}`;
   drawRail();themeFromConfig();clock();setInterval(clock,1000);
