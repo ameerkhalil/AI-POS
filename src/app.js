@@ -25,7 +25,7 @@ const hhmm=d=>d.toTimeString().slice(0,5);
 const A={type:"",typeOther:"",name:"",desc:"",caps:[],loc:"",margin:"35",ending:"x9",dir:"nearest",
   priceMode:"margin",trade:{},mods:[],
   staff:[],layout:"",accent:"",mode:"dark",footer:"",policy:"",startCash:"200",
-  logo:"",logoRaw:"",logoCut:false,logoTol:60,slogan:"",
+  logo:"",logoRaw:"",logoCut:false,logoTol:60,logoNote:"",slogan:"",
   keep:"keep",keepDays:"90",keepEmail:""};
 let TRADE_Q=[],REC_MODS=[],TRADE_ASKED=false,FLEET=null,FLEET_ASKED=false;
 
@@ -141,6 +141,13 @@ const LAYOUTS=[
   tape:"left",depts:"tabs",keyStyle:"tile",nav:"top",tapeStyle:"receipt",
   why:"Warm paper, a serif for the names, navigation across the top. Feels like a counter rather than a computer."},
 
+ {k:"classic",n:"Classic",tag:"Convenience, liquor, hardware — scan and key",
+  font:"Archivo",mono:"Azeret Mono",mode:"dark",accent:"#5CE0A8",
+  bg:"#141819",panel:"#1C2123",line:"#2E3639",key:"#262C2F",
+  keyMin:150,density:1,radius:3,fs:1,search:false,fkeys:false,
+  tape:"left",depts:"tabs",keyStyle:"tile",nav:"rail",tapeStyle:"receipt",shell:"classic",
+  why:"No product grid at all. A keypad, department keys and a line display — type a price, press a department, or scan. What a Verifone or an NCR looks like, and what most counters have actually run for thirty years."},
+
  {k:"midnight",n:"Midnight",tag:"Late trade, dim rooms, tired eyes",
   font:"IBM Plex Sans",mono:"IBM Plex Mono",mode:"contrast",accent:"#33E0E0",
   bg:"#000000",panel:"#0A0C0D",line:"#3A4448",key:"#141819",
@@ -165,6 +172,7 @@ function suggestLayout(){
   if(/cloth|boutique|shoe|jewel|watch|handbag|furniture|antique|salon|spa/.test(t))return "boutique";
   if(/grocer|supermarket|pharmac|hardware|auto parts|feed|market/.test(t))return "ledger";
   if(/vape|smoke|tobacco|dispensary/.test(t))return "midnight";
+  if(/convenience|gas station|truck stop|bodega|liquor|hardware|auto parts/.test(t))return "classic";
   return "counter";
 }
 function suggestAccent(){
@@ -194,26 +202,32 @@ function removeBg(src, tol, cb){
     cx.drawImage(img,0,0);
     const d=cx.getImageData(0,0,w,h),px=d.data;
 
-    /* The background is whatever the corners agree on. */
-    const corner=i=>[px[i],px[i+1],px[i+2]];
-    const cs=[0,(w-1)*4,(h-1)*w*4,((h-1)*w+(w-1))*4].map(corner);
-    const bg=[0,1,2].map(k=>Math.round(cs.reduce((s,c)=>s+c[k],0)/cs.length));
-    const near=(i)=>{
+    /* A PNG that already has a transparent background reads (0,0,0,0) at the
+       corners. Treating that as "the background is black" is what made this
+       tool eat dark logos. If the corners are already clear there is nothing
+       to remove, so leave the artwork alone. */
+    const corners=[0,(w-1)*4,(h-1)*w*4,((h-1)*w+(w-1))*4];
+    const opaque=corners.filter(i=>px[i+3]>200);
+    if(!opaque.length)return cb(src,{already:true});
+
+    const bg=[0,1,2].map(k=>Math.round(opaque.reduce((s,i)=>s+px[i+k],0)/opaque.length));
+    const near=i=>{
+      if(px[i+3]<24)return true;                  // already clear, keep flooding
       const dr=px[i]-bg[0],dg=px[i+1]-bg[1],db=px[i+2]-bg[2];
       return Math.sqrt(dr*dr+dg*dg+db*db)<=tol;
     };
 
-    const seen=new Uint8Array(w*h);
-    const stack=[];
-    for(let x=0;x<w;x++){stack.push(x,(h-1)*w+x)}
-    for(let y=0;y<h;y++){stack.push(y*w,y*w+w-1)}
-
+    const seen=new Uint8Array(w*h),stack=[];
+    for(let x=0;x<w;x++)stack.push(x,(h-1)*w+x);
+    for(let y=0;y<h;y++)stack.push(y*w,y*w+w-1);
+    let cleared=0;
     while(stack.length){
       const p=stack.pop();
       if(seen[p])continue;
       seen[p]=1;
       const i=p*4;
       if(!near(i))continue;
+      if(px[i+3])cleared++;
       px[i+3]=0;
       const x=p%w,y=(p/w)|0;
       if(x>0)stack.push(p-1);
@@ -222,36 +236,47 @@ function removeBg(src, tol, cb){
       if(y<h-1)stack.push(p+w);
     }
 
-    /* One pass of feathering, so the cut edge isn't a staircase. */
+    /* If nearly everything went, the guess was wrong — hand back the original
+       rather than a hole where a logo used to be. */
+    if(cleared>w*h*0.94)return cb(src,{tooMuch:true});
+
     const out=new Uint8ClampedArray(px);
     for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){
-      const p=(y*w+x),i=p*4;
+      const p=y*w+x,i=p*4;
       if(px[i+3]===0)continue;
       let clear=0;
       if(px[(p-1)*4+3]===0)clear++;
       if(px[(p+1)*4+3]===0)clear++;
       if(px[(p-w)*4+3]===0)clear++;
       if(px[(p+w)*4+3]===0)clear++;
-      if(clear)out[i+3]=Math.round(px[i+3]*(1-clear*0.2));
+      if(clear)out[i+3]=Math.round(px[i+3]*(1-clear*0.18));
     }
     cx.putImageData(new ImageData(out,w,h),0,0);
-    cb(c.toDataURL("image/png"));
+    cb(c.toDataURL("image/png"),{cleared:Math.round(cleared/(w*h)*100)});
   };
-  img.onerror=()=>cb(src);
+  img.onerror=()=>cb(src,{failed:true});
   img.src=src;
 }
 
 /* Scaled down before it's stored — a 4MB phone photo has no business being in
    a config object that gets written on every keystroke. */
 window.__cut=on=>{
-  if(!on){A.logoCut=false;A.logo=A.logoRaw||A.logo;return draw()}
+  if(!on){A.logoCut=false;A.logo=A.logoRaw||A.logo;A.logoNote="";return draw()}
   A.logoCut=true;
-  removeBg(A.logoRaw||A.logo,A.logoTol,d=>{A.logo=d;draw()});
-  draw();
+  removeBg(A.logoRaw||A.logo,A.logoTol,(d,info)=>{
+    A.logo=d;
+    A.logoNote=info.already?"This logo already has a transparent background — nothing to remove."
+      :info.tooMuch?"That would have removed almost the whole image, so it was left alone. This works on a flat background behind the mark."
+      :info.failed?"Couldn't read that image."
+      :`Cleared ${info.cleared}% of the image.`;
+    if(info.already||info.tooMuch)A.logoCut=false;
+    draw();
+  });
 };
 window.__tol=v=>{
   A.logoTol=parseInt(v)||60;
-  removeBg(A.logoRaw||A.logo,A.logoTol,d=>{A.logo=d;
+  removeBg(A.logoRaw||A.logo,A.logoTol,(d,info)=>{A.logo=d;
+    A.logoNote=info.cleared!=null?`Cleared ${info.cleared}% of the image.`:(A.logoNote||"");
     const el=document.querySelector(".lp.on .lpimg img");if(el)el.src=d;
     const out=document.querySelector(".logotools .strange b");if(out)out.textContent=A.logoTol;});
 };
@@ -425,7 +450,7 @@ const STEPS=[
       <input type="file" id="logoFile" accept="image/*" hidden>
     </div>
     ${A.logo?`<div class="logotools">
-      <div class="logopreviews">
+      <div class="logopreviews big">
         <div class="lp ${A.logoCut?"":"on"}" onclick="__cut(false)">
           <span class="lpimg plain"><img src="${A.logoRaw||A.logo}" alt=""></span>
           <em>As uploaded</em></div>
@@ -433,6 +458,7 @@ const STEPS=[
           <span class="lpimg checker"><img src="${A.logoCut?A.logo:(A.logoRaw||A.logo)}" alt=""></span>
           <em>Background removed</em></div>
       </div>
+      ${A.logoNote?`<div class="lognote">${esc(A.logoNote)}</div>`:""}
       ${A.logoCut?`<label class="strange" style="margin-top:12px">
         <span>How much</span>
         <input type="range" min="20" max="140" value="${A.logoTol}"
@@ -1340,7 +1366,7 @@ function wireSale(){
   $("search").onkeydown=e=>{if(e.key==="Enter"){const p=CFG.plus.find(x=>x.upc===FILTER);
     if(p){ring(p);$("search").value="";FILTER="";drawGrid()}}};
   $("tenders").onclick=e=>{const b=e.target.closest(".tender");if(b&&CART.length)tender(byId(CFG.mops,b.dataset.m))};
-  renderTenders();renderSubops();renderFkeys();drawMenus();drawGrid();drawCart();wedge();
+  renderTenders();renderSubops();renderFkeys();drawMenus();drawGrid();refreshSale();wedge();
   if(THEME.searchLeads!==false&&$("search"))setTimeout(()=>$("search").focus(),120);
   toast("Tap a key, scan a barcode, or search to start a sale.");
 }
@@ -1356,7 +1382,7 @@ function renderSubops(){
   $("oDisc").onclick=()=>auth("discount","Sale discount",discPrompt);
   $("oHold").onclick=hold;$("oRecall").onclick=recall;
   $("oClear").onclick=()=>{if(CART.length)auth("void","Clearing the sale",()=>{
-    CART=[];SEL=null;DISC=null;drawCart();toast("Sale cleared.")})};
+    CART=[];SEL=null;DISC=null;refreshSale();toast("Sale cleared.")})};
 }
 const FKEYS=[["F1","Price check",()=>priceCheck()],["F2","Void line",()=>{if(SEL!=null)voidLine(SEL)}],
   ["F3","Discount",()=>auth("discount","Sale discount",discPrompt)],["F4","No sale",()=>noSale()],
@@ -1505,12 +1531,12 @@ function add(p,ex={}){
   const m=CART.find(c=>c.pluId===p.id&&!c.note&&!c.mods&&!c.disc&&!ex.note&&!ex.mods);
   if(m){m.q++;FRESH=m.lid}else{CART.push(line);FRESH=line.lid}
   if(p.deposit)CART.push({lid:uid(),n:"Bottle deposit",price:p.deposit,q:1,taxId:"TX0",auto:true,disc:0});
-  SEL=null;drawCart();$("lines").scrollTop=$("lines").scrollHeight;
+  SEL=null;refreshSale();$("lines").scrollTop=$("lines").scrollHeight;
 }
 function prepay(k){
   ask({t:"Prepay fuel",p:`How much on ${k.label}?`,num:"30.00",pre:["10","20","30","40","50"],
     done:v=>{CART.push({lid:uid(),n:k.label+" prepay",price:+v,q:1,taxId:"TX0",deptId:"DF",
-      note:`Authorize pump to $${money(+v)}`,disc:0});SEL=null;drawCart()}});
+      note:`Authorize pump to $${money(+v)}`,disc:0});SEL=null;refreshSale()}});
 }
 
 /* ========================= totals ========================= */
@@ -1550,12 +1576,21 @@ function setTotal(v){
     else{TOTVAL=v;el.textContent=money(v);el.classList.remove("tick")}};
   TOTANIM=requestAnimationFrame(step);
 }
+/* Two shells now render the same sale. Everything that changes the cart calls
+   this instead of assuming the panel-and-grid layout is on screen. */
+function refreshSale(){
+  if(typeof THEME!=="undefined"&&THEME.shell==="classic"&&typeof drawClassic==="function")
+    return drawClassic();
+  drawCart();
+}
 function drawCart(){
+  if(typeof THEME!=="undefined"&&THEME.shell==="classic"&&typeof drawClassic==="function")
+    return drawClassic();
   const L=$("lines");
   if(!CART.length)L.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24">${ICONS.cart}</svg><br>
     ${RETURN?"Return mode.<br>Ring the items coming back.":"No items yet.<br>Tap a key to start a sale."}</div>`;
   else{
-    window.__sel=i=>{SEL=SEL===i?null:i;drawCart()};
+    window.__sel=i=>{SEL=SEL===i?null:i;refreshSale()};
     window.__vx=(i,e)=>{e.stopPropagation();voidLine(i)};
     L.innerHTML=CART.map((c,i)=>{
       const eff=c.price*c.q*(1-(c.disc||0)/100);
@@ -1573,13 +1608,13 @@ function drawCart(){
     ?`<div class="lineops"><button id="lm">− qty</button><button id="lp">+ qty</button>
       <button id="lpr">Price</button><button id="ld">Discount</button><button id="lv">Void</button></div>`:"";
   if(SEL!=null&&$("lm")){
-    $("lm").onclick=()=>{const c=CART[SEL];c.q>1?c.q--:voidLine(SEL);drawCart()};
-    $("lp").onclick=()=>{CART[SEL].q++;drawCart()};
+    $("lm").onclick=()=>{const c=CART[SEL];c.q>1?c.q--:voidLine(SEL);refreshSale()};
+    $("lp").onclick=()=>{CART[SEL].q++;refreshSale()};
     $("lpr").onclick=()=>auth("pricechange","Price override",()=>ask({t:"Override price",
       p:`New unit price for ${CART[SEL].n}.`,num:money(CART[SEL].price),
-      done:v=>{CART[SEL].price=+v;CART[SEL].note="price overridden";drawCart()}}));
+      done:v=>{CART[SEL].price=+v;CART[SEL].note="price overridden";refreshSale()}}));
     $("ld").onclick=()=>auth("discount","Line discount",()=>ask({t:"Line discount",
-      p:`Percent off ${CART[SEL].n}.`,num:"10",done:v=>{CART[SEL].disc=Math.min(100,+v);drawCart()}}));
+      p:`Percent off ${CART[SEL].n}.`,num:"10",done:v=>{CART[SEL].disc=Math.min(100,+v);refreshSale()}}));
     $("lv").onclick=()=>voidLine(SEL);
   }
   const t=calc();
@@ -1607,7 +1642,7 @@ function voidLine(i){
   const c=CART[i];if(!c)return;
   auth("void","Voiding a line",()=>reasonPrompt("void",`Void ${c.n}`,r=>{
     SHIFT.exceptions.push({at:new Date(),by:ME.n,what:`Void ${c.n}`,reason:r?.n});
-    CART.splice(i,1);SEL=null;drawCart();toast(`Voided <b>${esc(c.n)}</b>${r?` · ${esc(r.n)}`:""}`)}));
+    CART.splice(i,1);SEL=null;refreshSale();toast(`Voided <b>${esc(c.n)}</b>${r?` · ${esc(r.n)}`:""}`)}));
 }
 
 /* ========================= prompts ========================= */
@@ -1651,16 +1686,16 @@ function discPrompt(){
     <div class="row"><button class="no" id="dn">Cancel</button><button class="ok" id="dy">Dollars off</button></div></div>`);
   el.querySelector("#dn").onclick=()=>el.remove();
   el.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{
-    const v=+b.dataset.p;DISC=v?{type:"pct",v}:null;el.remove();drawCart()});
+    const v=+b.dataset.p;DISC=v?{type:"pct",v}:null;el.remove();refreshSale()});
   el.querySelector("#dy").onclick=()=>{const v=parseFloat(el.querySelector("#dv").value);
-    if(!(v>0))return;DISC={type:"amt",v};el.remove();drawCart()};
+    if(!(v>0))return;DISC={type:"amt",v};el.remove();refreshSale()};
 }
 /* A return should start from the original sale, not from an empty basket. It
    puts the money back on the card it came off, it caps the refund at what was
    actually paid, and it makes "I bought this here" checkable instead of taken
    on trust — which is most of retail refund fraud closed off for one extra tap. */
 function toggleReturn(){
-  if(RETURN){RETURN=false;RETREF=null;CART=[];DISC=null;drawCart();
+  if(RETURN){RETURN=false;RETREF=null;CART=[];DISC=null;refreshSale();
     return toast("Back to normal sales.")}
   findOriginal();
 }
@@ -1684,7 +1719,7 @@ function findOriginal(){
     /* Load what they bought, then let the cashier strike out anything being kept. */
     CART=s?JSON.parse(JSON.stringify(s.lines)):[];
     CART.forEach(c=>c.lid=uid());
-    DISC=null;SEL=null;drawCart();
+    DISC=null;SEL=null;refreshSale();
     toast(s?`Return against <b>#${s.n}</b>. Void anything they're keeping, then pick a refund method.`
            :"Return with no receipt. Card refunds aren't available — cash only.");
   };
@@ -1714,7 +1749,7 @@ function hold(){
   if(!CART.length)return;
   if(typeof modOn==="function"&&modOn("service"))return holdNamed();
   HELD.push({lines:CART,disc:DISC,at:new Date(),n:HELD.length+1,by:ME.n});
-  CART=[];SEL=null;DISC=null;drawCart();renderSubops();toast(`Sale suspended. ${HELD.length} on hold.`)}
+  CART=[];SEL=null;DISC=null;refreshSale();renderSubops();toast(`Sale suspended. ${HELD.length} on hold.`)}
 function holdNamed(){
   const el=veil(`<div class="card"><h3>Open a tab</h3>
     <p>A table number or a name, so it can be found again.</p>
@@ -1725,7 +1760,7 @@ function holdNamed(){
   const go=()=>{
     const label=inp.value.trim()||("#"+(HELD.length+1));
     HELD.push({lines:CART,disc:DISC,at:new Date(),n:HELD.length+1,by:ME.n,label});
-    CART=[];SEL=null;DISC=null;el.remove();drawCart();renderSubops();
+    CART=[];SEL=null;DISC=null;el.remove();refreshSale();renderSubops();
     toast(`Tab <b>${esc(label)}</b> opened. ${HELD.length} running.`);
   };
   el.querySelector("#tbc").onclick=()=>el.remove();
@@ -1742,7 +1777,7 @@ function recall(){
   el.querySelector("#hn").onclick=()=>el.remove();
   el.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{
     const h=HELD.splice(+b.dataset.i,1)[0];CART=h.lines;DISC=h.disc;el.remove();
-    drawCart();renderSubops();toast(`Recalled #${h.n}.`)});
+    refreshSale();renderSubops();toast(`Recalled #${h.n}.`)});
 }
 
 /* ========================= tender ========================= */
@@ -1907,7 +1942,7 @@ function finish(pays,roundAdj,reason,cid){
     cid:cid||(Date.now().toString(36)+Math.random().toString(36).slice(2,8))};
   if(!TRAIN)SHIFT.sales.push(sale);
   CART=[];SEL=null;DISC=null;SALE_TIP=0;SALE_CUST=null;
-  const wasRet=RETURN;RETURN=false;RETREF=null;drawCart();
+  const wasRet=RETURN;RETURN=false;RETREF=null;refreshSale();
   const paid=pays.map(p=>`${p.mop} ${money(Math.abs(p.amt))}`).join(" + ");
   const ch=pays.find(p=>p.change>0.001);
   /* Record first, then take the money. If anything fails between the two, the
@@ -2062,7 +2097,7 @@ function drawOffice(){
         <b style="font-size:12px;color:var(--txt-2)">${esc(x.by)} ${x.at.toLocaleTimeString()}</b></div>`).join("")}</div></div>`:""}
   </div>`;
   window.__pin=payIn;window.__pout=()=>auth("payout","Pay out",payOut);window.__safe=safeDrop;
-  window.__train=()=>{TRAIN=!TRAIN;drawCart();drawOffice();toast(TRAIN?"Training mode on. Sales won't post to the shift.":"Training mode off.")};
+  window.__train=()=>{TRAIN=!TRAIN;refreshSale();drawOffice();toast(TRAIN?"Training mode on. Sales won't post to the shift.":"Training mode off.")};
 }
 
 /* ========================= reports ========================= */

@@ -56,7 +56,7 @@ function themeFromConfig(){
     THEME.keyStyle=L.keyStyle;
     THEME.nav=L.nav;
     THEME.tapeStyle=L.tapeStyle;
-    THEME.font=L.font;THEME.mono=L.mono;
+    THEME.font=L.font;THEME.mono=L.mono;THEME.shell=L.shell||"panels";
     THEME.bg=L.bg;THEME.panel=L.panel;THEME.line=L.line;THEME.key=L.key;
     if(CFG.theme?.radius==null)THEME.radius=L.radius;
     if(CFG.theme?.fontScale==null)THEME.fontScale=L.fs;
@@ -97,6 +97,7 @@ function applyTheme(){
      actually make one trade's register look unlike another's. */
   const sale=$("vSale");
   if(sale){
+    sale.classList.toggle("shell-classic",THEME.shell==="classic");
     sale.classList.remove("tape-left","tape-right","tape-bottom");
     sale.classList.add("tape-"+(THEME.tape||"left"));
     sale.classList.toggle("depts-rail",THEME.depts==="rail");

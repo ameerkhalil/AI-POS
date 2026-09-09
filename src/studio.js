@@ -259,7 +259,7 @@ function launchPOS() {
 */
 function runLaunch() {
   const studio = document.getElementById("studio");
-  const mock = studio.querySelector(".stmock");
+  const mock = studio.querySelector(".qmock");
   if (!mock) return boot();
 
   if (typeof saveNow === "function") saveNow();
@@ -312,7 +312,7 @@ function runLaunch() {
 
   AUTO_IN = true;
   studio.classList.add("launching");
-  [...mock.querySelectorAll(".sk")].forEach((k, i) => {
+  [...mock.querySelectorAll(".q")].forEach((k, i) => {
     k.style.animation = `keyfire .5s cubic-bezier(.25,1.5,.45,1) ${380 + i * 55}ms both`;
   });
 
