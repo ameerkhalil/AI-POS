@@ -2511,6 +2511,26 @@ body.tp-plain .grand .amt{font-size:40px}
   font-size:22px;font-weight:700;border:none;display:block;width:calc(100% - 44px)}
 .kk-pay[disabled]{background:#DDE3E0;color:#98A29D}
 
+/* a register that fails to draw says so rather than showing an empty counter */
+.shellfail{display:grid;place-content:center;justify-items:center;gap:12px;height:100%;padding:40px;
+  text-align:center}
+.shellfail b{font-size:20px;font-weight:600}
+.shellfail p{font-size:14px;color:var(--txt-2);line-height:1.65;max-width:52ch}
+.shellfail button{margin-top:6px;border:1px solid var(--line-2);border-radius:var(--r);
+  padding:11px 20px;font-size:14px;color:var(--txt)}
+
+/* the mark carries the moment, so give it room */
+.lv-mark{width:150px;height:150px;border-radius:34px;margin-bottom:28px}
+.lv-mark img{padding:16px}
+.lv-initial{font-size:66px}
+.lv-ring{top:22px;width:186px;height:186px}
+.lv-ring.two{width:262px;height:262px;top:-16px}
+@media(max-width:600px){
+  .lv-mark{width:112px;height:112px;border-radius:26px}
+  .lv-ring{width:142px;height:142px;top:16px}
+  .lv-ring.two{width:196px;height:196px;top:-11px}
+}
+
 .tchip.save{transition:color .2s,border-color .2s}
 .tchip.save.pending{color:var(--warn);border-color:rgba(224,178,85,.4)}
 .tchip.save.saving{color:var(--txt-2)}
@@ -3880,11 +3900,11 @@ function startShell(){
   drawRail();themeFromConfig();clock();setInterval(clock,1000);
   $("btnLock").onclick=()=>{ME=null;signIn()};
   $("btnAcct").onclick=accountMenu;
-  wireSale();
   if(typeof OPEN_AFTER!=="undefined"&&OPEN_AFTER){
     const t=OPEN_AFTER;OPEN_AFTER=null;
     go("config");TAB=t;drawConfig();
-  } else go("sale");
+    wireSale();
+  } else { go("sale"); wireSale(); }
   toast(`Signed in as <b>${esc(ME.n)}</b> · ${esc(byId(CFG.groups,ME.groupId).n)}`);
 }
 function clock(){
@@ -3932,16 +3952,41 @@ function toast(html,bad){
 
 /* ========================= sale view ========================= */
 function wireSale(){
-  $("grid").addEventListener("pointerdown",keyBloom);
-  $("search").oninput=e=>{FILTER=e.target.value.trim();drawGrid()};
-  $("search").onkeydown=e=>{if(e.key==="Enter"){const p=CFG.plus.find(x=>x.upc===FILTER);
-    if(p){ring(p);$("search").value="";FILTER="";drawGrid()}}};
-  $("tenders").onclick=e=>{const b=e.target.closest(".tender");if(b&&CART.length)tender(byId(CFG.mops,b.dataset.m))};
-  const sh=typeof THEME!=="undefined"&&THEME.shell;
-  if(sh&&sh!=="panels"){refreshSale();wedge()}
-  else{renderTenders();renderSubops();renderFkeys();drawMenus();drawGrid();refreshSale();wedge()}
-  if(THEME.searchLeads!==false&&$("search"))setTimeout(()=>$("search").focus(),120);
-  toast("Tap a key, scan a barcode, or search to start a sale.");
+  /* The panel shell's own elements only exist when that shell is showing. A
+     register that replaces the whole sale view has none of them, and reaching
+     for one used to throw before anything had been drawn — which is what left
+     the screen blank after launching. */
+  const on=(id,ev,fn)=>{const el=$(id);if(el)el.addEventListener(ev,fn)};
+  const sh=(typeof THEME!=="undefined"&&THEME.shell)||"panels";
+
+  if(sh==="panels"){
+    on("grid","pointerdown",keyBloom);
+    const s=$("search");
+    if(s){
+      s.oninput=e=>{FILTER=e.target.value.trim();drawGrid()};
+      s.onkeydown=e=>{if(e.key==="Enter"){const p=CFG.plus.find(x=>x.upc===FILTER);
+        if(p){ring(p);s.value="";FILTER="";drawGrid()}}};
+    }
+    on("tenders","click",e=>{const b=e.target.closest(".tender");
+      if(b&&CART.length)tender(byId(CFG.mops,b.dataset.m))});
+    renderTenders();renderSubops();renderFkeys();drawMenus();drawGrid();
+  }
+
+  refreshSale();
+  wedge();
+
+  /* If a shell drew nothing, say so rather than presenting a blank counter. */
+  const view=$("vSale");
+  if(view&&!view.textContent.trim()){
+    view.innerHTML=`<div class="shellfail">
+      <b>This register didn't draw</b>
+      <p>The <b>${esc(sh)}</b> layout returned an empty screen. Your sale, pricebook and settings are
+        untouched — switch to another register under Config → Appearance and this one can be looked at.</p>
+      <button onclick="go('config')">Open settings</button></div>`;
+  }
+
+  if(sh==="panels"&&THEME.searchLeads!==false&&$("search"))
+    setTimeout(()=>$("search").focus(),120);
 }
 function renderTenders(){
   if(typeof modOn==="function"&&modOn("giftcards")&&!CFG.mops.some(m=>m.kind==="gift"))
@@ -5758,7 +5803,7 @@ function health(){
   themeIssues().forEach(i=>f.push({sev:i.t==="warn"?"warn":"info",t:"Appearance",d:i.m,fix:null}));
   return f;
 }
-const BUILD="6116872244";
+const BUILD="a5b11a98a1";
 function tHealth(){
   const f=health();
   window.__fix=i=>{f[i].fix&&f[i].fix();reload();drawConfig()};

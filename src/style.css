@@ -2500,3 +2500,23 @@ body.tp-plain .grand .amt{font-size:40px}
 .kk-pay{margin:0 22px 22px;padding:26px;border-radius:16px;background:#00A05A;color:#fff;
   font-size:22px;font-weight:700;border:none;display:block;width:calc(100% - 44px)}
 .kk-pay[disabled]{background:#DDE3E0;color:#98A29D}
+
+/* a register that fails to draw says so rather than showing an empty counter */
+.shellfail{display:grid;place-content:center;justify-items:center;gap:12px;height:100%;padding:40px;
+  text-align:center}
+.shellfail b{font-size:20px;font-weight:600}
+.shellfail p{font-size:14px;color:var(--txt-2);line-height:1.65;max-width:52ch}
+.shellfail button{margin-top:6px;border:1px solid var(--line-2);border-radius:var(--r);
+  padding:11px 20px;font-size:14px;color:var(--txt)}
+
+/* the mark carries the moment, so give it room */
+.lv-mark{width:150px;height:150px;border-radius:34px;margin-bottom:28px}
+.lv-mark img{padding:16px}
+.lv-initial{font-size:66px}
+.lv-ring{top:22px;width:186px;height:186px}
+.lv-ring.two{width:262px;height:262px;top:-16px}
+@media(max-width:600px){
+  .lv-mark{width:112px;height:112px;border-radius:26px}
+  .lv-ring{width:142px;height:142px;top:16px}
+  .lv-ring.two{width:196px;height:196px;top:-11px}
+}

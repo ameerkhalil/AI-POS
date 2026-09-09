@@ -1286,11 +1286,11 @@ function startShell(){
   $("hdrMeta").textContent=`Reg ${CFG.site.register} · Store ${CFG.site.store}`;
   drawRail();themeFromConfig();clock();setInterval(clock,1000);
   $("btnLock").onclick=()=>{ME=null;signIn()};
-  wireSale();
   if(typeof OPEN_AFTER!=="undefined"&&OPEN_AFTER){
     const t=OPEN_AFTER;OPEN_AFTER=null;
     go("config");TAB=t;drawConfig();
-  } else go("sale");
+    wireSale();
+  } else { go("sale"); wireSale(); }
   toast(`Signed in as <b>${esc(ME.n)}</b> · ${esc(byId(CFG.groups,ME.groupId).n)}`);
 }
 function clock(){
@@ -1338,16 +1338,41 @@ function toast(html,bad){
 
 /* ========================= sale view ========================= */
 function wireSale(){
-  $("grid").addEventListener("pointerdown",keyBloom);
-  $("search").oninput=e=>{FILTER=e.target.value.trim();drawGrid()};
-  $("search").onkeydown=e=>{if(e.key==="Enter"){const p=CFG.plus.find(x=>x.upc===FILTER);
-    if(p){ring(p);$("search").value="";FILTER="";drawGrid()}}};
-  $("tenders").onclick=e=>{const b=e.target.closest(".tender");if(b&&CART.length)tender(byId(CFG.mops,b.dataset.m))};
-  const sh=typeof THEME!=="undefined"&&THEME.shell;
-  if(sh&&sh!=="panels"){refreshSale();wedge()}
-  else{renderTenders();renderSubops();renderFkeys();drawMenus();drawGrid();refreshSale();wedge()}
-  if(THEME.searchLeads!==false&&$("search"))setTimeout(()=>$("search").focus(),120);
-  toast("Tap a key, scan a barcode, or search to start a sale.");
+  /* The panel shell's own elements only exist when that shell is showing. A
+     register that replaces the whole sale view has none of them, and reaching
+     for one used to throw before anything had been drawn — which is what left
+     the screen blank after launching. */
+  const on=(id,ev,fn)=>{const el=$(id);if(el)el.addEventListener(ev,fn)};
+  const sh=(typeof THEME!=="undefined"&&THEME.shell)||"panels";
+
+  if(sh==="panels"){
+    on("grid","pointerdown",keyBloom);
+    const s=$("search");
+    if(s){
+      s.oninput=e=>{FILTER=e.target.value.trim();drawGrid()};
+      s.onkeydown=e=>{if(e.key==="Enter"){const p=CFG.plus.find(x=>x.upc===FILTER);
+        if(p){ring(p);s.value="";FILTER="";drawGrid()}}};
+    }
+    on("tenders","click",e=>{const b=e.target.closest(".tender");
+      if(b&&CART.length)tender(byId(CFG.mops,b.dataset.m))});
+    renderTenders();renderSubops();renderFkeys();drawMenus();drawGrid();
+  }
+
+  refreshSale();
+  wedge();
+
+  /* If a shell drew nothing, say so rather than presenting a blank counter. */
+  const view=$("vSale");
+  if(view&&!view.textContent.trim()){
+    view.innerHTML=`<div class="shellfail">
+      <b>This register didn't draw</b>
+      <p>The <b>${esc(sh)}</b> layout returned an empty screen. Your sale, pricebook and settings are
+        untouched — switch to another register under Config → Appearance and this one can be looked at.</p>
+      <button onclick="go('config')">Open settings</button></div>`;
+  }
+
+  if(sh==="panels"&&THEME.searchLeads!==false&&$("search"))
+    setTimeout(()=>$("search").focus(),120);
 }
 function renderTenders(){
   if(typeof modOn==="function"&&modOn("giftcards")&&!CFG.mops.some(m=>m.kind==="gift"))
