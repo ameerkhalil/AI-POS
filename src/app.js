@@ -1240,6 +1240,53 @@ function boot(){
   signIn();
 }
 let AUTO_IN=false;
+/* The PIN screen was a dead end: a cashier code is the only way past it, so an
+   owner with several accounts, or anyone handed a terminal signed in as someone
+   else, had nowhere to go. These are account-level doors, not shift ones. */
+function lockFooter(){
+  const el=$("lockFoot");
+  if(!el)return;
+  el.innerHTML=`
+    <button id="lkSwitch">Switch store</button>
+    <span>·</span>
+    <button id="lkOut">Sign in as a different account</button>`;
+
+  $("lkSwitch").onclick=async()=>{
+    let me;
+    try{ me=await api("/api/me"); }
+    catch(e){ return (location.href="/login.html"); }
+    if(!me.stores||me.stores.length<2)
+      return toast("This account only has one store.",true);
+    const v=veil(`<div class="card"><h3>Switch store</h3>
+      <p>Signed in as ${esc(me.account.email)}.</p>
+      <div class="opts" style="flex-direction:column;margin-top:14px">
+        ${me.stores.map(s=>`<button data-s="${s.id}" style="width:100%;${
+          String(s.id)===String(STORE_ID)?"background:rgba(92,224,168,.16);border-color:var(--vfd)":""
+          }">${esc(s.name)}</button>`).join("")}</div>
+      <div class="row"><button class="no" id="swx">Cancel</button></div></div>`);
+    v.querySelector("#swx").onclick=()=>v.remove();
+    v.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{
+      localStorage.setItem("pos_store",b.dataset.s);
+      location.reload();
+    });
+  };
+
+  $("lkOut").onclick=()=>{
+    const v=veil(`<div class="card"><h3>Sign in as a different account</h3>
+      <p>This signs out of the account entirely, not just this cashier. Anything not yet saved is
+        written first.</p>
+      <div class="row"><button class="no" id="sox">Stay here</button>
+        <button class="ok" id="soy">Sign out</button></div></div>`);
+    v.querySelector("#sox").onclick=()=>v.remove();
+    v.querySelector("#soy").onclick=async()=>{
+      try{ if(typeof saveNow==="function")await saveNow(); }catch(e){}
+      try{ await api("/api/logout",{method:"POST"}); }catch(e){}
+      localStorage.removeItem("pos_store");
+      location.href="/login.html";
+    };
+  };
+}
+
 function signIn(){
   /* Reaching here without a configuration is a bug elsewhere, but a blank
      screen with four dots on it helps nobody diagnose it. */
@@ -1253,6 +1300,7 @@ function signIn(){
     $("lockMsg").innerHTML=`This store has no usable configuration, so there's nobody to sign in.
       <br><br><button class="tbtn2" onclick="localStorage.removeItem('pos_store');location.reload()"
         style="margin-top:10px">Start over</button>`;
+    lockFooter();
     return;
   }
   $("app").classList.remove("on");$("lock").classList.add("on");
@@ -1265,6 +1313,7 @@ function signIn(){
   $("lockPad").innerHTML=[1,2,3,4,5,6,7,8,9,"",0,"←"].map(k=>
     k===""?`<span></span>`:`<button data-k="${k}">${k}</button>`).join("");
   dots();
+  lockFooter();
   $("lockPad").querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{
     const k=b.dataset.k;
     if(k==="←")pin=pin.slice(0,-1);else if(pin.length<4)pin+=k;
