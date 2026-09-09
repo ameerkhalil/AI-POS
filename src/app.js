@@ -91,69 +91,35 @@ const TYPES=TYPE_GROUPS.flatMap(g=>g[1]);
    Different type, different palette, different arrangement, different weight.
    Every one has been drawn deliberately and works — which is worth more than
    the freedom to build something that doesn't. */
+/* Five registers. Not one design in five colourways — five different machines
+   that happen to share a database. Different shell, different interaction,
+   different typeface, different palette. Somebody shown two of these would not
+   guess they were the same software. */
 const LAYOUTS=[
- {k:"counter",n:"Counter",tag:"Convenience, hardware, anywhere with a scanner",
-  font:"Archivo",mono:"Azeret Mono",mode:"dark",accent:"#5CE0A8",
-  bg:"#1B2023",panel:"#242A2D",line:"#333B3E",key:"#394145",
-  keyMin:150,density:1,radius:4,fs:1,search:true,fkeys:true,
-  tape:"left",depts:"tabs",keyStyle:"tile",nav:"rail",tapeStyle:"receipt",
-  why:"Compact tiles, sections across the top, receipt down the left. The workhorse — a broad pricebook, a scanner, and a queue."},
+ {k:"classic",n:"Classic",tag:"Convenience, liquor, hardware",
+  shell:"classic",font:"Archivo",mono:"Azeret Mono",mode:"dark",accent:"#5CE0A8",
+  bg:"#141819",panel:"#1C2123",line:"#2E3639",key:"#262C2F",radius:3,
+  why:"A keypad, department keys and a line display. No product grid at all — type a price and press a department, or scan. What a Verifone or an NCR looks like, and what most counters have actually run for thirty years."},
 
- {k:"kitchen",n:"Kitchen",tag:"Pizzerias, delis, anywhere with a hot line",
-  font:"Space Grotesk",mono:"Space Mono",mode:"dark",accent:"#F2762E",
-  bg:"#191512",panel:"#241D18",line:"#3A2F26",key:"#33291F",
-  keyMin:216,density:1.28,radius:16,fs:1.14,search:false,fkeys:true,
-  tape:"right",depts:"tabs",keyStyle:"pad",nav:"top",tapeStyle:"list",
-  why:"Big soft pads, warm and high-contrast, navigation across the top. Made to be read at arm's length in a hot kitchen."},
+ {k:"menu",n:"Menu",tag:"Cafés, pizzerias, bars, food trucks",
+  shell:"menu",font:"Space Grotesk",mono:"Space Mono",mode:"dark",accent:"#FF7A45",
+  bg:"#17110E",panel:"#231A15",line:"#3B2B22",key:"#2E211A",radius:18,
+  why:"Products edge to edge, as big and colourful as the screen allows. No order panel taking up room — it lives behind one button and slides up over the top when you want it."},
 
- {k:"ledger",n:"Ledger",tag:"Grocery, pharmacy, thousands of lines",
-  font:"IBM Plex Sans",mono:"IBM Plex Mono",mode:"dark",accent:"#79A6E0",
-  bg:"#15181C",panel:"#1D2126",line:"#2C323A",key:"#232830",
-  keyMin:260,density:.82,radius:2,fs:.94,search:true,fkeys:true,
-  tape:"left",depts:"rail",keyStyle:"list",nav:"rail",tapeStyle:"receipt",
-  why:"Products as dense rows, sharp edges, sections down the side. Three times as many on screen for a pricebook you scan more than you tap."},
+ {k:"terminal",n:"Terminal",tag:"Parts counters, pharmacy, wholesale",
+  shell:"terminal",font:"IBM Plex Mono",mono:"IBM Plex Mono",mode:"contrast",accent:"#FFB000",
+  bg:"#000000",panel:"#080A08",line:"#3A3320",key:"#141208",radius:0,
+  why:"A command line. Type a barcode, or three-times-a-code, and press enter. Amber on black, no pictures, function keys down the side. Nobody needs to lift a hand off the keyboard."},
 
- {k:"boutique",n:"Boutique",tag:"Clothing, jewellery, considered purchases",
-  font:"Fraunces",mono:"Azeret Mono",mode:"light",accent:"#8C6BC8",
-  bg:"#F4F1EC",panel:"#FBF9F6",line:"#DED8CF",key:"#EFEBE4",
-  keyMin:234,density:1.34,radius:14,fs:1.06,search:true,fkeys:false,
-  tape:"right",depts:"rail",keyStyle:"card",nav:"rail",tapeStyle:"plain",
-  why:"Light, serif, unhurried. Roomy cards with space for sizes and colours, no function row. For one sale that takes a conversation."},
+ {k:"catalogue",n:"Catalogue",tag:"Clothing, jewellery, furniture",
+  shell:"catalogue",font:"Fraunces",mono:"Azeret Mono",mode:"light",accent:"#7B5EA7",
+  bg:"#F5F2ED",panel:"#FDFBF8",line:"#E2DBD1",key:"#EFEAE2",radius:14,
+  why:"Browse first. Large cards with room for sizes, categories set in a serif down the side, and the order along the bottom where it isn't competing for attention."},
 
- {k:"bar",n:"Last Call",tag:"Bars, taprooms, running tabs",
-  font:"Archivo",mono:"Azeret Mono",mode:"dark",accent:"#E0A03C",
-  bg:"#0F1113",panel:"#181B1E",line:"#2A2F34",key:"#22272C",
-  keyMin:180,density:1.12,radius:9,fs:1.05,search:false,fkeys:true,
-  tape:"right",depts:"rail",keyStyle:"tile",nav:"rail",tapeStyle:"list",
-  why:"Near-black and amber, so it doesn't light up the room. Sections down the side, tab on the right where it gets read back."},
-
- {k:"kiosk",n:"Kiosk",tag:"Tablets, food trucks, narrow counters",
-  font:"Space Grotesk",mono:"Space Mono",mode:"light",accent:"#0FA3A3",
-  bg:"#F2F4F3",panel:"#FFFFFF",line:"#DCE2E0",key:"#E7ECEA",
-  keyMin:250,density:1.5,radius:22,fs:1.22,search:false,fkeys:false,
-  tape:"bottom",depts:"tabs",keyStyle:"pad",nav:"top",tapeStyle:"plain",
-  why:"Very large targets, almost no chrome, order along the bottom. Bright enough to work outdoors and simple enough to hand over."},
-
- {k:"market",n:"Market",tag:"Cafés, bakeries, farm stands",
-  font:"Fraunces",mono:"IBM Plex Mono",mode:"light",accent:"#4E8C48",
-  bg:"#F6F4EE",panel:"#FDFCF8",line:"#E0DACC",key:"#EDE9DE",
-  keyMin:186,density:1.16,radius:10,fs:1.06,search:true,fkeys:true,
-  tape:"left",depts:"tabs",keyStyle:"tile",nav:"top",tapeStyle:"receipt",
-  why:"Warm paper, a serif for the names, navigation across the top. Feels like a counter rather than a computer."},
-
- {k:"classic",n:"Classic",tag:"Convenience, liquor, hardware — scan and key",
-  font:"Archivo",mono:"Azeret Mono",mode:"dark",accent:"#5CE0A8",
-  bg:"#141819",panel:"#1C2123",line:"#2E3639",key:"#262C2F",
-  keyMin:150,density:1,radius:3,fs:1,search:false,fkeys:false,
-  tape:"left",depts:"tabs",keyStyle:"tile",nav:"rail",tapeStyle:"receipt",shell:"classic",
-  why:"No product grid at all. A keypad, department keys and a line display — type a price, press a department, or scan. What a Verifone or an NCR looks like, and what most counters have actually run for thirty years."},
-
- {k:"midnight",n:"Midnight",tag:"Late trade, dim rooms, tired eyes",
-  font:"IBM Plex Sans",mono:"IBM Plex Mono",mode:"contrast",accent:"#33E0E0",
-  bg:"#000000",panel:"#0A0C0D",line:"#3A4448",key:"#141819",
-  keyMin:196,density:1.18,radius:0,fs:1.1,search:true,fkeys:true,
-  tape:"right",depts:"tabs",keyStyle:"tile",nav:"rail",tapeStyle:"list",
-  why:"True black, hard edges, one bright colour. Maximum contrast for a night shift or anyone who finds the others hard to read."}
+ {k:"pad",n:"Pad",tag:"Market stalls, pop-ups, tablets",
+  shell:"pad",font:"Space Grotesk",mono:"Space Mono",mode:"light",accent:"#0E9B8E",
+  bg:"#F1F5F4",panel:"#FFFFFF",line:"#DCE5E3",key:"#E8EFED",radius:20,
+  why:"One column, everything oversized, order as a sheet you pull up from the bottom. Built for a tablet held in one hand."}
 ];
 const ACCENTS=[
  ["#5CE0A8","Mint"],["#3FBF8F","Jade"],["#2FA3A3","Teal"],["#4FD6D6","Aqua"],
@@ -165,15 +131,11 @@ const ACCENTS=[
 ];
 function suggestLayout(){
   const t=(A.type+" "+A.desc).toLowerCase();
-  if(/bar|pub|brewery|taproom|liquor/.test(t))return "bar";
-  if(/pizz|restaurant|fast food|deli|sandwich/.test(t))return "kitchen";
-  if(/food truck|kiosk|stand|juice|ice cream/.test(t))return "kiosk";
-  if(/caf|coffee|bakery|farm|cheese|produce|florist/.test(t))return "market";
-  if(/cloth|boutique|shoe|jewel|watch|handbag|furniture|antique|salon|spa/.test(t))return "boutique";
-  if(/grocer|supermarket|pharmac|hardware|auto parts|feed|market/.test(t))return "ledger";
-  if(/vape|smoke|tobacco|dispensary/.test(t))return "midnight";
-  if(/convenience|gas station|truck stop|bodega|liquor|hardware|auto parts/.test(t))return "classic";
-  return "counter";
+  if(/caf|coffee|pizz|restaurant|bar|pub|brewery|deli|bakery|juice|ice cream/.test(t))return "menu";
+  if(/food truck|kiosk|stand|market stall|pop/.test(t))return "pad";
+  if(/cloth|boutique|shoe|jewel|watch|handbag|furniture|antique|gift|book|record/.test(t))return "catalogue";
+  if(/pharmac|auto parts|wholesale|electrical|plumb|supply|feed/.test(t))return "terminal";
+  return "classic";
 }
 function suggestAccent(){
   const t=(A.type+" "+A.desc).toLowerCase();
@@ -1366,7 +1328,9 @@ function wireSale(){
   $("search").onkeydown=e=>{if(e.key==="Enter"){const p=CFG.plus.find(x=>x.upc===FILTER);
     if(p){ring(p);$("search").value="";FILTER="";drawGrid()}}};
   $("tenders").onclick=e=>{const b=e.target.closest(".tender");if(b&&CART.length)tender(byId(CFG.mops,b.dataset.m))};
-  renderTenders();renderSubops();renderFkeys();drawMenus();drawGrid();refreshSale();wedge();
+  const sh=typeof THEME!=="undefined"&&THEME.shell;
+  if(sh&&sh!=="panels"){refreshSale();wedge()}
+  else{renderTenders();renderSubops();renderFkeys();drawMenus();drawGrid();refreshSale();wedge()}
   if(THEME.searchLeads!==false&&$("search"))setTimeout(()=>$("search").focus(),120);
   toast("Tap a key, scan a barcode, or search to start a sale.");
 }
@@ -1578,14 +1542,16 @@ function setTotal(v){
 }
 /* Two shells now render the same sale. Everything that changes the cart calls
    this instead of assuming the panel-and-grid layout is on screen. */
+const SHELLS={classic:()=>drawClassic(),menu:()=>drawMenuShell(),
+  terminal:()=>drawTerminalShell(),catalogue:()=>drawCatalogueShell(),pad:()=>drawPadShell()};
 function refreshSale(){
-  if(typeof THEME!=="undefined"&&THEME.shell==="classic"&&typeof drawClassic==="function")
-    return drawClassic();
+  const s=typeof THEME!=="undefined"&&THEME.shell;
+  if(s&&SHELLS[s])return SHELLS[s]();
   drawCart();
 }
 function drawCart(){
-  if(typeof THEME!=="undefined"&&THEME.shell==="classic"&&typeof drawClassic==="function")
-    return drawClassic();
+  const s=typeof THEME!=="undefined"&&THEME.shell;
+  if(s&&s!=="panels"&&SHELLS[s])return SHELLS[s]();
   const L=$("lines");
   if(!CART.length)L.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24">${ICONS.cart}</svg><br>
     ${RETURN?"Return mode.<br>Ring the items coming back.":"No items yet.<br>Tap a key to start a sale."}</div>`;

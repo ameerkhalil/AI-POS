@@ -2065,6 +2065,224 @@ body.tp-plain .grand .amt{font-size:40px}
   .cls-pad{grid-template-columns:repeat(4,1fr)}
 }
 
+/* ================================ MENU ================================ */
+#vSale.shell-menu{display:block;padding:0;overflow:hidden}
+.mn{display:grid;grid-template-rows:auto minmax(0,1fr);height:100%;background:var(--bg);position:relative}
+.mn-cats{display:flex;gap:8px;padding:16px 18px;overflow-x:auto;border-bottom:1px solid var(--line)}
+.mn-cats button{flex:none;padding:12px 22px;border-radius:99px;font-size:15px;font-weight:600;
+  color:var(--txt-2);border:1px solid var(--line);transition:all .15s}
+.mn-cats button:hover{color:var(--txt);border-color:var(--line-2)}
+.mn-cats button.on{background:var(--vfd);color:#20120A;border-color:var(--vfd)}
+.mn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;
+  padding:18px 18px 110px;overflow-y:auto;align-content:start}
+.mn-t{background:linear-gradient(155deg,var(--c) 0%,color-mix(in srgb,var(--c) 62%,black) 130%);
+  border-radius:var(--r2);padding:22px 20px;min-height:132px;display:flex;flex-direction:column;
+  justify-content:space-between;gap:12px;color:#fff;text-align:left;border:none;
+  box-shadow:0 6px 20px rgba(0,0,0,.28);animation:keyLand .45s cubic-bezier(.16,1.4,.4,1) both;
+  transition:transform .13s,box-shadow .16s,filter .13s}
+.mn-t:hover{transform:translateY(-3px);filter:brightness(1.12);box-shadow:0 12px 32px rgba(0,0,0,.4)}
+.mn-t:active{transform:translateY(0) scale(.985)}
+.mn-n{font-size:19px;font-weight:600;line-height:1.2;text-shadow:0 1px 4px rgba(0,0,0,.35)}
+.mn-p{font-size:23px;font-weight:500}
+.mn-o{font-size:11.5px;opacity:.75;letter-spacing:.08em;text-transform:uppercase}
+.mn-empty{grid-column:1/-1;padding:60px;text-align:center;color:var(--txt-3)}
+.mn-bar{position:absolute;left:18px;right:18px;bottom:18px;display:flex;align-items:center;gap:16px;
+  padding:18px 24px;border-radius:99px;background:var(--vfd);color:#20120A;border:none;
+  box-shadow:0 12px 34px rgba(0,0,0,.42);z-index:3;transition:opacity .2s,transform .15s}
+.mn-bar.off{opacity:.42}
+.mn-bar:hover{transform:translateY(-2px)}
+.mn-cnt{min-width:32px;height:32px;border-radius:99px;background:rgba(0,0,0,.2);display:grid;
+  place-items:center;font-weight:700;font-size:15px;padding:0 10px}
+.mn-lbl{flex:1;text-align:left;font-size:16px;font-weight:600}
+.mn-tot{font-size:22px;font-weight:600}
+.mn-sheet{position:absolute;left:0;right:0;bottom:0;top:16%;background:var(--panel);
+  border-radius:24px 24px 0 0;border-top:1px solid var(--line);z-index:4;display:flex;
+  flex-direction:column;transform:translateY(102%);transition:transform .38s cubic-bezier(.16,1,.3,1);
+  box-shadow:0 -20px 60px rgba(0,0,0,.5)}
+.mn-sheet.up{transform:none}
+.mn-sh{display:flex;justify-content:space-between;align-items:center;padding:20px 24px 14px;
+  border-bottom:1px solid var(--line)}
+.mn-sh b{font-size:19px;font-weight:600}
+.mn-sh button{font-size:13.5px;color:var(--txt-2);padding:8px 14px;border:1px solid var(--line);
+  border-radius:99px}
+.mn-lines{flex:1;overflow-y:auto;padding:8px 0}
+.mn-l{display:grid;grid-template-columns:34px minmax(0,1fr) auto 34px;gap:12px;align-items:center;
+  padding:13px 24px;font-size:15px}
+.mn-lq{font-family:var(--fm),monospace;color:var(--vfd);font-weight:600}
+.mn-ln em{display:block;font-style:normal;font-size:12px;color:var(--txt-3);margin-top:2px}
+.mn-la{font-size:15px}
+.mn-lx{color:var(--txt-3);font-size:19px}
+.mn-lx:hover{color:var(--void)}
+.mn-empty2,.mn-none{padding:36px;text-align:center;color:var(--txt-3);font-size:14px}
+.mn-sums{border-top:1px solid var(--line);padding:14px 24px}
+.mn-sums div{display:flex;justify-content:space-between;padding:4px 0;font-size:13.5px;color:var(--txt-2)}
+.mn-sums div.big{font-size:17px;color:var(--txt);padding-top:10px;margin-top:6px;
+  border-top:1px solid var(--line)}
+.mn-sums div.big b{font-size:30px;color:var(--vfd);font-weight:600}
+.mn-pay{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;padding:0 24px 24px}
+.mn-pay button{padding:20px 10px;border-radius:var(--r2);background:var(--vfd);color:#20120A;
+  font-size:16px;font-weight:600;border:none}
+.mn-pay button:nth-child(n+2){background:var(--up);color:var(--txt);border:1px solid var(--line-2)}
+.mn-pay button[disabled]{opacity:.3}
+
+/* ============================== TERMINAL ============================== */
+#vSale.shell-terminal{display:block;padding:0;overflow:hidden;background:#000}
+.tm{display:grid;grid-template-rows:auto minmax(0,1fr);height:100%;
+  font-family:"IBM Plex Mono",monospace;font-size:13px;color:#FFB000}
+.tm-head{display:flex;gap:26px;padding:9px 16px;border-bottom:1px solid #3A3320;
+  letter-spacing:.1em;font-size:11.5px;background:#080A08}
+.tm-head span:last-child{margin-left:auto}
+.tm-cols{display:grid;grid-template-columns:minmax(0,1fr) 250px;min-height:0}
+.tm-main{display:flex;flex-direction:column;min-height:0;border-right:1px solid #3A3320}
+.tm-hdr,.tm-l{display:grid;grid-template-columns:52px minmax(0,1fr) 92px 104px;gap:10px;
+  padding:6px 16px}
+.tm-hdr{border-bottom:1px solid #3A3320;font-size:11px;letter-spacing:.12em;color:#8A7333}
+.tm-hdr span:nth-child(3),.tm-hdr span:nth-child(4),
+.tm-l span:nth-child(3),.tm-l span:nth-child(4){text-align:right}
+.tm-lines{flex:1;overflow-y:auto;padding:5px 0}
+.tm-l{cursor:pointer;white-space:pre}
+.tm-l:hover{background:rgba(255,176,0,.08)}
+.tm-l.on{background:rgba(255,176,0,.16);box-shadow:inset 3px 0 0 #FFB000}
+.tm-idle{padding:30px 16px;color:#6B5A28;letter-spacing:.14em}
+.tm-sums{border-top:1px solid #3A3320;padding:9px 16px}
+.tm-sums div{display:flex;justify-content:space-between;padding:2px 0;font-size:12.5px;color:#C89A38}
+.tm-sums div.tot{border-top:1px solid #3A3320;margin-top:6px;padding-top:8px;font-size:17px;color:#FFB000}
+.tm-sums b{font-weight:500}
+.tm-cmd{display:flex;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid #3A3320;
+  background:#0B0D09}
+.tm-prompt{color:#FFB000;font-size:17px}
+.tm-cmd input{flex:1;background:none;border:none;color:#FFB000;font-family:inherit;font-size:15px;
+  outline:none;caret-color:#FFB000}
+.tm-cmd input::placeholder{color:#6B5A28}
+.tm-log{padding:0 16px 10px;min-height:56px;font-size:11.5px;color:#8A7333;background:#0B0D09}
+.tm-log .bad{color:#E0603C}
+.tm-side{padding:12px;overflow-y:auto;background:#050705}
+.tm-sh{font-size:10.5px;letter-spacing:.16em;color:#6B5A28;padding:0 2px 8px}
+.tm-fk{display:flex;gap:11px;align-items:baseline;width:100%;padding:9px 11px;
+  border:1px solid #2C2716;border-radius:0;margin-bottom:4px;text-align:left;
+  transition:background .1s,border-color .1s}
+.tm-fk:hover{background:rgba(255,176,0,.09);border-color:#3A3320}
+.tm-fk b{font-weight:500;color:#FFB000;font-size:12px;width:26px;flex:none}
+.tm-fk span{font-size:11.5px;color:#C89A38;letter-spacing:.06em}
+.tm-pay{display:block;width:100%;padding:13px;margin-bottom:5px;border:1px solid #3A3320;
+  background:rgba(255,176,0,.07);color:#FFB000;font-family:inherit;font-size:12.5px;
+  letter-spacing:.12em;text-align:center}
+.tm-pay:hover{background:rgba(255,176,0,.16)}
+.tm-pay[disabled]{opacity:.3}
+
+/* ============================= CATALOGUE ============================= */
+#vSale.shell-catalogue{display:block;padding:0;overflow:hidden}
+.ct{display:grid;grid-template-columns:236px minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;
+  height:100%;background:var(--bg)}
+.ct-side{grid-row:1/3;border-right:1px solid var(--line);padding:24px 18px;overflow-y:auto;
+  background:var(--panel)}
+.ct-brand{display:flex;align-items:center;gap:11px;margin-bottom:26px}
+.ct-brand img{width:34px;height:34px;object-fit:contain;border-radius:8px;background:#fff;padding:3px}
+.ct-brand b{font-size:17px;font-weight:600;letter-spacing:-.02em;line-height:1.2}
+.ct-cats{display:flex;flex-direction:column;gap:1px}
+.ct-cats button{display:flex;justify-content:space-between;align-items:baseline;padding:11px 12px;
+  text-align:left;font-size:15px;color:var(--txt-2);border-radius:8px;transition:all .14s}
+.ct-cats button:hover{background:rgba(0,0,0,.04);color:var(--txt)}
+.ct-cats button.on{background:color-mix(in srgb,var(--vfd) 14%,transparent);color:var(--txt);
+  font-weight:600}
+.ct-cats em{font-style:normal;font-size:11.5px;color:var(--txt-3);font-family:var(--fm),monospace}
+.ct-srch{margin-top:22px}
+.ct-srch input{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:9px;
+  background:var(--bg);color:var(--txt);font-size:14px}
+.ct-main{overflow-y:auto;padding:28px 30px 24px;min-height:0}
+.ct-h{display:flex;align-items:baseline;gap:14px;margin-bottom:20px}
+.ct-h h2{font-size:30px;font-weight:600;letter-spacing:-.025em}
+.ct-h span{font-size:13px;color:var(--txt-3)}
+.ct-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(238px,1fr));gap:16px}
+.ct-c{background:var(--panel);border:1px solid var(--line);border-radius:var(--r2);overflow:hidden;
+  display:flex;flex-direction:column;text-align:left;
+  animation:keyLand .45s cubic-bezier(.16,1.3,.4,1) both;
+  transition:transform .15s,box-shadow .18s,border-color .15s}
+.ct-c:hover{transform:translateY(-3px);border-color:var(--vfd);box-shadow:0 14px 34px rgba(0,0,0,.09)}
+.ct-swatch{display:block;height:76px}
+.ct-body{padding:16px 17px 12px;flex:1}
+.ct-n{display:block;font-size:16px;font-weight:600;line-height:1.3}
+.ct-o{display:block;font-size:12px;color:var(--txt-3);margin-top:5px}
+.ct-f{display:flex;justify-content:space-between;align-items:center;padding:13px 17px;
+  border-top:1px solid var(--line)}
+.ct-p{font-size:17px;font-weight:500}
+.ct-add{font-size:12px;color:var(--vfd);border:1px solid color-mix(in srgb,var(--vfd) 45%,transparent);
+  border-radius:99px;padding:4px 13px}
+.ct-empty{grid-column:1/-1;padding:60px;text-align:center;color:var(--txt-3)}
+.ct-bar{grid-column:2;display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:22px;
+  align-items:center;padding:16px 30px;border-top:1px solid var(--line);background:var(--panel);
+  opacity:.55;transition:opacity .2s}
+.ct-bar.on{opacity:1}
+.ct-items{display:flex;gap:7px;flex-wrap:wrap;min-width:0}
+.ct-chip{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:99px;
+  background:var(--bg);border:1px solid var(--line);font-size:13px;cursor:pointer}
+.ct-chip:hover{border-color:var(--void);color:var(--void)}
+.ct-chip em{font-style:normal;opacity:.5}
+.ct-none,.ct-more{font-size:13px;color:var(--txt-3)}
+.ct-tot span{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--txt-3)}
+.ct-tot b{font-size:26px;font-weight:600}
+.ct-pay{display:flex;gap:8px}
+.ct-pay button{padding:14px 22px;border-radius:10px;background:var(--vfd);color:#1A1226;
+  font-size:14.5px;font-weight:600}
+.ct-pay button:nth-child(n+2){background:var(--bg);color:var(--txt);border:1px solid var(--line)}
+.ct-pay button[disabled]{opacity:.35}
+
+/* ================================ PAD ================================ */
+#vSale.shell-pad{display:block;padding:0;overflow:hidden}
+.pd{display:grid;grid-template-rows:auto auto minmax(0,1fr);height:100%;background:var(--bg);
+  position:relative;max-width:760px;margin:0 auto;width:100%;border-left:1px solid var(--line);
+  border-right:1px solid var(--line)}
+.pd-top{display:flex;justify-content:space-between;align-items:baseline;padding:18px 20px 12px}
+.pd-top b{font-size:21px;font-weight:600;letter-spacing:-.02em}
+.pd-top span{font-size:13px;color:var(--txt-3)}
+.pd-cats{display:flex;gap:7px;padding:0 20px 14px;overflow-x:auto}
+.pd-cats button{flex:none;padding:11px 20px;border-radius:99px;font-size:14.5px;font-weight:600;
+  border:1.5px solid var(--line);color:var(--txt-2)}
+.pd-cats button.on{background:var(--vfd);border-color:var(--vfd);color:#08211F}
+.pd-list{overflow-y:auto;padding:0 20px 150px}
+.pd-r{display:grid;grid-template-columns:12px minmax(0,1fr) auto 44px;gap:14px;align-items:center;
+  width:100%;padding:20px 18px;margin-bottom:9px;border-radius:var(--r2);background:var(--panel);
+  border:1px solid var(--line);text-align:left;
+  animation:keyLand .4s cubic-bezier(.16,1.3,.4,1) both;transition:transform .12s,border-color .14s}
+.pd-r:hover{border-color:var(--vfd)}
+.pd-r:active{transform:scale(.985)}
+.pd-dot{width:12px;height:12px;border-radius:99px}
+.pd-n{font-size:18px;font-weight:600;line-height:1.25}
+.pd-p{font-size:19px;font-weight:500}
+.pd-plus{width:38px;height:38px;border-radius:99px;background:var(--vfd);color:#08211F;
+  display:grid;place-items:center;font-size:23px;font-weight:600;line-height:1}
+.pd-empty,.pd-empty2{padding:50px;text-align:center;color:var(--txt-3)}
+.pd-sheet{position:absolute;left:0;right:0;bottom:0;background:var(--panel);
+  border-top:1px solid var(--line);border-radius:22px 22px 0 0;z-index:3;
+  box-shadow:0 -14px 46px rgba(0,0,0,.16);
+  transform:translateY(calc(100% - 88px));transition:transform .4s cubic-bezier(.16,1,.3,1)}
+.pd-sheet.up{transform:translateY(0)}
+.pd-handle{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;
+  width:100%;padding:20px 24px 16px;position:relative}
+.pd-grip{position:absolute;left:50%;top:9px;transform:translateX(-50%);width:42px;height:4px;
+  border-radius:99px;background:var(--line-2)}
+.pd-hl{font-size:16px;font-weight:600;text-align:left}
+.pd-ht{font-size:24px;font-weight:600;color:var(--vfd)}
+.pd-inner{max-height:56vh;display:flex;flex-direction:column}
+.pd-lines{flex:1;overflow-y:auto;padding:0 24px}
+.pd-l{display:grid;grid-template-columns:30px minmax(0,1fr) auto 30px;gap:12px;align-items:center;
+  padding:14px 0;border-top:1px solid var(--line);font-size:15.5px}
+.pd-lq{font-family:var(--fm),monospace;color:var(--vfd);font-weight:600}
+.pd-l button{color:var(--txt-3);font-size:19px}
+.pd-pay{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:9px;padding:16px 24px 24px}
+.pd-pay button{padding:20px 8px;border-radius:14px;background:var(--vfd);color:#08211F;
+  font-size:16px;font-weight:600}
+.pd-pay button:nth-child(n+2){background:var(--bg);color:var(--txt);border:1px solid var(--line)}
+.pd-pay button[disabled]{opacity:.32}
+
+@media(max-width:900px){
+  .tm-cols{grid-template-columns:1fr}
+  .ct{grid-template-columns:1fr}
+  .ct-side{grid-row:auto;border-right:none;border-bottom:1px solid var(--line)}
+  .ct-bar{grid-column:1}
+}
+
 .tchip.save{transition:color .2s,border-color .2s}
 .tchip.save.pending{color:var(--warn);border-color:rgba(224,178,85,.4)}
 .tchip.save.saving{color:var(--txt-2)}
@@ -2248,69 +2466,35 @@ const TYPES=TYPE_GROUPS.flatMap(g=>g[1]);
    Different type, different palette, different arrangement, different weight.
    Every one has been drawn deliberately and works — which is worth more than
    the freedom to build something that doesn't. */
+/* Five registers. Not one design in five colourways — five different machines
+   that happen to share a database. Different shell, different interaction,
+   different typeface, different palette. Somebody shown two of these would not
+   guess they were the same software. */
 const LAYOUTS=[
- {k:"counter",n:"Counter",tag:"Convenience, hardware, anywhere with a scanner",
-  font:"Archivo",mono:"Azeret Mono",mode:"dark",accent:"#5CE0A8",
-  bg:"#1B2023",panel:"#242A2D",line:"#333B3E",key:"#394145",
-  keyMin:150,density:1,radius:4,fs:1,search:true,fkeys:true,
-  tape:"left",depts:"tabs",keyStyle:"tile",nav:"rail",tapeStyle:"receipt",
-  why:"Compact tiles, sections across the top, receipt down the left. The workhorse — a broad pricebook, a scanner, and a queue."},
+ {k:"classic",n:"Classic",tag:"Convenience, liquor, hardware",
+  shell:"classic",font:"Archivo",mono:"Azeret Mono",mode:"dark",accent:"#5CE0A8",
+  bg:"#141819",panel:"#1C2123",line:"#2E3639",key:"#262C2F",radius:3,
+  why:"A keypad, department keys and a line display. No product grid at all — type a price and press a department, or scan. What a Verifone or an NCR looks like, and what most counters have actually run for thirty years."},
 
- {k:"kitchen",n:"Kitchen",tag:"Pizzerias, delis, anywhere with a hot line",
-  font:"Space Grotesk",mono:"Space Mono",mode:"dark",accent:"#F2762E",
-  bg:"#191512",panel:"#241D18",line:"#3A2F26",key:"#33291F",
-  keyMin:216,density:1.28,radius:16,fs:1.14,search:false,fkeys:true,
-  tape:"right",depts:"tabs",keyStyle:"pad",nav:"top",tapeStyle:"list",
-  why:"Big soft pads, warm and high-contrast, navigation across the top. Made to be read at arm's length in a hot kitchen."},
+ {k:"menu",n:"Menu",tag:"Cafés, pizzerias, bars, food trucks",
+  shell:"menu",font:"Space Grotesk",mono:"Space Mono",mode:"dark",accent:"#FF7A45",
+  bg:"#17110E",panel:"#231A15",line:"#3B2B22",key:"#2E211A",radius:18,
+  why:"Products edge to edge, as big and colourful as the screen allows. No order panel taking up room — it lives behind one button and slides up over the top when you want it."},
 
- {k:"ledger",n:"Ledger",tag:"Grocery, pharmacy, thousands of lines",
-  font:"IBM Plex Sans",mono:"IBM Plex Mono",mode:"dark",accent:"#79A6E0",
-  bg:"#15181C",panel:"#1D2126",line:"#2C323A",key:"#232830",
-  keyMin:260,density:.82,radius:2,fs:.94,search:true,fkeys:true,
-  tape:"left",depts:"rail",keyStyle:"list",nav:"rail",tapeStyle:"receipt",
-  why:"Products as dense rows, sharp edges, sections down the side. Three times as many on screen for a pricebook you scan more than you tap."},
+ {k:"terminal",n:"Terminal",tag:"Parts counters, pharmacy, wholesale",
+  shell:"terminal",font:"IBM Plex Mono",mono:"IBM Plex Mono",mode:"contrast",accent:"#FFB000",
+  bg:"#000000",panel:"#080A08",line:"#3A3320",key:"#141208",radius:0,
+  why:"A command line. Type a barcode, or three-times-a-code, and press enter. Amber on black, no pictures, function keys down the side. Nobody needs to lift a hand off the keyboard."},
 
- {k:"boutique",n:"Boutique",tag:"Clothing, jewellery, considered purchases",
-  font:"Fraunces",mono:"Azeret Mono",mode:"light",accent:"#8C6BC8",
-  bg:"#F4F1EC",panel:"#FBF9F6",line:"#DED8CF",key:"#EFEBE4",
-  keyMin:234,density:1.34,radius:14,fs:1.06,search:true,fkeys:false,
-  tape:"right",depts:"rail",keyStyle:"card",nav:"rail",tapeStyle:"plain",
-  why:"Light, serif, unhurried. Roomy cards with space for sizes and colours, no function row. For one sale that takes a conversation."},
+ {k:"catalogue",n:"Catalogue",tag:"Clothing, jewellery, furniture",
+  shell:"catalogue",font:"Fraunces",mono:"Azeret Mono",mode:"light",accent:"#7B5EA7",
+  bg:"#F5F2ED",panel:"#FDFBF8",line:"#E2DBD1",key:"#EFEAE2",radius:14,
+  why:"Browse first. Large cards with room for sizes, categories set in a serif down the side, and the order along the bottom where it isn't competing for attention."},
 
- {k:"bar",n:"Last Call",tag:"Bars, taprooms, running tabs",
-  font:"Archivo",mono:"Azeret Mono",mode:"dark",accent:"#E0A03C",
-  bg:"#0F1113",panel:"#181B1E",line:"#2A2F34",key:"#22272C",
-  keyMin:180,density:1.12,radius:9,fs:1.05,search:false,fkeys:true,
-  tape:"right",depts:"rail",keyStyle:"tile",nav:"rail",tapeStyle:"list",
-  why:"Near-black and amber, so it doesn't light up the room. Sections down the side, tab on the right where it gets read back."},
-
- {k:"kiosk",n:"Kiosk",tag:"Tablets, food trucks, narrow counters",
-  font:"Space Grotesk",mono:"Space Mono",mode:"light",accent:"#0FA3A3",
-  bg:"#F2F4F3",panel:"#FFFFFF",line:"#DCE2E0",key:"#E7ECEA",
-  keyMin:250,density:1.5,radius:22,fs:1.22,search:false,fkeys:false,
-  tape:"bottom",depts:"tabs",keyStyle:"pad",nav:"top",tapeStyle:"plain",
-  why:"Very large targets, almost no chrome, order along the bottom. Bright enough to work outdoors and simple enough to hand over."},
-
- {k:"market",n:"Market",tag:"Cafés, bakeries, farm stands",
-  font:"Fraunces",mono:"IBM Plex Mono",mode:"light",accent:"#4E8C48",
-  bg:"#F6F4EE",panel:"#FDFCF8",line:"#E0DACC",key:"#EDE9DE",
-  keyMin:186,density:1.16,radius:10,fs:1.06,search:true,fkeys:true,
-  tape:"left",depts:"tabs",keyStyle:"tile",nav:"top",tapeStyle:"receipt",
-  why:"Warm paper, a serif for the names, navigation across the top. Feels like a counter rather than a computer."},
-
- {k:"classic",n:"Classic",tag:"Convenience, liquor, hardware — scan and key",
-  font:"Archivo",mono:"Azeret Mono",mode:"dark",accent:"#5CE0A8",
-  bg:"#141819",panel:"#1C2123",line:"#2E3639",key:"#262C2F",
-  keyMin:150,density:1,radius:3,fs:1,search:false,fkeys:false,
-  tape:"left",depts:"tabs",keyStyle:"tile",nav:"rail",tapeStyle:"receipt",shell:"classic",
-  why:"No product grid at all. A keypad, department keys and a line display — type a price, press a department, or scan. What a Verifone or an NCR looks like, and what most counters have actually run for thirty years."},
-
- {k:"midnight",n:"Midnight",tag:"Late trade, dim rooms, tired eyes",
-  font:"IBM Plex Sans",mono:"IBM Plex Mono",mode:"contrast",accent:"#33E0E0",
-  bg:"#000000",panel:"#0A0C0D",line:"#3A4448",key:"#141819",
-  keyMin:196,density:1.18,radius:0,fs:1.1,search:true,fkeys:true,
-  tape:"right",depts:"tabs",keyStyle:"tile",nav:"rail",tapeStyle:"list",
-  why:"True black, hard edges, one bright colour. Maximum contrast for a night shift or anyone who finds the others hard to read."}
+ {k:"pad",n:"Pad",tag:"Market stalls, pop-ups, tablets",
+  shell:"pad",font:"Space Grotesk",mono:"Space Mono",mode:"light",accent:"#0E9B8E",
+  bg:"#F1F5F4",panel:"#FFFFFF",line:"#DCE5E3",key:"#E8EFED",radius:20,
+  why:"One column, everything oversized, order as a sheet you pull up from the bottom. Built for a tablet held in one hand."}
 ];
 const ACCENTS=[
  ["#5CE0A8","Mint"],["#3FBF8F","Jade"],["#2FA3A3","Teal"],["#4FD6D6","Aqua"],
@@ -2322,15 +2506,11 @@ const ACCENTS=[
 ];
 function suggestLayout(){
   const t=(A.type+" "+A.desc).toLowerCase();
-  if(/bar|pub|brewery|taproom|liquor/.test(t))return "bar";
-  if(/pizz|restaurant|fast food|deli|sandwich/.test(t))return "kitchen";
-  if(/food truck|kiosk|stand|juice|ice cream/.test(t))return "kiosk";
-  if(/caf|coffee|bakery|farm|cheese|produce|florist/.test(t))return "market";
-  if(/cloth|boutique|shoe|jewel|watch|handbag|furniture|antique|salon|spa/.test(t))return "boutique";
-  if(/grocer|supermarket|pharmac|hardware|auto parts|feed|market/.test(t))return "ledger";
-  if(/vape|smoke|tobacco|dispensary/.test(t))return "midnight";
-  if(/convenience|gas station|truck stop|bodega|liquor|hardware|auto parts/.test(t))return "classic";
-  return "counter";
+  if(/caf|coffee|pizz|restaurant|bar|pub|brewery|deli|bakery|juice|ice cream/.test(t))return "menu";
+  if(/food truck|kiosk|stand|market stall|pop/.test(t))return "pad";
+  if(/cloth|boutique|shoe|jewel|watch|handbag|furniture|antique|gift|book|record/.test(t))return "catalogue";
+  if(/pharmac|auto parts|wholesale|electrical|plumb|supply|feed/.test(t))return "terminal";
+  return "classic";
 }
 function suggestAccent(){
   const t=(A.type+" "+A.desc).toLowerCase();
@@ -3514,7 +3694,9 @@ function wireSale(){
   $("search").onkeydown=e=>{if(e.key==="Enter"){const p=CFG.plus.find(x=>x.upc===FILTER);
     if(p){ring(p);$("search").value="";FILTER="";drawGrid()}}};
   $("tenders").onclick=e=>{const b=e.target.closest(".tender");if(b&&CART.length)tender(byId(CFG.mops,b.dataset.m))};
-  renderTenders();renderSubops();renderFkeys();drawMenus();drawGrid();refreshSale();wedge();
+  const sh=typeof THEME!=="undefined"&&THEME.shell;
+  if(sh&&sh!=="panels"){refreshSale();wedge()}
+  else{renderTenders();renderSubops();renderFkeys();drawMenus();drawGrid();refreshSale();wedge()}
   if(THEME.searchLeads!==false&&$("search"))setTimeout(()=>$("search").focus(),120);
   toast("Tap a key, scan a barcode, or search to start a sale.");
 }
@@ -3726,14 +3908,16 @@ function setTotal(v){
 }
 /* Two shells now render the same sale. Everything that changes the cart calls
    this instead of assuming the panel-and-grid layout is on screen. */
+const SHELLS={classic:()=>drawClassic(),menu:()=>drawMenuShell(),
+  terminal:()=>drawTerminalShell(),catalogue:()=>drawCatalogueShell(),pad:()=>drawPadShell()};
 function refreshSale(){
-  if(typeof THEME!=="undefined"&&THEME.shell==="classic"&&typeof drawClassic==="function")
-    return drawClassic();
+  const s=typeof THEME!=="undefined"&&THEME.shell;
+  if(s&&SHELLS[s])return SHELLS[s]();
   drawCart();
 }
 function drawCart(){
-  if(typeof THEME!=="undefined"&&THEME.shell==="classic"&&typeof drawClassic==="function")
-    return drawClassic();
+  const s=typeof THEME!=="undefined"&&THEME.shell;
+  if(s&&s!=="panels"&&SHELLS[s])return SHELLS[s]();
   const L=$("lines");
   if(!CART.length)L.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24">${ICONS.cart}</svg><br>
     ${RETURN?"Return mode.<br>Ring the items coming back.":"No items yet.<br>Tap a key to start a sale."}</div>`;
@@ -5241,7 +5425,9 @@ function applyTheme(){
      actually make one trade's register look unlike another's. */
   const sale=$("vSale");
   if(sale){
-    sale.classList.toggle("shell-classic",THEME.shell==="classic");
+    ["classic","menu","terminal","catalogue","pad","panels"].forEach(s=>
+      sale.classList.remove("shell-"+s));
+    sale.classList.add("shell-"+(THEME.shell||"panels"));
     sale.classList.remove("tape-left","tape-right","tape-bottom");
     sale.classList.add("tape-"+(THEME.tape||"left"));
     sale.classList.toggle("depts-rail",THEME.depts==="rail");
@@ -5319,7 +5505,7 @@ function health(){
   themeIssues().forEach(i=>f.push({sev:i.t==="warn"?"warn":"info",t:"Appearance",d:i.m,fix:null}));
   return f;
 }
-const BUILD="c21561860f";
+const BUILD="ba6f77511e";
 function tHealth(){
   const f=health();
   window.__fix=i=>{f[i].fix&&f[i].fix();reload();drawConfig()};
@@ -7543,6 +7729,300 @@ function clsKeyboard(e) {
     CLS_ENTRY = CLS_ENTRY.slice(0, -1); drawClassic(); e.preventDefault();
   }
 }
+
+/* ===========================================================================
+   Four more registers.
+
+   Each of these renders the sale screen from scratch. They do not share a
+   skeleton with each other or with Classic — different structure, different
+   interaction, different type, different colour. What they share is everything
+   underneath: one CART, one calc(), one tender path, one set of restrictions.
+
+     menu       full-bleed tiles, no cart panel, order slides up over the top
+     terminal   a command line. Type a code, press enter. Text only.
+     catalogue  browse-first, large cards, order along the bottom
+     pad        one column of big rows, order as a sheet you pull up
+   =========================================================================== */
+
+let SH_CAT = 0, SH_OPEN = false, SH_CMD = "", SH_LOG = [];
+
+const shDepts = () => CFG.menus.filter(m => !m.fuel);
+const shKeys = () => {
+  const m = shDepts()[SH_CAT];
+  return m ? m.keys.map(k => ({ k, p: byId(CFG.plus, k.pluId) })).filter(x => x.p) : [];
+};
+const shCount = () => CART.reduce((a, c) => a + c.q, 0);
+
+/* ============================== MENU ==============================
+   No cart on screen. Products edge to edge, as big and as colourful as they
+   can be. The order lives behind a button and slides up when you want it —
+   which is how a counter with a queue actually works: hands on products,
+   totals at the end. */
+function drawMenuShell() {
+  const t = calc(), items = shKeys(), cats = shDepts();
+  document.getElementById("vSale").innerHTML = `
+    <div class="mn">
+      <div class="mn-cats">
+        ${cats.map((m, i) => `<button class="${i === SH_CAT ? "on" : ""}"
+          onclick="__sh.cat(${i})">${esc(m.n)}</button>`).join("")}
+      </div>
+      <div class="mn-grid">
+        ${items.length ? items.map(({ k, p }, i) => {
+          const d = byId(CFG.depts, p.deptId);
+          const col = k.color || d?.color || "#3E464A";
+          return `<button class="mn-t" onclick="__sh.ring('${p.id}')"
+            style="--c:${col};animation-delay:${Math.min(i * 22, 320)}ms">
+            <span class="mn-n">${esc(k.label || p.n)}</span>
+            <span class="mn-p num">${money(p.price)}</span>
+            ${p.modIds?.length ? `<span class="mn-o">options</span>` : ""}
+          </button>`;
+        }).join("") : `<div class="mn-empty">Nothing on this menu yet</div>`}
+      </div>
+      <button class="mn-bar ${CART.length ? "" : "off"}" onclick="__sh.open()">
+        <span class="mn-cnt">${shCount()}</span>
+        <span class="mn-lbl">${CART.length ? "View the order" : "No items yet"}</span>
+        <span class="mn-tot num">${money(Math.abs(t.tot))}</span>
+      </button>
+      <div class="mn-sheet ${SH_OPEN ? "up" : ""}">
+        <div class="mn-sh">
+          <b>Current order</b>
+          <button onclick="__sh.close()">Back to the menu</button>
+        </div>
+        <div class="mn-lines">
+          ${CART.map((c, i) => `<div class="mn-l">
+            <span class="mn-lq">${c.q}</span>
+            <span class="mn-ln">${esc(c.n)}${c.mods?.length ? `<em>${esc(c.mods.join(", "))}</em>` : ""}</span>
+            <span class="mn-la num">${money(c.price * c.q * (1 - (c.disc || 0) / 100))}</span>
+            <button class="mn-lx" onclick="__sh.drop(${i})">×</button>
+          </div>`).join("") || `<div class="mn-empty2">Nothing added</div>`}
+        </div>
+        <div class="mn-sums">
+          ${CFG.taxRates.filter(r => r.rate > 0 && Math.abs(t.taxes[r.id] || 0) > 0.001)
+            .map(r => `<div><span>${esc(r.n)}</span><b class="num">${money(t.taxes[r.id])}</b></div>`).join("")}
+          <div class="big"><span>Total</span><b class="num">${money(Math.abs(t.tot))}</b></div>
+        </div>
+        <div class="mn-pay">
+          ${CFG.mops.map(m => `<button onclick="__sh.tender('${m.id}')"
+            ${CART.length ? "" : "disabled"}>${esc(m.n)}</button>`).join("")}
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ============================ TERMINAL ============================
+   A command line. Type a barcode, a PLU number, or a quantity and a code, and
+   press enter. No mouse required and no pictures — which is what a parts
+   counter, a pharmacy or a wholesale desk actually wants. */
+function drawTerminalShell() {
+  const t = calc();
+  document.getElementById("vSale").innerHTML = `
+    <div class="tm">
+      <div class="tm-head">
+        <span>${esc(CFG.site.name).toUpperCase()}</span>
+        <span>REG ${esc(CFG.site.register)}</span>
+        <span>${esc(ME ? ME.n.toUpperCase() : "")}</span>
+        <span>${RETURN ? "** RETURN **" : "SALE"}</span>
+      </div>
+      <div class="tm-cols">
+        <div class="tm-main">
+          <div class="tm-hdr">
+            <span>QTY</span><span>DESCRIPTION</span><span>PRICE</span><span>AMOUNT</span>
+          </div>
+          <div class="tm-lines" id="tmLines">
+            ${CART.map((c, i) => `<div class="tm-l ${SEL === i ? "on" : ""}" onclick="__sh.sel(${i})">
+              <span>${String(c.q).padStart(3)}</span>
+              <span>${esc(c.n.toUpperCase().slice(0, 40))}</span>
+              <span>${money(c.price)}</span>
+              <span>${money(c.price * c.q * (1 - (c.disc || 0) / 100))}</span>
+            </div>`).join("") || `<div class="tm-idle">-- NO ITEMS --</div>`}
+          </div>
+          <div class="tm-sums">
+            <div><span>SUBTOTAL</span><b>${money(t.sub)}</b></div>
+            ${CFG.taxRates.filter(r => r.rate > 0 && Math.abs(t.taxes[r.id] || 0) > 0.001)
+              .map(r => `<div><span>${esc(r.n.toUpperCase())} ${r.rate}%</span><b>${money(t.taxes[r.id])}</b></div>`).join("")}
+            <div class="tot"><span>${RETURN ? "REFUND" : "TOTAL"}</span><b>${money(Math.abs(t.tot))}</b></div>
+          </div>
+          <div class="tm-cmd">
+            <span class="tm-prompt">&gt;</span>
+            <input id="tmIn" autocomplete="off" spellcheck="false"
+              placeholder="barcode, or QTY*CODE, or ? to search">
+          </div>
+          <div class="tm-log">${SH_LOG.slice(-4).map(l =>
+            `<div class="${l.bad ? "bad" : ""}">${esc(l.t)}</div>`).join("")}</div>
+        </div>
+        <div class="tm-side">
+          <div class="tm-sh">FUNCTION KEYS</div>
+          ${[["F1", "PRICE CHECK", "look"], ["F2", "VOID LINE", "void"], ["F3", "DISCOUNT", "disc"],
+             ["F4", "NO SALE", "nosale"], ["F5", "SUSPEND", "hold"], ["F6", "RECALL", "recall"],
+             ["F7", "RETURN", "ret"], ["F8", "MENU", "menu"]].map(([k, n, a]) =>
+            `<button class="tm-fk" onclick="__sh.fn('${a}')"><b>${k}</b><span>${n}</span></button>`).join("")}
+          <div class="tm-sh" style="margin-top:14px">TENDER</div>
+          ${CFG.mops.map(m => `<button class="tm-pay" onclick="__sh.tender('${m.id}')"
+            ${CART.length ? "" : "disabled"}>${esc(m.n.toUpperCase())}</button>`).join("")}
+        </div>
+      </div>
+    </div>`;
+  const inp = document.getElementById("tmIn");
+  if (inp) {
+    inp.value = SH_CMD;
+    inp.oninput = e => { SH_CMD = e.target.value; };
+    inp.onkeydown = e => { if (e.key === "Enter") { __sh.run(); e.preventDefault(); } };
+    if (!document.querySelector(".veil")) inp.focus();
+  }
+  const box = document.getElementById("tmLines");
+  if (box) box.scrollTop = box.scrollHeight;
+}
+
+/* =========================== CATALOGUE ===========================
+   Browse-first. Large cards with room for options, categories spelled out down
+   the side in a serif, and the order along the bottom where it doesn't compete
+   for attention. For a shop where one sale takes a conversation. */
+function drawCatalogueShell() {
+  const t = calc(), items = shKeys(), cats = shDepts();
+  document.getElementById("vSale").innerHTML = `
+    <div class="ct">
+      <aside class="ct-side">
+        <div class="ct-brand">
+          ${CFG.site.logo ? `<img src="${esc(CFG.site.logo)}" alt="">` : ""}
+          <b>${esc(CFG.site.name)}</b>
+        </div>
+        <div class="ct-cats">
+          ${cats.map((m, i) => `<button class="${i === SH_CAT ? "on" : ""}"
+            onclick="__sh.cat(${i})">${esc(m.n)}<em>${m.keys.length}</em></button>`).join("")}
+        </div>
+        <div class="ct-srch">
+          <input id="ctQ" placeholder="Search" autocomplete="off">
+        </div>
+      </aside>
+      <main class="ct-main">
+        <div class="ct-h">
+          <h2>${esc(cats[SH_CAT] ? cats[SH_CAT].n : "")}</h2>
+          <span>${items.length} item${items.length === 1 ? "" : "s"}</span>
+        </div>
+        <div class="ct-grid">
+          ${items.map(({ k, p }, i) => {
+            const d = byId(CFG.depts, p.deptId);
+            return `<button class="ct-c" onclick="__sh.ring('${p.id}')"
+              style="animation-delay:${Math.min(i * 26, 340)}ms">
+              <span class="ct-swatch" style="background:${k.color || d?.color || "#8C6BC8"}"></span>
+              <span class="ct-body">
+                <span class="ct-n">${esc(k.label || p.n)}</span>
+                ${p.modIds?.length ? `<span class="ct-o">Sizes and options</span>` : ""}
+              </span>
+              <span class="ct-f"><span class="ct-p num">${money(p.price)}</span>
+                <span class="ct-add">Add</span></span>
+            </button>`;
+          }).join("") || `<div class="ct-empty">Nothing in this section</div>`}
+        </div>
+      </main>
+      <div class="ct-bar ${CART.length ? "on" : ""}">
+        <div class="ct-items">
+          ${CART.slice(-4).map((c, i) => `<span class="ct-chip" onclick="__sh.drop(${CART.indexOf(c)})">
+            ${c.q > 1 ? c.q + "× " : ""}${esc(c.n)}<em>×</em></span>`).join("")
+            || `<span class="ct-none">Nothing selected yet</span>`}
+          ${CART.length > 4 ? `<span class="ct-more">+${CART.length - 4} more</span>` : ""}
+        </div>
+        <div class="ct-tot"><span>Total</span><b class="num">${money(Math.abs(t.tot))}</b></div>
+        <div class="ct-pay">
+          ${CFG.mops.slice(0, 3).map(m => `<button onclick="__sh.tender('${m.id}')"
+            ${CART.length ? "" : "disabled"}>${esc(m.n)}</button>`).join("")}
+        </div>
+      </div>
+    </div>`;
+  const q = document.getElementById("ctQ");
+  if (q) q.oninput = e => { FILTER = e.target.value; drawCatalogueShell(); };
+}
+
+/* ============================== PAD ==============================
+   One column, everything oversized, order as a sheet you pull up from the
+   bottom. Built for a tablet held in one hand — a food truck, a market stall,
+   a pop-up. */
+function drawPadShell() {
+  const t = calc(), items = shKeys(), cats = shDepts();
+  document.getElementById("vSale").innerHTML = `
+    <div class="pd">
+      <div class="pd-top">
+        <b>${esc(CFG.site.name)}</b>
+        <span>${esc(ME ? ME.n : "")}</span>
+      </div>
+      <div class="pd-cats">
+        ${cats.map((m, i) => `<button class="${i === SH_CAT ? "on" : ""}"
+          onclick="__sh.cat(${i})">${esc(m.n)}</button>`).join("")}
+      </div>
+      <div class="pd-list">
+        ${items.map(({ k, p }, i) => {
+          const d = byId(CFG.depts, p.deptId);
+          return `<button class="pd-r" onclick="__sh.ring('${p.id}')"
+            style="animation-delay:${Math.min(i * 20, 280)}ms">
+            <span class="pd-dot" style="background:${k.color || d?.color || "#0FA3A3"}"></span>
+            <span class="pd-n">${esc(k.label || p.n)}</span>
+            <span class="pd-p num">${money(p.price)}</span>
+            <span class="pd-plus">+</span>
+          </button>`;
+        }).join("") || `<div class="pd-empty">Nothing here yet</div>`}
+      </div>
+      <div class="pd-sheet ${SH_OPEN ? "up" : ""}">
+        <button class="pd-handle" onclick="__sh.toggle()">
+          <span class="pd-grip"></span>
+          <span class="pd-hl">${shCount()} item${shCount() === 1 ? "" : "s"}</span>
+          <span class="pd-ht num">${money(Math.abs(t.tot))}</span>
+        </button>
+        <div class="pd-inner">
+          <div class="pd-lines">
+            ${CART.map((c, i) => `<div class="pd-l">
+              <span class="pd-lq">${c.q}</span>
+              <span class="pd-ln">${esc(c.n)}</span>
+              <span class="pd-la num">${money(c.price * c.q * (1 - (c.disc || 0) / 100))}</span>
+              <button onclick="__sh.drop(${i})">×</button>
+            </div>`).join("") || `<div class="pd-empty2">Tap a product to start</div>`}
+          </div>
+          <div class="pd-pay">
+            ${CFG.mops.map(m => `<button onclick="__sh.tender('${m.id}')"
+              ${CART.length ? "" : "disabled"}>${esc(m.n)}</button>`).join("")}
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ------------------------- shared interactions ------------------------- */
+window.__sh = {
+  cat(i) { SH_CAT = i; FILTER = ""; refreshSale(); },
+  ring(id) { ring(byId(CFG.plus, id)); },
+  drop(i) { CART.splice(i, 1); SEL = null; refreshSale(); },
+  sel(i) { SEL = SEL === i ? null : i; refreshSale(); },
+  open() { if (CART.length) { SH_OPEN = true; refreshSale(); } },
+  close() { SH_OPEN = false; refreshSale(); },
+  toggle() { SH_OPEN = !SH_OPEN; refreshSale(); },
+  tender(id) { const m = byId(CFG.mops, id); if (m && CART.length) tender(m); },
+  fn(a) {
+    ({ look: () => window.__cls.look(), void: () => window.__cls.voidLine(),
+       disc: () => CART.length && discPrompt(), nosale: () => noSale(),
+       hold: () => hold(), recall: () => recall(),
+       ret: () => toggleReturn(), menu: () => openMenu() })[a]?.();
+  },
+  /* The command line. A barcode rings it. "3*1234" rings three. "?" searches. */
+  run() {
+    const raw = SH_CMD.trim();
+    SH_CMD = "";
+    if (!raw) return refreshSale();
+    if (raw === "?" || raw.startsWith("?")) {
+      const q = raw.slice(1).trim();
+      if (q) FILTER = q;
+      return window.__cls.look();
+    }
+    let qty = 1, code = raw;
+    const m = /^(\d+)\s*[*x]\s*(.+)$/i.exec(raw);
+    if (m) { qty = Math.min(999, parseInt(m[1], 10)); code = m[2].trim(); }
+    const p = CFG.plus.find(x => x.upc === code)
+      || CFG.plus.find(x => x.n.toLowerCase() === code.toLowerCase())
+      || CFG.plus.find(x => x.n.toLowerCase().includes(code.toLowerCase()));
+    if (!p) { SH_LOG.push({ t: `NO MATCH FOR "${code.toUpperCase()}"`, bad: true }); return refreshSale(); }
+    for (let i = 0; i < qty; i++) ring(p);
+    SH_LOG.push({ t: `${qty} × ${p.n.toUpperCase()} @ ${money(p.price)}` });
+    refreshSale();
+  }
+};
 
 /* ============================ CONFIGURATION CLIENT ============================
    Modelled on Commander's Config Client and Passport's Manager Workstation:

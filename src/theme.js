@@ -97,7 +97,9 @@ function applyTheme(){
      actually make one trade's register look unlike another's. */
   const sale=$("vSale");
   if(sale){
-    sale.classList.toggle("shell-classic",THEME.shell==="classic");
+    ["classic","menu","terminal","catalogue","pad","panels"].forEach(s=>
+      sale.classList.remove("shell-"+s));
+    sale.classList.add("shell-"+(THEME.shell||"panels"));
     sale.classList.remove("tape-left","tape-right","tape-bottom");
     sale.classList.add("tape-"+(THEME.tape||"left"));
     sale.classList.toggle("depts-rail",THEME.depts==="rail");
