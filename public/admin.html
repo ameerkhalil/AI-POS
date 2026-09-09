@@ -321,7 +321,12 @@ async function viewAccount(id, email) {
   </div>`);
 }
 
-api("/api/me").then(me => { $("who").textContent = me.account.email; }).catch(() => {});
+api("/api/me").then(me => {
+  $("who").textContent = me.account.email;
+  /* An operator with no store has nothing to go back to. */
+  const back = document.querySelector(".top a");
+  if (back && !me.stores.length) back.remove();
+}).catch(() => {});
 load();
 </script>
 </body>

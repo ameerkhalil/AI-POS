@@ -125,7 +125,8 @@ app.get("/api/me", auth, (req, res) => {
   const stores = db.prepare(
     "SELECT s.id, s.name, (SELECT 1 FROM configs c WHERE c.store_id = s.id) AS configured " +
     "FROM stores s WHERE s.account_id = ? ORDER BY s.id").all(req.account.id);
-  res.json({ account: req.account, stores: stores.map(s => ({ ...s, configured: !!s.configured })) });
+  res.json({ account: req.account, operator: ADMIN.isOperator(req.account.id),
+    stores: stores.map(s => ({ ...s, configured: !!s.configured })) });
 });
 
 app.post("/api/stores", auth, (req, res) => {
@@ -361,6 +362,40 @@ app.post("/api/ai", auth, async (req, res) => {
     res.status(502).json({ error: `Couldn't reach the model: ${e.message}` });
   }
 });
+
+/* --------------------------- recovering an account ------------------------
+   Hosted with no shell and no mail server, a forgotten password is otherwise
+   terminal. Setting ADMIN_RESET to "email:newpassword" applies it once at boot,
+   says so loudly in the log, and records it in that account's activity so the
+   change is never silent. Remove the variable afterwards — it re-applies on
+   every deploy while it's set, which is a standing back door. */
+function resetOnBoot() {
+  const raw = String(process.env.ADMIN_RESET || "").trim();
+  if (!raw) return;
+  const at = raw.indexOf(":");
+  if (at < 1) return console.log("  ADMIN_RESET ignored — expected email:newpassword");
+
+  const email = raw.slice(0, at).trim().toLowerCase();
+  const pass = raw.slice(at + 1);
+  if (pass.length < 8)
+    return console.log("  ADMIN_RESET ignored — the new password must be at least 8 characters");
+
+  const a = db.prepare("SELECT id, email FROM accounts WHERE lower(email) = ?").get(email);
+  if (!a) return console.log(`  ADMIN_RESET ignored — no account for ${email}`);
+
+  db.prepare("UPDATE accounts SET pass_hash = ? WHERE id = ?")
+    .run(bcrypt.hashSync(pass, 10), a.id);
+  /* Every other session is killed, because a reset you didn't ask for should
+     not leave someone else still signed in. */
+  db.prepare("DELETE FROM sessions WHERE account_id = ?").run(a.id);
+  try {
+    db.prepare("INSERT INTO activity (account_id, action, detail, ip) VALUES (?,?,?,?)")
+      .run(a.id, "password-reset", "Reset from the server environment; all sessions signed out",
+        "boot");
+  } catch (e) {}
+
+  console.log(`  ADMIN_RESET applied to ${a.email} — sign in, then REMOVE the variable`);
+}
 
 /* ---------------------------- operator console ----------------------------
    Guarded by a flag on the account row, checked on every request. Not by an
@@ -877,7 +912,8 @@ const runSweep = async () => {
 
 app.listen(PORT, () => {
   console.log(`AI POS listening on :${PORT}`);
-  ADMIN.seedOperator();
+  ADMIN.seedOperator(bcrypt);
+  resetOnBoot();
   setTimeout(runSweep, 5000);
   setTimeout(pollGauges, 9000);
   setInterval(pollGauges, 15 * 60 * 1000);

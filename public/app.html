@@ -6062,7 +6062,7 @@ function health(){
   themeIssues().forEach(i=>f.push({sev:i.t==="warn"?"warn":"info",t:"Appearance",d:i.m,fix:null}));
   return f;
 }
-const BUILD="ef9a56a3a0";
+const BUILD="f2ea3f314a";
 function tHealth(){
   const f=health();
   window.__fix=i=>{f[i].fix&&f[i].fix();reload();drawConfig()};
@@ -11633,7 +11633,21 @@ async function initApp() {
   if (me) {
     ACCOUNT = me.account;
     const pick = me.stores.find(s => String(s.id) === savedStore) || me.stores[0];
-    if (!pick) { location.href = "/login.html"; return; }
+    if (!pick) {
+      /* An operator runs the service rather than a shop, so it owns no store.
+         Sending it back to login was a loop: log in, no store, log in again. */
+      if (me.operator) { location.href = "/admin.html"; return; }
+      /* A merchant with no store needs one made, not a bounce to the sign-in
+         page they just came from. */
+      const name = prompt("What's this store called?", "My store");
+      if (!name || !name.trim()) { location.href = "/login.html"; return; }
+      try {
+        const d = await api("/api/stores", { method: "POST", body: { name: name.trim() } });
+        localStorage.setItem("pos_store", String(d.id));
+        location.reload();
+      } catch (e) { location.href = "/login.html"; }
+      return;
+    }
     STORE_ID = pick.id;
     localStorage.setItem("pos_store", String(STORE_ID));
   } else if (savedStore) {
