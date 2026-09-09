@@ -18,6 +18,7 @@ const PAY = require("./lib/payments");
 const LEARN = require("./lib/learn");
 const RET = require("./lib/retention");
 const TANKS = require("./lib/tanks");
+const ADMIN = require("./lib/admin");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -360,6 +361,46 @@ app.post("/api/ai", auth, async (req, res) => {
     res.status(502).json({ error: `Couldn't reach the model: ${e.message}` });
   }
 });
+
+/* ---------------------------- operator console ----------------------------
+   Guarded by a flag on the account row, checked on every request. Not by an
+   email match, not by a header — a row, so revoking it is a database change. */
+function operator(req, res, next) {
+  if (!ADMIN.isOperator(req.account.id)) {
+    /* No hint that the route exists. */
+    return res.status(404).json({ error: "Not found" });
+  }
+  next();
+}
+
+app.get("/api/admin/fleet", auth, operator, (req, res) => {
+  res.json({ ...ADMIN.fleet(req.account.id), trend: ADMIN.trend(+req.query.days || 30),
+    attention: ADMIN.attention(), grants: ADMIN.grants() });
+});
+
+app.get("/api/admin/log", auth, operator, (req, res) =>
+  res.json({ log: ADMIN.operatorLog() }));
+
+app.post("/api/admin/support/open", auth, operator, (req, res) => {
+  try {
+    res.json(ADMIN.openSupport(req.account.id, +req.body.account,
+      req.body.reason, req.body.minutes));
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.post("/api/admin/support/close", auth, operator, (req, res) => {
+  ADMIN.closeSupport(req.account.id, +req.body.account);
+  res.json({ ok: true });
+});
+
+app.get("/api/admin/account/:id", auth, operator, (req, res) => {
+  try { res.json(ADMIN.accountDetail(req.account.id, +req.params.id)); }
+  catch (e) { res.status(403).json({ error: e.message }); }
+});
+
+/* Whether to show the console at all. */
+app.get("/api/admin/whoami", auth, (req, res) =>
+  res.json({ operator: ADMIN.isOperator(req.account.id) }));
 
 /* -------------------------- the electronic journal ------------------------
    Every sale ever taken, searchable. The sales are already written down; this
@@ -836,6 +877,7 @@ const runSweep = async () => {
 
 app.listen(PORT, () => {
   console.log(`AI POS listening on :${PORT}`);
+  ADMIN.seedOperator();
   setTimeout(runSweep, 5000);
   setTimeout(pollGauges, 9000);
   setInterval(pollGauges, 15 * 60 * 1000);

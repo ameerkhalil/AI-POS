@@ -5940,7 +5940,7 @@ function health(){
   themeIssues().forEach(i=>f.push({sev:i.t==="warn"?"warn":"info",t:"Appearance",d:i.m,fix:null}));
   return f;
 }
-const BUILD="43814d4bf3";
+const BUILD="9b3977ef5d";
 function tHealth(){
   const f=health();
   window.__fix=i=>{f[i].fix&&f[i].fix();reload();drawConfig()};
@@ -10574,6 +10574,13 @@ function tAccount(){
     };
   };
   $("cfgBody").innerHTML=`<div id="acctBody"><p style="color:var(--txt-3);font-size:13px">Loading…</p></div>`;
+  /* The fleet console is only mentioned to accounts that have it. Everyone else
+     never learns the route exists, and the server answers 404 regardless. */
+  api("/api/admin/whoami").then(r=>{
+    const el=$("opLink");
+    if(el&&r.operator)el.innerHTML=`<a class="mini" href="/admin.html"
+      style="text-decoration:none;display:inline-block">Fleet console</a>`;
+  }).catch(()=>{});
   Promise.all([api("/api/me"),api("/api/account/sessions"),api("/api/account/activity")])
     .then(([me,ses,act])=>{
       $("acctBody").innerHTML=`
@@ -10583,6 +10590,7 @@ function tAccount(){
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:11px">
           <button class="mini" onclick="__w.chgPass()">Change password</button>
           <button class="mini" onclick="__w.exportAll()">Download all my data</button>
+          <span id="opLink"></span>
         </div>
 
         <div class="sect">Who can see this data</div>
@@ -11589,20 +11597,48 @@ function accountMenu() {
       localStorage.setItem("pos_store", b.dataset.s);
       location.reload();
     });
+    /* This used to open a dialog with no text field and then hunt for one,
+       which meant the Create button did nothing at all. A dialog that needs a
+       name should be built with a name box in it. */
     el.querySelector("#newStore").onclick = () => {
       el.remove();
-      ask({ t: "Add a store", p: "Each store gets its own pricebook, staff and reports.",
-        yes: "Create it", done: () => {} });
-      const inp = document.querySelector(".veil .card input");
-      if (inp) { inp.type = "text"; inp.value = ""; inp.classList.remove("num"); inp.style.textAlign = "left";
-        inp.placeholder = "Second location"; inp.focus();
-        document.querySelector(".veil .card .ok").onclick = async () => {
-          const name = inp.value.trim(); if (!name) return;
+      const box = veil(`<div class="card"><h3>Add a store</h3>
+        <p>Each store keeps its own pricebook, staff, shifts and reports. You can move between
+          them from this menu at any time.</p>
+        <input id="nsName" placeholder="Second location" autocomplete="off"
+          style="margin-top:15px;font-size:16px">
+        <div id="nsMsg" class="note" style="margin-top:9px;display:none"></div>
+        <div class="row"><button class="no" id="nsx">Cancel</button>
+          <button class="ok" id="nsy">Create it</button></div></div>`);
+
+      const inp = box.querySelector("#nsName");
+      const msg = box.querySelector("#nsMsg");
+      const go = box.querySelector("#nsy");
+      const fail = t => { msg.textContent = t; msg.style.display = "block"; };
+
+      const create = async () => {
+        const name = inp.value.trim();
+        if (!name) return fail("Give the store a name.");
+        go.disabled = true;
+        go.textContent = "Creating…";
+        try {
           const d = await api("/api/stores", { method: "POST", body: { name } });
+          /* Switching to it immediately is the point — a store you have to go
+             and find afterwards feels like nothing happened. */
           localStorage.setItem("pos_store", String(d.id));
           location.reload();
-        };
-      }
+        } catch (e) {
+          go.disabled = false;
+          go.textContent = "Create it";
+          fail(e.message || "Couldn't create that store.");
+        }
+      };
+
+      go.onclick = create;
+      inp.onkeydown = e => { if (e.key === "Enter") create(); };
+      box.querySelector("#nsx").onclick = () => box.remove();
+      box.onclick = e => { if (e.target === box) box.remove(); };
+      setTimeout(() => inp.focus(), 40);
     };
     el.querySelector("#acn").onclick = () => el.remove();
     el.querySelector("#aco").onclick = async () => {

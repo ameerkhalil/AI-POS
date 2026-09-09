@@ -1031,6 +1031,13 @@ function tAccount(){
     };
   };
   $("cfgBody").innerHTML=`<div id="acctBody"><p style="color:var(--txt-3);font-size:13px">Loading…</p></div>`;
+  /* The fleet console is only mentioned to accounts that have it. Everyone else
+     never learns the route exists, and the server answers 404 regardless. */
+  api("/api/admin/whoami").then(r=>{
+    const el=$("opLink");
+    if(el&&r.operator)el.innerHTML=`<a class="mini" href="/admin.html"
+      style="text-decoration:none;display:inline-block">Fleet console</a>`;
+  }).catch(()=>{});
   Promise.all([api("/api/me"),api("/api/account/sessions"),api("/api/account/activity")])
     .then(([me,ses,act])=>{
       $("acctBody").innerHTML=`
@@ -1040,6 +1047,7 @@ function tAccount(){
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:11px">
           <button class="mini" onclick="__w.chgPass()">Change password</button>
           <button class="mini" onclick="__w.exportAll()">Download all my data</button>
+          <span id="opLink"></span>
         </div>
 
         <div class="sect">Who can see this data</div>
