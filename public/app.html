@@ -1596,18 +1596,27 @@ body.tp-plain .grand .amt{font-size:40px}
 .stwrap.enter .sttools{animation:qin .45s var(--ease) .06s both}
 .stwrap.enter .stcanvas{animation:qin .45s var(--ease) .12s both}
 
-/* ---- pre-flight: readable, whatever the store's theme is ---- */
-.pfcard{background:#1E2427;border-color:#3A4245}
-.pfcard h3{color:#F2F5F5}
-.pfcard>p{color:#9BA5A9}
-.pfrow{background:rgba(255,255,255,.04);border-color:#39423F}
-.pfrow b{color:#F2F5F5;font-weight:600}
-.pfrow em{color:#A8B2B5}
-.pfrow.ok{background:rgba(92,224,168,.07);border-color:rgba(92,224,168,.3)}
-.pfrow.warn{background:rgba(224,178,85,.09);border-color:rgba(224,178,85,.42)}
-.pfrow.warn b{color:#F0D9A6}
-.pfrow.bad{background:rgba(210,102,76,.11);border-color:rgba(210,102,76,.5)}
-.pfrow.bad b{color:#F2BCAC}
+/* ---- pre-flight ----
+   This sits on the light setup page, so it is a light card. It used to carry
+   the dark-theme text colours, which put white titles on a white card — every
+   heading was invisible and only the sub-lines could be read. Scoped tightly
+   enough to win against the register's own theme. */
+.veil .card.pfcard{background:#FBFAF7;border-color:#DDD9D1;color:#16181A;max-width:520px}
+.veil .card.pfcard h3{color:#16181A;font-size:20px}
+.veil .card.pfcard>p{color:#5C6467;font-size:13.5px;line-height:1.6}
+.veil .card.pfcard .pfrow{background:#fff;border:1px solid #E4E0D8}
+.veil .card.pfcard .pfrow b{color:#16181A;font-weight:600;font-size:13.5px}
+.veil .card.pfcard .pfrow em{color:#5C6467;font-size:12.5px}
+.veil .card.pfcard .pfrow.ok{background:#F2FAF6;border-color:#BFE4D3}
+.veil .card.pfcard .pfrow.ok .pfm{background:#D6F0E3;color:#1B7A55}
+.veil .card.pfcard .pfrow.warn{background:#FDF8EC;border-color:#EAD9AE}
+.veil .card.pfcard .pfrow.warn .pfm{background:#F6E9C8;color:#8A6410}
+.veil .card.pfcard .pfrow.warn b{color:#6E4F0C}
+.veil .card.pfcard .pfrow.bad{background:#FDF2EF;border-color:#EFC7BB}
+.veil .card.pfcard .pfrow.bad .pfm{background:#F7D8CE;color:#A33A20}
+.veil .card.pfcard .pfrow.bad b{color:#8C3218}
+.veil .card.pfcard .row .no{background:#EFEDE7;border:1px solid #DDD9D1;color:#16181A}
+.veil .card.pfcard .row .ok{background:#1B7A55;color:#fff;border:none}
 
 /* ---- a bigger palette ---- */
 .swatchrow{gap:8px;max-width:420px}
@@ -2609,6 +2618,58 @@ body.tp-plain .grand .amt{font-size:40px}
 .agescan.bad b{color:#F2BCAC}
 .agescan.ok span,.agescan.bad span{color:var(--txt-2)}
 
+/* ---- the sizing controls reach every register ----
+   Key width, spacing and text size used to drive only the old single layout,
+   so moving a slider changed nothing on four of the five. Each shell's grid and
+   type now derive from the same variables. */
+.mn-grid{grid-template-columns:repeat(auto-fill,minmax(var(--keymin,210px),1fr));
+  gap:calc(12px * var(--dens,1))}
+.mn-t{min-height:calc(132px * var(--dens,1));padding:calc(22px * var(--dens,1)) calc(20px * var(--dens,1))}
+.mn-n{font-size:calc(19px * var(--fs,1))}
+.mn-p{font-size:calc(23px * var(--fs,1))}
+.mn-cats button{font-size:calc(15px * var(--fs,1))}
+
+.cls-depts{grid-template-columns:repeat(auto-fill,minmax(var(--keymin,150px),1fr));
+  gap:calc(7px * var(--dens,1))}
+.cls-dk{min-height:calc(62px * var(--dens,1))}
+.cls-dn{font-size:calc(13.5px * var(--fs,1))}
+.cls-nk{font-size:calc(19px * var(--fs,1));padding:calc(15px * var(--dens,1)) 4px}
+.cls-line{font-size:calc(13px * var(--fs,1))}
+.cls-tender{font-size:calc(14.5px * var(--fs,1));padding:calc(16px * var(--dens,1)) 8px}
+
+.bd-grid{grid-template-columns:repeat(auto-fill,minmax(var(--keymin,142px),1fr));
+  gap:calc(8px * var(--dens,1))}
+.bd-t{min-height:calc(74px * var(--dens,1))}
+.bd-t span{font-size:calc(13.5px * var(--fs,1))}
+.bd-t em{font-size:calc(13px * var(--fs,1))}
+.bd-cats button{font-size:calc(13.5px * var(--fs,1))}
+
+.cm-row{padding:calc(11px * var(--dens,1)) 13px}
+.cm-info b{font-size:calc(14px * var(--fs,1))}
+.cm-price{font-size:calc(14px * var(--fs,1))}
+.cm-cats button{font-size:calc(13px * var(--fs,1))}
+.cm-searchbar input{font-size:calc(14px * var(--fs,1))}
+
+.kk-grid.items{grid-template-columns:repeat(auto-fit,minmax(var(--keymin,220px),1fr))}
+.kk-grid{gap:calc(14px * var(--dens,1))}
+.kk-item{min-height:calc(132px * var(--dens,1));padding:calc(28px * var(--dens,1)) calc(24px * var(--dens,1))}
+.kk-item span{font-size:calc(21px * var(--fs,1))}
+.kk-item em{font-size:calc(22px * var(--fs,1))}
+.kk-cat span{font-size:calc(26px * var(--fs,1))}
+
+/* corner rounding, wherever a register has corners */
+.mn-t,.cn-t,.bd-t,.kk-item,.cm-row,.cls-dk,.cls-nk{border-radius:var(--r)}
+
+/* ---- the mode buttons were overlapping their own captions ---- */
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:9px;margin-top:12px}
+.modes button{display:block;padding:13px 16px;border:1px solid var(--line);border-radius:var(--r2);
+  background:rgba(255,255,255,.02);text-align:left;transition:border-color .14s,background .14s}
+.modes button:hover{border-color:var(--line-2)}
+.modes button.on{border-color:var(--vfd);background:color-mix(in srgb,var(--vfd) 12%,transparent)}
+.modes b{display:block;font-size:14.5px;font-weight:600}
+.modes em{display:block;font-style:normal;font-size:11.5px;color:var(--txt-3);margin-top:4px;
+  line-height:1.4}
+
 .tchip.save{transition:color .2s,border-color .2s}
 .tchip.save.pending{color:var(--warn);border-color:rgba(224,178,85,.4)}
 .tchip.save.saving{color:var(--txt-2)}
@@ -2804,31 +2865,31 @@ const TYPES=TYPE_GROUPS.flatMap(g=>g[1]);
 const LAYOUTS=[
  {k:"commander",n:"Commander",tag:"Fuel, convenience, liquor — the industry standard",
   shell:"classic",font:"Archivo",mono:"Azeret Mono",mode:"dark",accent:"#3D8BD6",
-  bg:"#2B3033",panel:"#373D41",line:"#4A5155",key:"#454C50",radius:2,chrome:"own",
+  bg:"#2B3033",panel:"#373D41",line:"#4A5155",key:"#454C50",radius:2,keyMin:150,density:1,fontScale:1,chrome:"own",
   ref:"Steel grey, hard edges, dense function keys and a blue line display. The shape every forecourt and convenience counter in America already runs.",
   why:"A keypad and department keys with no product grid. Sharp corners, small type, everything reachable without scrolling."},
 
  {k:"service",n:"Service",tag:"Restaurants, cafés, bars — table and counter service",
   shell:"menu",font:"Space Grotesk",mono:"Space Mono",mode:"dark",accent:"#FF4C00",
-  bg:"#1A1A1A",panel:"#242424",line:"#333333",key:"#2E2E2E",radius:8,chrome:"own",
+  bg:"#1A1A1A",panel:"#242424",line:"#333333",key:"#2E2E2E",radius:8,keyMin:210,density:1.2,fontScale:1.08,chrome:"own",
   ref:"Near-black with a hot orange, heavy type, full-bleed tiles and an order that reads back before payment.",
   why:"Built for a hot line and a queue. Options open as a full screen, the order is confirmed once, and the ticket number fills the display at the end."},
 
  {k:"board",n:"Board",tag:"Delis, takeaways, repair counters — several orders at once",
   shell:"board",font:"Inter",mono:"Inter",mode:"dark",accent:"#4FA3D9",
-  bg:"#1E2429",panel:"#262E34",line:"#39434B",key:"#2E3740",radius:6,chrome:"own",
+  bg:"#1E2429",panel:"#262E34",line:"#39434B",key:"#2E3740",radius:6,keyMin:142,density:.95,fontScale:.98,chrome:"own",
   ref:"Every open order visible at the same time as a card, with products adding to whichever one is active.",
   why:"No other register here can hold four orders at once. Tap a ticket to make it live, tap products to fill it, settle it when they pay. Built for a counter where three people are waiting on different things."},
 
  {k:"commerce",n:"Commerce",tag:"Clothing, gifts, anything with a catalogue behind it",
   shell:"commerce",font:"Inter",mono:"Inter",mode:"light",accent:"#008060",
-  bg:"#F1F2F4",panel:"#FFFFFF",line:"#DFE3E8",key:"#FFFFFF",radius:8,chrome:"own",
+  bg:"#F1F2F4",panel:"#FFFFFF",line:"#DFE3E8",key:"#FFFFFF",radius:8,keyMin:170,density:1,fontScale:1,chrome:"own",
   ref:"Search-led, products as a list rather than a grid, a green checkout button and a cart panel that behaves like an online one.",
   why:"For a shop with more products than fit on a screen. You search or scan rather than browse, and the cart totals like a web checkout."},
 
  {k:"kiosk",n:"Kiosk",tag:"Big screens, queues, anywhere a customer can see it",
   shell:"kiosk",font:"Inter",mono:"Inter",mode:"light",accent:"#00A05A",
-  bg:"#FFFFFF",panel:"#F5F7F6",line:"#E1E6E3",key:"#F5F7F6",radius:16,chrome:"own",
+  bg:"#FFFFFF",panel:"#F5F7F6",line:"#E1E6E3",key:"#F5F7F6",radius:16,keyMin:240,density:1.35,fontScale:1.18,chrome:"own",
   ref:"One thing on screen at a time — categories, then products, then how many. Nothing sits beside anything else.",
   why:"Every other register shows a grid and an order together. This one never does: it asks one question per screen with targets big enough to hit from a metre away."}
 ];
@@ -5797,7 +5858,8 @@ const clamp=(v,lo,hi)=>Math.min(hi,Math.max(lo,+v||lo));
 function applyRegister(k){
   const L=LAYOUTS.find(x=>x.k===k)||LAYOUTS[0];
   CFG.layout=L.k;
-  CFG.theme={mode:L.mode,accent:L.accent,keyMin:L.keyMin,density:L.density,radius:L.radius};
+  CFG.theme={mode:L.mode,accent:L.accent,keyMin:L.keyMin,density:L.density,
+    fontScale:L.fontScale??1,radius:L.radius};
   themeFromConfig();
 }
 function themeFromConfig(){
@@ -5810,6 +5872,7 @@ function themeFromConfig(){
   if(L){
     if(CFG.theme?.keyMin==null)THEME.keyMin=L.keyMin;
     if(CFG.theme?.density==null)THEME.density=L.density;
+    if(CFG.theme?.fontScale==null)THEME.fontScale=L.fontScale??1;
     THEME.showF=L.fkeys;
     THEME.searchLeads=L.search;
     THEME.tape=L.tape;
@@ -5827,7 +5890,8 @@ function themeFromConfig(){
 }
 function saveTheme(){
   if(!CFG)return;
-  CFG.theme={mode:THEME.mode,accent:THEME.accent,keyMin:THEME.keyMin,density:THEME.density};
+  CFG.theme={mode:THEME.mode,accent:THEME.accent,keyMin:THEME.keyMin,
+    density:THEME.density,fontScale:THEME.fontScale,radius:THEME.radius};
   if(typeof queueSave==="function")queueSave();
 }
 function applyTheme(){
@@ -5940,7 +6004,7 @@ function health(){
   themeIssues().forEach(i=>f.push({sev:i.t==="warn"?"warn":"info",t:"Appearance",d:i.m,fix:null}));
   return f;
 }
-const BUILD="9b3977ef5d";
+const BUILD="63c355ad8a";
 function tHealth(){
   const f=health();
   window.__fix=i=>{f[i].fix&&f[i].fix();reload();drawConfig()};
@@ -6008,10 +6072,11 @@ function tLook(){
         <em>${esc(l.tag)}</em>
       </button>`).join("")}</div>
     <div class="sect">Mode</div>
-    <div class="opts" style="margin-top:0">${[["dark","Dark","for indoor counters"],
-      ["light","Light","for bright forecourts"],["contrast","High contrast","for glare and low vision"]].map(([k,l,s])=>
-      `<button onclick="__th('mode','${k}')" style="${THEME.mode===k?"background:rgba(92,224,168,.16);border-color:var(--vfd)":""}">
-        ${l}<em style="display:block;font-style:normal;font-size:11.5px;color:var(--txt-3);margin-top:3px">${s}</em></button>`).join("")}</div>
+    <div class="modes">${[["dark","Dark","for indoor counters"],
+      ["light","Light","for bright forecourts"],
+      ["contrast","High contrast","for glare and low vision"]].map(([k,l,s])=>
+      `<button class="${THEME.mode===k?"on":""}" onclick="__th('mode','${k}')">
+        <b>${l}</b><em>${s}</em></button>`).join("")}</div>
 
     <div class="sect">Accent</div>
     <div class="swrow">${ACC.map(a=>`<button class="sw ${THEME.accent===a?"on":""}"
@@ -6022,26 +6087,10 @@ function tLook(){
       Contrast against the panel is <b>${c.toFixed(1)}:1</b>.
       <span style="color:${c<3?"var(--warn)":"var(--vfd)"}">${c<3?"Below the 3:1 floor — the total will be hard to read.":"Comfortable."}</span></div>
 
-    <div class="sect">Layout</div>
-    <div class="frm">
-      <label>Receipt position
-        <select onchange="__th('tape',this.value)">
-          <option value="left" ${THEME.tape==="left"?"selected":""}>Left</option>
-          <option value="right" ${THEME.tape==="right"?"selected":""}>Right</option>
-          <option value="bottom" ${THEME.tape==="bottom"?"selected":""}>Along the bottom</option></select></label>
-      <label>Sections
-        <select onchange="__th('depts',this.value)">
-          <option value="tabs" ${THEME.depts!=="rail"?"selected":""}>Tabs across the top</option>
-          <option value="rail" ${THEME.depts==="rail"?"selected":""}>A rail down the side</option></select></label>
-      <label>Key colour
-        <select onchange="__th('keyStyle',this.value)">
-          <option value="tint" ${THEME.keyStyle==="tint"?"selected":""}>Tinted by department</option>
-          <option value="flat" ${THEME.keyStyle==="flat"?"selected":""}>Flat, colour on the edge only</option></select></label>
-      <label>Function key row
-        <select onchange="__th('showF',this.value==='1')">
-          <option value="1" ${THEME.showF?"selected":""}>Shown</option>
-          <option value="0" ${!THEME.showF?"selected":""}>Hidden</option></select></label>
-    </div>
+    <div class="note" style="margin-top:14px">Where the receipt sits, how sections are laid out and
+      whether there's a function row are part of the register you picked above — each of the five is
+      designed as a whole rather than assembled from switches. The sizing below applies to whichever
+      one you're on.</div>
 
     <div class="sect">Sizing</div>
     <div class="sliders">
@@ -6051,7 +6100,7 @@ function tLook(){
          ["radius","Corner rounding",0,14,1,THEME.radius,"px"]].map(([k,l,lo,hi,st,v,u])=>
       `<label class="slide"><span>${l}</span>
         <input type="range" min="${lo}" max="${hi}" step="${st}" value="${v}" oninput="__th('${k}',this.value)">
-        <b class="num">${typeof v==="number"&&v%1?(+v).toFixed(2):v}${u}</b></label>`).join("")}
+        <b class="num">${v==null?"—":(typeof v==="number"&&v%1?(+v).toFixed(2):v)}${v==null?"":u}</b></label>`).join("")}
     </div>
 
     <div class="sect">Preview</div>
@@ -8332,7 +8381,10 @@ function drawShot(L) {
    is shown and can be waved through. */
 function preflight() {
   const out = [];
-  const add = (label, ok, detail, blocking) => out.push({ label, ok, detail, blocking });
+  /* Three states, not two. A check that says "go and confirm this" is not a
+     pass, and showing it with a green tick teaches people to ignore the list. */
+  const add = (label, ok, detail, blocking, warn) =>
+    out.push({ label, ok, detail, blocking, warn: !!warn && ok });
 
   add("Products in the pricebook", CFG.plus.length > 0,
     CFG.plus.length ? `${CFG.plus.length} ready to ring` : "Nothing to sell yet — import or add some", false);
@@ -8346,9 +8398,11 @@ function preflight() {
     noTax ? `${noTax} department${noTax === 1 ? "" : "s"} would ring untaxed` : "All mapped", true);
 
   const anyTax = CFG.taxRates.some(r => r.rate > 0);
+  const taxOk = anyTax && CFG.tax?.confirmed;
   add("Sales tax is set", anyTax,
-    anyTax ? (CFG.tax?.confirmed ? "Confirmed against the state" : "Not yet confirmed — check it under Site & tax")
-      : "Every rate is zero, so nothing will be taxed", false);
+    !anyTax ? "Every rate is zero, so nothing will be taxed"
+      : taxOk ? "Confirmed against the state"
+      : "Not confirmed yet — check it under Site & tax", false, !taxOk);
 
   const cash = CFG.mops.some(m => m.kind === "cash");
   add("A cash tender exists", cash, cash ? "The drawer can be balanced" : "No way to take or count cash", true);
@@ -8369,6 +8423,10 @@ function preflight() {
   add("Something is on the board", onBoard > 0,
     onBoard ? `${onBoard} keys across ${CFG.menus.length} menus` : "The register would open empty", false);
 
+  /* An unconfirmed rate is worth saying out loud at the top too, because it is
+     the one thing here that costs money quietly rather than failing loudly. */
+  out.cautions = out.filter(o => o.warn).length;
+
   return out;
 }
 
@@ -8376,6 +8434,7 @@ function launchPOS() {
   const checks = preflight();
   const blockers = checks.filter(c => !c.ok && c.blocking);
   const warns = checks.filter(c => !c.ok && !c.blocking);
+  const cautions = checks.filter(c => c.ok && c.warn).length;
 
   const el = document.createElement("div");
   el.className = "veil pf";
@@ -8383,12 +8442,13 @@ function launchPOS() {
     <h3>${blockers.length ? "Two things to fix first" : "Ready to open"}</h3>
     <p>${blockers.length
       ? "The register won't behave correctly until these are sorted. Everything else can wait."
-      : warns.length
-      ? "Nothing is broken. A couple of things are worth knowing before you take a real sale."
+      : (warns.length + cautions)
+      ? `Nothing is broken. ${warns.length + cautions === 1 ? "One thing is" : "A few things are"}
+         worth knowing before you take a real sale.`
       : "Everything checks out. Your register is ready to open."}</p>
     <div class="pflist">${checks.map((c, i) => `
-      <div class="pfrow ${c.ok ? "ok" : c.blocking ? "bad" : "warn"}" style="animation-delay:${i * 55}ms">
-        <span class="pfm">${c.ok ? "\u2713" : c.blocking ? "\u00d7" : "!"}</span>
+      <div class="pfrow ${!c.ok ? (c.blocking ? "bad" : "warn") : c.warn ? "warn" : "ok"}" style="animation-delay:${i * 55}ms">
+        <span class="pfm">${!c.ok ? (c.blocking ? "\u00d7" : "!") : c.warn ? "!" : "\u2713"}</span>
         <span><b>${esc(c.label)}</b><em>${esc(c.detail)}</em></span></div>`).join("")}</div>
     <div class="row">
       <button class="no" id="pfBack">Keep editing</button>

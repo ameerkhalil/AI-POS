@@ -1586,18 +1586,27 @@ body.tp-plain .grand .amt{font-size:40px}
 .stwrap.enter .sttools{animation:qin .45s var(--ease) .06s both}
 .stwrap.enter .stcanvas{animation:qin .45s var(--ease) .12s both}
 
-/* ---- pre-flight: readable, whatever the store's theme is ---- */
-.pfcard{background:#1E2427;border-color:#3A4245}
-.pfcard h3{color:#F2F5F5}
-.pfcard>p{color:#9BA5A9}
-.pfrow{background:rgba(255,255,255,.04);border-color:#39423F}
-.pfrow b{color:#F2F5F5;font-weight:600}
-.pfrow em{color:#A8B2B5}
-.pfrow.ok{background:rgba(92,224,168,.07);border-color:rgba(92,224,168,.3)}
-.pfrow.warn{background:rgba(224,178,85,.09);border-color:rgba(224,178,85,.42)}
-.pfrow.warn b{color:#F0D9A6}
-.pfrow.bad{background:rgba(210,102,76,.11);border-color:rgba(210,102,76,.5)}
-.pfrow.bad b{color:#F2BCAC}
+/* ---- pre-flight ----
+   This sits on the light setup page, so it is a light card. It used to carry
+   the dark-theme text colours, which put white titles on a white card — every
+   heading was invisible and only the sub-lines could be read. Scoped tightly
+   enough to win against the register's own theme. */
+.veil .card.pfcard{background:#FBFAF7;border-color:#DDD9D1;color:#16181A;max-width:520px}
+.veil .card.pfcard h3{color:#16181A;font-size:20px}
+.veil .card.pfcard>p{color:#5C6467;font-size:13.5px;line-height:1.6}
+.veil .card.pfcard .pfrow{background:#fff;border:1px solid #E4E0D8}
+.veil .card.pfcard .pfrow b{color:#16181A;font-weight:600;font-size:13.5px}
+.veil .card.pfcard .pfrow em{color:#5C6467;font-size:12.5px}
+.veil .card.pfcard .pfrow.ok{background:#F2FAF6;border-color:#BFE4D3}
+.veil .card.pfcard .pfrow.ok .pfm{background:#D6F0E3;color:#1B7A55}
+.veil .card.pfcard .pfrow.warn{background:#FDF8EC;border-color:#EAD9AE}
+.veil .card.pfcard .pfrow.warn .pfm{background:#F6E9C8;color:#8A6410}
+.veil .card.pfcard .pfrow.warn b{color:#6E4F0C}
+.veil .card.pfcard .pfrow.bad{background:#FDF2EF;border-color:#EFC7BB}
+.veil .card.pfcard .pfrow.bad .pfm{background:#F7D8CE;color:#A33A20}
+.veil .card.pfcard .pfrow.bad b{color:#8C3218}
+.veil .card.pfcard .row .no{background:#EFEDE7;border:1px solid #DDD9D1;color:#16181A}
+.veil .card.pfcard .row .ok{background:#1B7A55;color:#fff;border:none}
 
 /* ---- a bigger palette ---- */
 .swatchrow{gap:8px;max-width:420px}
@@ -2598,3 +2607,55 @@ body.tp-plain .grand .amt{font-size:40px}
 .agescan.bad{border-style:solid;border-color:var(--void);background:rgba(210,102,76,.09)}
 .agescan.bad b{color:#F2BCAC}
 .agescan.ok span,.agescan.bad span{color:var(--txt-2)}
+
+/* ---- the sizing controls reach every register ----
+   Key width, spacing and text size used to drive only the old single layout,
+   so moving a slider changed nothing on four of the five. Each shell's grid and
+   type now derive from the same variables. */
+.mn-grid{grid-template-columns:repeat(auto-fill,minmax(var(--keymin,210px),1fr));
+  gap:calc(12px * var(--dens,1))}
+.mn-t{min-height:calc(132px * var(--dens,1));padding:calc(22px * var(--dens,1)) calc(20px * var(--dens,1))}
+.mn-n{font-size:calc(19px * var(--fs,1))}
+.mn-p{font-size:calc(23px * var(--fs,1))}
+.mn-cats button{font-size:calc(15px * var(--fs,1))}
+
+.cls-depts{grid-template-columns:repeat(auto-fill,minmax(var(--keymin,150px),1fr));
+  gap:calc(7px * var(--dens,1))}
+.cls-dk{min-height:calc(62px * var(--dens,1))}
+.cls-dn{font-size:calc(13.5px * var(--fs,1))}
+.cls-nk{font-size:calc(19px * var(--fs,1));padding:calc(15px * var(--dens,1)) 4px}
+.cls-line{font-size:calc(13px * var(--fs,1))}
+.cls-tender{font-size:calc(14.5px * var(--fs,1));padding:calc(16px * var(--dens,1)) 8px}
+
+.bd-grid{grid-template-columns:repeat(auto-fill,minmax(var(--keymin,142px),1fr));
+  gap:calc(8px * var(--dens,1))}
+.bd-t{min-height:calc(74px * var(--dens,1))}
+.bd-t span{font-size:calc(13.5px * var(--fs,1))}
+.bd-t em{font-size:calc(13px * var(--fs,1))}
+.bd-cats button{font-size:calc(13.5px * var(--fs,1))}
+
+.cm-row{padding:calc(11px * var(--dens,1)) 13px}
+.cm-info b{font-size:calc(14px * var(--fs,1))}
+.cm-price{font-size:calc(14px * var(--fs,1))}
+.cm-cats button{font-size:calc(13px * var(--fs,1))}
+.cm-searchbar input{font-size:calc(14px * var(--fs,1))}
+
+.kk-grid.items{grid-template-columns:repeat(auto-fit,minmax(var(--keymin,220px),1fr))}
+.kk-grid{gap:calc(14px * var(--dens,1))}
+.kk-item{min-height:calc(132px * var(--dens,1));padding:calc(28px * var(--dens,1)) calc(24px * var(--dens,1))}
+.kk-item span{font-size:calc(21px * var(--fs,1))}
+.kk-item em{font-size:calc(22px * var(--fs,1))}
+.kk-cat span{font-size:calc(26px * var(--fs,1))}
+
+/* corner rounding, wherever a register has corners */
+.mn-t,.cn-t,.bd-t,.kk-item,.cm-row,.cls-dk,.cls-nk{border-radius:var(--r)}
+
+/* ---- the mode buttons were overlapping their own captions ---- */
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:9px;margin-top:12px}
+.modes button{display:block;padding:13px 16px;border:1px solid var(--line);border-radius:var(--r2);
+  background:rgba(255,255,255,.02);text-align:left;transition:border-color .14s,background .14s}
+.modes button:hover{border-color:var(--line-2)}
+.modes button.on{border-color:var(--vfd);background:color-mix(in srgb,var(--vfd) 12%,transparent)}
+.modes b{display:block;font-size:14.5px;font-weight:600}
+.modes em{display:block;font-style:normal;font-size:11.5px;color:var(--txt-3);margin-top:4px;
+  line-height:1.4}

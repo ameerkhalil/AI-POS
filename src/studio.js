@@ -315,7 +315,10 @@ function drawShot(L) {
    is shown and can be waved through. */
 function preflight() {
   const out = [];
-  const add = (label, ok, detail, blocking) => out.push({ label, ok, detail, blocking });
+  /* Three states, not two. A check that says "go and confirm this" is not a
+     pass, and showing it with a green tick teaches people to ignore the list. */
+  const add = (label, ok, detail, blocking, warn) =>
+    out.push({ label, ok, detail, blocking, warn: !!warn && ok });
 
   add("Products in the pricebook", CFG.plus.length > 0,
     CFG.plus.length ? `${CFG.plus.length} ready to ring` : "Nothing to sell yet — import or add some", false);
@@ -329,9 +332,11 @@ function preflight() {
     noTax ? `${noTax} department${noTax === 1 ? "" : "s"} would ring untaxed` : "All mapped", true);
 
   const anyTax = CFG.taxRates.some(r => r.rate > 0);
+  const taxOk = anyTax && CFG.tax?.confirmed;
   add("Sales tax is set", anyTax,
-    anyTax ? (CFG.tax?.confirmed ? "Confirmed against the state" : "Not yet confirmed — check it under Site & tax")
-      : "Every rate is zero, so nothing will be taxed", false);
+    !anyTax ? "Every rate is zero, so nothing will be taxed"
+      : taxOk ? "Confirmed against the state"
+      : "Not confirmed yet — check it under Site & tax", false, !taxOk);
 
   const cash = CFG.mops.some(m => m.kind === "cash");
   add("A cash tender exists", cash, cash ? "The drawer can be balanced" : "No way to take or count cash", true);
@@ -352,6 +357,10 @@ function preflight() {
   add("Something is on the board", onBoard > 0,
     onBoard ? `${onBoard} keys across ${CFG.menus.length} menus` : "The register would open empty", false);
 
+  /* An unconfirmed rate is worth saying out loud at the top too, because it is
+     the one thing here that costs money quietly rather than failing loudly. */
+  out.cautions = out.filter(o => o.warn).length;
+
   return out;
 }
 
@@ -359,6 +368,7 @@ function launchPOS() {
   const checks = preflight();
   const blockers = checks.filter(c => !c.ok && c.blocking);
   const warns = checks.filter(c => !c.ok && !c.blocking);
+  const cautions = checks.filter(c => c.ok && c.warn).length;
 
   const el = document.createElement("div");
   el.className = "veil pf";
@@ -366,12 +376,13 @@ function launchPOS() {
     <h3>${blockers.length ? "Two things to fix first" : "Ready to open"}</h3>
     <p>${blockers.length
       ? "The register won't behave correctly until these are sorted. Everything else can wait."
-      : warns.length
-      ? "Nothing is broken. A couple of things are worth knowing before you take a real sale."
+      : (warns.length + cautions)
+      ? `Nothing is broken. ${warns.length + cautions === 1 ? "One thing is" : "A few things are"}
+         worth knowing before you take a real sale.`
       : "Everything checks out. Your register is ready to open."}</p>
     <div class="pflist">${checks.map((c, i) => `
-      <div class="pfrow ${c.ok ? "ok" : c.blocking ? "bad" : "warn"}" style="animation-delay:${i * 55}ms">
-        <span class="pfm">${c.ok ? "\u2713" : c.blocking ? "\u00d7" : "!"}</span>
+      <div class="pfrow ${!c.ok ? (c.blocking ? "bad" : "warn") : c.warn ? "warn" : "ok"}" style="animation-delay:${i * 55}ms">
+        <span class="pfm">${!c.ok ? (c.blocking ? "\u00d7" : "!") : c.warn ? "!" : "\u2713"}</span>
         <span><b>${esc(c.label)}</b><em>${esc(c.detail)}</em></span></div>`).join("")}</div>
     <div class="row">
       <button class="no" id="pfBack">Keep editing</button>

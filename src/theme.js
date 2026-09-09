@@ -36,7 +36,8 @@ const clamp=(v,lo,hi)=>Math.min(hi,Math.max(lo,+v||lo));
 function applyRegister(k){
   const L=LAYOUTS.find(x=>x.k===k)||LAYOUTS[0];
   CFG.layout=L.k;
-  CFG.theme={mode:L.mode,accent:L.accent,keyMin:L.keyMin,density:L.density,radius:L.radius};
+  CFG.theme={mode:L.mode,accent:L.accent,keyMin:L.keyMin,density:L.density,
+    fontScale:L.fontScale??1,radius:L.radius};
   themeFromConfig();
 }
 function themeFromConfig(){
@@ -49,6 +50,7 @@ function themeFromConfig(){
   if(L){
     if(CFG.theme?.keyMin==null)THEME.keyMin=L.keyMin;
     if(CFG.theme?.density==null)THEME.density=L.density;
+    if(CFG.theme?.fontScale==null)THEME.fontScale=L.fontScale??1;
     THEME.showF=L.fkeys;
     THEME.searchLeads=L.search;
     THEME.tape=L.tape;
@@ -66,7 +68,8 @@ function themeFromConfig(){
 }
 function saveTheme(){
   if(!CFG)return;
-  CFG.theme={mode:THEME.mode,accent:THEME.accent,keyMin:THEME.keyMin,density:THEME.density};
+  CFG.theme={mode:THEME.mode,accent:THEME.accent,keyMin:THEME.keyMin,
+    density:THEME.density,fontScale:THEME.fontScale,radius:THEME.radius};
   if(typeof queueSave==="function")queueSave();
 }
 function applyTheme(){
@@ -247,10 +250,11 @@ function tLook(){
         <em>${esc(l.tag)}</em>
       </button>`).join("")}</div>
     <div class="sect">Mode</div>
-    <div class="opts" style="margin-top:0">${[["dark","Dark","for indoor counters"],
-      ["light","Light","for bright forecourts"],["contrast","High contrast","for glare and low vision"]].map(([k,l,s])=>
-      `<button onclick="__th('mode','${k}')" style="${THEME.mode===k?"background:rgba(92,224,168,.16);border-color:var(--vfd)":""}">
-        ${l}<em style="display:block;font-style:normal;font-size:11.5px;color:var(--txt-3);margin-top:3px">${s}</em></button>`).join("")}</div>
+    <div class="modes">${[["dark","Dark","for indoor counters"],
+      ["light","Light","for bright forecourts"],
+      ["contrast","High contrast","for glare and low vision"]].map(([k,l,s])=>
+      `<button class="${THEME.mode===k?"on":""}" onclick="__th('mode','${k}')">
+        <b>${l}</b><em>${s}</em></button>`).join("")}</div>
 
     <div class="sect">Accent</div>
     <div class="swrow">${ACC.map(a=>`<button class="sw ${THEME.accent===a?"on":""}"
@@ -261,26 +265,10 @@ function tLook(){
       Contrast against the panel is <b>${c.toFixed(1)}:1</b>.
       <span style="color:${c<3?"var(--warn)":"var(--vfd)"}">${c<3?"Below the 3:1 floor — the total will be hard to read.":"Comfortable."}</span></div>
 
-    <div class="sect">Layout</div>
-    <div class="frm">
-      <label>Receipt position
-        <select onchange="__th('tape',this.value)">
-          <option value="left" ${THEME.tape==="left"?"selected":""}>Left</option>
-          <option value="right" ${THEME.tape==="right"?"selected":""}>Right</option>
-          <option value="bottom" ${THEME.tape==="bottom"?"selected":""}>Along the bottom</option></select></label>
-      <label>Sections
-        <select onchange="__th('depts',this.value)">
-          <option value="tabs" ${THEME.depts!=="rail"?"selected":""}>Tabs across the top</option>
-          <option value="rail" ${THEME.depts==="rail"?"selected":""}>A rail down the side</option></select></label>
-      <label>Key colour
-        <select onchange="__th('keyStyle',this.value)">
-          <option value="tint" ${THEME.keyStyle==="tint"?"selected":""}>Tinted by department</option>
-          <option value="flat" ${THEME.keyStyle==="flat"?"selected":""}>Flat, colour on the edge only</option></select></label>
-      <label>Function key row
-        <select onchange="__th('showF',this.value==='1')">
-          <option value="1" ${THEME.showF?"selected":""}>Shown</option>
-          <option value="0" ${!THEME.showF?"selected":""}>Hidden</option></select></label>
-    </div>
+    <div class="note" style="margin-top:14px">Where the receipt sits, how sections are laid out and
+      whether there's a function row are part of the register you picked above — each of the five is
+      designed as a whole rather than assembled from switches. The sizing below applies to whichever
+      one you're on.</div>
 
     <div class="sect">Sizing</div>
     <div class="sliders">
@@ -290,7 +278,7 @@ function tLook(){
          ["radius","Corner rounding",0,14,1,THEME.radius,"px"]].map(([k,l,lo,hi,st,v,u])=>
       `<label class="slide"><span>${l}</span>
         <input type="range" min="${lo}" max="${hi}" step="${st}" value="${v}" oninput="__th('${k}',this.value)">
-        <b class="num">${typeof v==="number"&&v%1?(+v).toFixed(2):v}${u}</b></label>`).join("")}
+        <b class="num">${v==null?"—":(typeof v==="number"&&v%1?(+v).toFixed(2):v)}${v==null?"":u}</b></label>`).join("")}
     </div>
 
     <div class="sect">Preview</div>

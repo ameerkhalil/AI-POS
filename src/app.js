@@ -103,31 +103,31 @@ const TYPES=TYPE_GROUPS.flatMap(g=>g[1]);
 const LAYOUTS=[
  {k:"commander",n:"Commander",tag:"Fuel, convenience, liquor — the industry standard",
   shell:"classic",font:"Archivo",mono:"Azeret Mono",mode:"dark",accent:"#3D8BD6",
-  bg:"#2B3033",panel:"#373D41",line:"#4A5155",key:"#454C50",radius:2,chrome:"own",
+  bg:"#2B3033",panel:"#373D41",line:"#4A5155",key:"#454C50",radius:2,keyMin:150,density:1,fontScale:1,chrome:"own",
   ref:"Steel grey, hard edges, dense function keys and a blue line display. The shape every forecourt and convenience counter in America already runs.",
   why:"A keypad and department keys with no product grid. Sharp corners, small type, everything reachable without scrolling."},
 
  {k:"service",n:"Service",tag:"Restaurants, cafés, bars — table and counter service",
   shell:"menu",font:"Space Grotesk",mono:"Space Mono",mode:"dark",accent:"#FF4C00",
-  bg:"#1A1A1A",panel:"#242424",line:"#333333",key:"#2E2E2E",radius:8,chrome:"own",
+  bg:"#1A1A1A",panel:"#242424",line:"#333333",key:"#2E2E2E",radius:8,keyMin:210,density:1.2,fontScale:1.08,chrome:"own",
   ref:"Near-black with a hot orange, heavy type, full-bleed tiles and an order that reads back before payment.",
   why:"Built for a hot line and a queue. Options open as a full screen, the order is confirmed once, and the ticket number fills the display at the end."},
 
  {k:"board",n:"Board",tag:"Delis, takeaways, repair counters — several orders at once",
   shell:"board",font:"Inter",mono:"Inter",mode:"dark",accent:"#4FA3D9",
-  bg:"#1E2429",panel:"#262E34",line:"#39434B",key:"#2E3740",radius:6,chrome:"own",
+  bg:"#1E2429",panel:"#262E34",line:"#39434B",key:"#2E3740",radius:6,keyMin:142,density:.95,fontScale:.98,chrome:"own",
   ref:"Every open order visible at the same time as a card, with products adding to whichever one is active.",
   why:"No other register here can hold four orders at once. Tap a ticket to make it live, tap products to fill it, settle it when they pay. Built for a counter where three people are waiting on different things."},
 
  {k:"commerce",n:"Commerce",tag:"Clothing, gifts, anything with a catalogue behind it",
   shell:"commerce",font:"Inter",mono:"Inter",mode:"light",accent:"#008060",
-  bg:"#F1F2F4",panel:"#FFFFFF",line:"#DFE3E8",key:"#FFFFFF",radius:8,chrome:"own",
+  bg:"#F1F2F4",panel:"#FFFFFF",line:"#DFE3E8",key:"#FFFFFF",radius:8,keyMin:170,density:1,fontScale:1,chrome:"own",
   ref:"Search-led, products as a list rather than a grid, a green checkout button and a cart panel that behaves like an online one.",
   why:"For a shop with more products than fit on a screen. You search or scan rather than browse, and the cart totals like a web checkout."},
 
  {k:"kiosk",n:"Kiosk",tag:"Big screens, queues, anywhere a customer can see it",
   shell:"kiosk",font:"Inter",mono:"Inter",mode:"light",accent:"#00A05A",
-  bg:"#FFFFFF",panel:"#F5F7F6",line:"#E1E6E3",key:"#F5F7F6",radius:16,chrome:"own",
+  bg:"#FFFFFF",panel:"#F5F7F6",line:"#E1E6E3",key:"#F5F7F6",radius:16,keyMin:240,density:1.35,fontScale:1.18,chrome:"own",
   ref:"One thing on screen at a time — categories, then products, then how many. Nothing sits beside anything else.",
   why:"Every other register shows a grid and an order together. This one never does: it asks one question per screen with targets big enough to hit from a metre away."}
 ];
