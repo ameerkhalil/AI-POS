@@ -1,463 +1,169 @@
 /* ===========================================================================
-   The design studio.
+   Choosing a register.
 
-   The last thing before the register opens. Not a list of layouts to pick from —
-   their actual register, with their actual products, that they rearrange by
-   dragging until it looks the way they want. Then they launch it.
+   This used to be a builder — drag the keys, move the panels, set a radius.
+   It produced a lot of mediocre registers and a lot of confusion. Eight
+   designed ones, each drawn as a whole and each properly different, is a better
+   answer: nobody has to have taste in interface design to end up with one that
+   works.
 
-   Everything here writes straight into CFG. There is no separate "design" state
-   to sync, because the thing on screen is the configuration.
+   Keys can still be rearranged afterwards, in the menu designer, by anyone who
+   wants to. It just isn't the first thing asked of somebody setting up a shop.
    =========================================================================== */
 
-let STUDIO_MENU = 0, STUDIO_SEL = null, STUDIO_GUIDE = true, STUDIO_DREW = false;
-
-/* Re-rendering the whole studio on every click replayed every entrance
-   animation, which read as the screen jumping. These three do the smallest
-   update each change actually needs. */
-function touchTools() {
-  const L = effL();
-  document.querySelectorAll("#studio [data-set]").forEach(b => {
-    const [k, v] = b.dataset.set.split("=");
-    const on = v === undefined ? !!L[k] : String(L[k]) === v;
-    b.classList.toggle("on", on);
-    if (b.dataset.label) b.textContent = b.dataset.label.replace("{v}",
-      k === "tape" ? L.tape : k === "nav" ? (L.nav === "rail" ? "side" : "top")
-      : k === "depts" ? (L.depts === "rail" ? "side" : "top") : L[k]);
-  });
-  document.querySelectorAll("#studio [data-out]").forEach(o => {
-    const k = o.dataset.out;
-    o.textContent = k === "density" ? (+L[k]).toFixed(2) : L[k];
-  });
-  const reset = document.getElementById("stReset");
-  if (reset) reset.style.display = CFG.layoutCustom ? "" : "none";
-}
-/* The mock's shape lives in classes and variables, so most changes are a class
-   swap rather than a rebuild. */
-function touchMock() {
-  const L = effL(), M = MODES[CFG.theme.mode] || MODES.dark, a = CFG.theme.accent;
-  const mock = document.querySelector("#studio .stmock");
-  if (!mock) return drawStudio();
-  const inner = mock.querySelector(".stinner");
-  inner.className = `stinner ${L.tape} ${L.nav}`;
-  mock.style.background = M.bg; mock.style.color = M.txt;
-  mock.classList.toggle("guide", STUDIO_GUIDE);
-  mock.style.setProperty("--a", a);
-  const bar = mock.querySelector(".stbar");
-  if (bar) bar.style.background = CFG.theme.mode === "light" ? "#E2E4DF" : "#141A1C";
-  mock.querySelectorAll(".sdot,.stt b").forEach(e => {
-    if (e.classList.contains("sdot")) e.style.background = a; else e.style.color = a;
-  });
-  touchKeys();
-}
-function touchSel() {
-  const el = document.getElementById("stSel");
-  if (el) el.innerHTML = selPanel();
-}
-function touchKeys() {
-  touchSel();
-  const box = document.getElementById("skeys");
-  if (!box) return drawStudio();
-  const L = effL();
-  const menus = CFG.menus.filter(m => !m.fuel);
-  const menu = menus[STUDIO_MENU] || menus[0];
-  const cols = L.keyStyle === "list" ? 1 : Math.max(2, Math.round(760 / L.keyMin));
-  box.className = `skeys ${L.keyStyle}`;
-  box.style.gridTemplateColumns = `repeat(${cols},1fr)`;
-  box.innerHTML = menu ? menu.keys.map(studioKey).join("") : "";
-  wireKeys();
-}
+let PICK = null;
 
 function openStudio() {
-  STUDIO_DREW = false;
   document.getElementById("setup").classList.add("hide");
   document.getElementById("building").style.display = "none";
   const el = document.getElementById("studio");
   el.classList.add("on");
-  themeFromConfig();
+  PICK = CFG.layout || "counter";
+  applyRegister(PICK);
   drawStudio();
 }
 
-function studioL() {
-  return LAYOUTS.find(x => x.k === CFG.layout) || LAYOUTS[0];
-}
-/* Writes a single property of the arrangement and redraws. Layout stops being a
-   preset the moment one of these is touched — it becomes theirs. */
-const SAY = {
-  tape: v => `Order panel moved ${v === "bottom" ? "to the bottom" : "to the " + v}`,
-  nav: v => `Main menu moved to the ${v === "rail" ? "side" : "top"}`,
-  depts: v => `Sections moved to the ${v === "rail" ? "side" : "top"}`,
-  keyStyle: v => `Products now drawn as ${({tile:"tiles",pad:"pads",list:"rows",card:"cards"})[v]}`,
-  search: v => v ? "Search bar shown" : "Search bar hidden",
-  fkeys: v => v ? "Function row shown" : "Function row hidden",
-  keyMin: v => `Keys ${v}px wide`,
-  density: v => `Spacing ${(+v).toFixed(2)}×`,
-  radius: v => `Corners ${v}px`
-};
-const STRUCTURAL = ["tape", "nav", "depts", "search", "fkeys"];
-function setL(prop, val) {
-  CFG.layoutCustom = { ...(CFG.layoutCustom || {}), [prop]: val };
-  applyStudio();
-  /* Only a change of arrangement needs the mock rebuilding. Sizing, colour and
-     key style are a class or a variable. */
-  if (STRUCTURAL.includes(prop)) drawStudio(true);
-  else { touchMock(); touchTools(); }
-  if (SAY[prop]) flash(SAY[prop](val));
-}
-/* One line, top of the canvas, saying what just happened. Without it every
-   click feels like nothing changed. */
-let FLASH_T = null;
-function flash(msg) {
-  const el = document.getElementById("stFlash");
-  if (!el) return;
-  el.textContent = msg;
-  el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
-  clearTimeout(FLASH_T);
-  FLASH_T = setTimeout(() => el.classList.remove("show"), 2200);
-}
-function effL() {
-  return { ...studioL(), ...(CFG.layoutCustom || {}) };
-}
-function applyStudio() {
-  const L = effL();
-  THEME.keyMin = L.keyMin; THEME.density = L.density; THEME.radius = L.radius;
-  THEME.fontScale = L.fs; THEME.showF = L.fkeys; THEME.searchLeads = L.search;
-  THEME.tape = L.tape; THEME.depts = L.depts; THEME.keyStyle = L.keyStyle; THEME.nav = L.nav;
-  THEME.mode = CFG.theme.mode; THEME.accent = CFG.theme.accent;
-  CFG.theme = { ...CFG.theme, keyMin: L.keyMin, density: L.density, radius: L.radius };
-  applyTheme();
-}
-
-const KEYC = ["#3E464A","#3A5A52","#57493B","#3D4D66","#573D4D","#485435","#7A3B3B","#2F4F55"];
-function studioKey(k, i) {
-  const L = effL();
-  const p = byId(CFG.plus, k.pluId);
-  const d = p ? byId(CFG.depts, p.deptId) : null;
-  const col = k.color || d?.color || "#3E464A";
-  const sel = STUDIO_SEL === i;
-  const span = `${(k.w || 1) > 1 ? "grid-column:span 2;" : ""}${(k.h || 1) > 1 ? "grid-row:span 2;" : ""}`;
-  const label = k.label || p?.n || "(missing)";
-  const price = p ? money(p.price) : "\u2014";
-  const body = L.keyStyle === "list"
-    ? `<span class="sbar" style="background:${col}"></span>
-       <span class="sn">${esc(label)}</span><span class="sp num">${price}</span>`
-    : L.keyStyle === "card"
-    ? `<span class="scap" style="background:${col}"></span>
-       <span class="sbody"><span class="sn">${esc(label)}</span></span>
-       <span class="sfoot"><span class="sp num">${price}</span></span>`
-    : `<span class="sn">${esc(label)}</span><span class="sp num">${price}</span>`;
-  const bg = L.keyStyle === "list" || L.keyStyle === "card" ? "" :
-    `background:linear-gradient(180deg,${col} 0%,${col}CC 120%);`;
-  return `<div class="sk ${L.keyStyle} ${sel ? "sel" : ""}" draggable="true" data-i="${i}"
-    style="${span}${bg}border-radius:${L.keyStyle === "list" ? 0 : L.radius + 2}px"
-    onclick="__st.pick(${i})">${body}${sel ? `<span class="skpin"></span>` : ""}</div>`;
-}
-/* The controls live beside the board, not on top of the key. Overlaying them
-   meant selecting a key put a delete button under the cursor, and the next
-   click removed the thing you'd just picked. */
-function selPanel() {
-  const menus = CFG.menus.filter(m => !m.fuel);
-  const menu = menus[STUDIO_MENU] || menus[0];
-  if (!menu || STUDIO_SEL == null || !menu.keys[STUDIO_SEL])
-    return `<div class="stsec">Selected key</div>
-      <div class="selnone">Click a key on the board to change its size, colour or label.
-        Drag one to move it.</div>`;
-  const k = menu.keys[STUDIO_SEL];
-  const p = byId(CFG.plus, k.pluId);
-  const d = p ? byId(CFG.depts, p.deptId) : null;
-  return `<div class="stsec">Selected key</div>
-    <div class="selbox">
-      <div class="selname">${esc(k.label || p?.n || "(missing)")}</div>
-      <div class="selsub">${esc(d?.n || "")}${p ? " · " + money(p.price) : ""}</div>
-      <div class="stchips" style="margin-top:11px">
-        <button class="${(k.w || 1) === 2 ? "on" : ""}" onclick="__st.wider(${STUDIO_SEL})">Double width</button>
-        <button class="${(k.h || 1) === 2 ? "on" : ""}" onclick="__st.taller(${STUDIO_SEL})">Double height</button>
-      </div>
-      <div class="selsw">${KEYC.map(c => `<i style="background:${c}"
-        class="${k.color === c ? "on" : ""}" onclick="__st.colour(${STUDIO_SEL},'${c}')"></i>`).join("")}
-        <i class="x ${!k.color ? "on" : ""}" onclick="__st.colour(${STUDIO_SEL},'')"
-          title="Use the department colour">&#8634;</i></div>
-      <button class="selrename" onclick="__st.rename(${STUDIO_SEL})">Rename this key</button>
-      <button class="seldrop" onclick="__st.drop(${STUDIO_SEL})">Take it off this menu</button>
-    </div>`;
-}
-
-let DRAGGING = false;
-function wireKeys() {
-  const box = document.getElementById("skeys");
-  if (!box) return;
-  let from = null;
-  box.querySelectorAll(".sk").forEach(k => {
-    k.addEventListener("dragstart", e => {
-      DRAGGING = true; from = +k.dataset.i; k.classList.add("drag");
-      e.dataTransfer.effectAllowed = "move";
-      /* Firefox needs data set or the drag never starts. */
-      try { e.dataTransfer.setData("text/plain", String(from)); } catch (err) {}
-    });
-    k.addEventListener("dragend", () => {
-      k.classList.remove("drag");
-      box.querySelectorAll(".sk").forEach(x => x.classList.remove("over"));
-      /* A drag ends with a click event; swallow it so dropping doesn't also
-         select whatever it landed on. */
-      setTimeout(() => { DRAGGING = false; }, 60);
-    });
-    k.addEventListener("dragover", e => { e.preventDefault();
-      e.dataTransfer.dropEffect = "move"; k.classList.add("over"); });
-    k.addEventListener("dragleave", () => k.classList.remove("over"));
-    k.addEventListener("drop", e => {
-      e.preventDefault(); e.stopPropagation();
-      k.classList.remove("over");
-      const to = +k.dataset.i;
-      const src = from != null ? from : parseInt(e.dataTransfer.getData("text/plain"), 10);
-      if (!isNaN(src)) window.__st.move(src, to);
-    });
-  });
-}
-
-function drawStudio(again) {
-  const L = effL();
-  const first = !STUDIO_DREW;
-  STUDIO_DREW = true;
-  const menus = CFG.menus.filter(m => !m.fuel);
-  const menu = menus[STUDIO_MENU] || menus[0];
-  const M = MODES[CFG.theme.mode] || MODES.dark;
-  const accent = CFG.theme.accent;
-
-  const cycle = (arr, cur) => arr[(arr.indexOf(cur) + 1) % arr.length];
-
+function drawStudio() {
+  const L = LAYOUTS.find(x => x.k === PICK) || LAYOUTS[0];
   window.__st = {
-    style: k => { CFG.layout = k; CFG.layoutCustom = null; applyStudio(); drawStudio(true);
-      flash(`Started from ${(LAYOUTS.find(x => x.k === k) || {}).n}`); },
-    tape: () => setL("tape", cycle(["left", "right", "bottom"], L.tape)),
-    nav: () => setL("nav", cycle(["rail", "top"], L.nav)),
-    depts: () => setL("depts", cycle(["tabs", "rail"], L.depts)),
-    keyStyle: k => setL("keyStyle", k),
-    search: () => setL("search", !L.search),
-    fkeys: () => setL("fkeys", !L.fkeys),
-    size: v => setL("keyMin", Math.round(+v)),
-    dense: v => setL("density", +v),
-    radius: v => setL("radius", +v),
-    mode: m => { CFG.theme.mode = m; applyStudio(); touchMock(); touchTools();
-      flash(({dark:"Dark",light:"Light",contrast:"High contrast"})[m] + " mode"); },
-    accent: a => { CFG.theme.accent = a; applyStudio(); touchMock(); touchTools();
-      flash("Accent colour changed"); },
-    menu: i => { STUDIO_MENU = i; STUDIO_SEL = null; drawStudio(true); },
-    pick: i => { if (DRAGGING) return; STUDIO_SEL = STUDIO_SEL === i ? null : i; touchKeys(); },
-    wider: i => { const k = menu.keys[i]; k.w = (k.w || 1) === 2 ? 1 : 2; touchKeys();
-      flash(k.w === 2 ? "Key made double width" : "Key back to single width"); },
-    taller: i => { const k = menu.keys[i]; k.h = (k.h || 1) === 2 ? 1 : 2; touchKeys();
-      flash(k.h === 2 ? "Key made double height" : "Key back to single height"); },
-    colour: (i, c) => { menu.keys[i].color = c || null; touchKeys();
-      flash(c ? "Key recoloured" : "Key back to its department colour"); },
-    drop: i => { const n = byId(CFG.plus, menu.keys[i].pluId)?.n || "Key";
-      menu.keys.splice(i, 1); STUDIO_SEL = null; touchKeys();
-      flash(`${n} taken off this menu — still in the pricebook`); },
-    move: (from, to) => {
-      if (to < 0 || to >= menu.keys.length || from === to) return;
-      menu.keys.splice(to, 0, menu.keys.splice(from, 1)[0]);
-      STUDIO_SEL = to; touchKeys(); flash("Key moved");
-    },
-    reset: () => { CFG.layoutCustom = null; applyStudio(); drawStudio(true);
-      toast("Back to the " + studioL().n + " arrangement."); },
-    rename: i => {
-      const menus = CFG.menus.filter(m => !m.fuel);
-      const menu = menus[STUDIO_MENU] || menus[0];
-      const k = menu.keys[i], p = byId(CFG.plus, k.pluId);
-      const el = veil(`<div class="card"><h3>Rename this key</h3>
-        <p>The product stays <b>${esc(p?.n || "—")}</b> in the pricebook. This only changes what's
-          printed on the button.</p>
-        <input id="rnv" class="big" style="text-align:left;font-size:18px"
-          value="${esc(k.label || p?.n || "")}">
-        <div class="row"><button class="no" id="rnn">Cancel</button>
-          <button class="ok" id="rny">Set it</button></div></div>`);
-      const inp = el.querySelector("#rnv"); inp.focus(); inp.select();
-      const go = () => { k.label = inp.value.trim() || null; el.remove(); touchKeys(); flash("Key renamed"); };
-      el.querySelector("#rnn").onclick = () => el.remove();
-      el.querySelector("#rny").onclick = go;
-      inp.onkeydown = e => { if (e.key === "Enter") go(); };
-    },
-    guide: () => { STUDIO_GUIDE = !STUDIO_GUIDE;
-      document.querySelector("#studio .stmock").classList.toggle("guide", STUDIO_GUIDE);
-      const b = document.querySelector("#studio .stguide");
-      if (b) { b.classList.toggle("on", STUDIO_GUIDE);
-        b.textContent = (STUDIO_GUIDE ? "Hide" : "Show") + " what I can change"; } },
+    pick: k => { PICK = k; applyRegister(k); drawStudio(); },
     launch: launchPOS
   };
 
-  const KEYC = ["#3E464A", "#3A5A52", "#57493B", "#3D4D66", "#573D4D", "#485435", "#7A3B3B", "#2F4F55"];
-  const cols = L.keyStyle === "list" ? 1 : Math.max(2, Math.round(760 / L.keyMin));
-
-  window.__keyCtx = { L, menus, menu };
-  const keyHtml = (k, i) => studioKey(k, i);
-  const _unusedKeyHtml = (k, i) => {
-    const p = byId(CFG.plus, k.pluId);
-    const d = p ? byId(CFG.depts, p.deptId) : null;
-    const col = k.color || d?.color || "#3E464A";
-    const sel = STUDIO_SEL === i;
-    const span = `${(k.w || 1) > 1 ? "grid-column:span 2;" : ""}${(k.h || 1) > 1 ? "grid-row:span 2;" : ""}`;
-    const label = k.label || p?.n || "(missing)";
-    const price = p ? money(p.price) : "—";
-    const body = L.keyStyle === "list"
-      ? `<span class="sbar" style="background:${col}"></span>
-         <span class="sn">${esc(label)}</span><span class="sp num">${price}</span>`
-      : L.keyStyle === "card"
-      ? `<span class="scap" style="background:${col}"></span>
-         <span class="sbody"><span class="sn">${esc(label)}</span></span>
-         <span class="sfoot"><span class="sp num">${price}</span></span>`
-      : `<span class="sn">${esc(label)}</span><span class="sp num">${price}</span>`;
-    const bg = L.keyStyle === "list" || L.keyStyle === "card" ? "" :
-      `background:linear-gradient(180deg,${col} 0%,${col}CC 120%);`;
-    return `<div class="sk ${L.keyStyle} ${sel ? "sel" : ""}" draggable="true" data-i="${i}"
-      style="${span}${bg}border-radius:${L.keyStyle === "list" ? 0 : L.radius + 2}px"
-      onclick="__st.pick(${i})">${body}
-      ${sel ? `<span class="skt">
-        <button onclick="event.stopPropagation();__st.wider(${i})" title="Width">${(k.w || 1) === 2 ? "◧" : "◫"}</button>
-        <button onclick="event.stopPropagation();__st.taller(${i})" title="Height">${(k.h || 1) === 2 ? "▤" : "▥"}</button>
-        <button onclick="event.stopPropagation();__st.drop(${i})" title="Remove">×</button></span>
-        <span class="skc">${KEYC.map(c => `<i style="background:${c}"
-          onclick="event.stopPropagation();__st.colour(${i},'${c}')"></i>`).join("")}
-          <i class="x" onclick="event.stopPropagation();__st.colour(${i},'')">↺</i></span>` : ""}</div>`;
-  };
-
-  /* Labels used to sit on top of the thing they described, which covered the
-     content and looked broken. They now live in one bar under the canvas and
-     fill in on hover, so nothing is ever obscured. */
-  const zone = (label, action) => ` data-zone="${esc(label)}" data-act="${esc(action)}"`;
-
-  const sections = `<div class="ssec ${L.depts} zone" onclick="__st.depts()"${
-    zone("Sections", L.depts === "rail" ? "move them to the top" : "move them to the side")}>
-    ${menus.map((m, i) => `<span class="${i === STUDIO_MENU ? "on" : ""}"
-      onclick="event.stopPropagation();__st.menu(${i})"
-      style="${i === STUDIO_MENU ? `--a:${accent}` : ""}">${esc(m.n)}</span>`).join("")}</div>`;
-
-  const tape = `<div class="stape zone" onclick="__st.tape()"${
-    zone("Order panel", "move it " + (L.tape === "left" ? "to the right" : L.tape === "right" ? "to the bottom" : "to the left"))}>
-    <div class="sth">Current sale</div>
-    <div class="stl"><span>${esc(CFG.plus[0]?.n || "First product")}</span>
-      <span class="num">${money(CFG.plus[0]?.price || 0)}</span></div>
-    <div class="stl"><span>${esc(CFG.plus[1]?.n || "Second product")}</span>
-      <span class="num">${money(CFG.plus[1]?.price || 0)}</span></div>
-    <div class="stt"><span>Total</span><b style="color:${accent}">${
-      money((CFG.plus[0]?.price || 0) + (CFG.plus[1]?.price || 0))}</b></div>
-    <div class="stp"><span style="border-color:${accent};color:${accent}">Cash</span>
-      <span>Card</span></div></div>`;
-
-  const board = `<div class="sboard">
-    ${L.search ? `<div class="ssearch zone" onclick="__st.search()"${
-      zone("Search bar", "hide it")}>Search the pricebook, or scan a barcode</div>` : ""}
-    ${L.depts === "rail"
-      ? `<div class="srail">${sections}<div class="skeys ${L.keyStyle}" id="skeys"
-           style="grid-template-columns:repeat(${cols},1fr)">${menu ? menu.keys.map(keyHtml).join("") : ""}</div></div>`
-      : sections + `<div class="skeys ${L.keyStyle}" id="skeys"
-           style="grid-template-columns:repeat(${cols},1fr)">${menu ? menu.keys.map(keyHtml).join("") : ""}</div>`}
-    ${L.fkeys ? `<div class="sfk zone" onclick="__st.fkeys()"${zone("Function row", "hide it")}>
-      ${["Price check", "Void", "Discount", "No sale", "Suspend", "Return"].map(f =>
-        `<span>${f}</span>`).join("")}</div>` : ""}
-  </div>`;
-
   document.getElementById("studio").innerHTML = `
-    <div class="stwrap${first ? " enter" : ""}">
-      <header class="sthead">
+    <div class="pkwrap">
+      <header class="pkhead">
         <div>
-          <h1>Make it yours</h1>
-          <p>This is your register with your products in it. Drag keys to move them, click one to
-             resize or recolour it, click the order panel or the sections to move them. Nothing here
-             is permanent — all of it is editable later under Appearance.</p>
+          <div class="pkkick">Last step</div>
+          <h1>Pick your register</h1>
+          <p>Eight of them, each designed as a whole — different type, different colour, different
+            arrangement. Every one is finished and tested. You can change it whenever you like, and
+            rearrange the keys yourself later under Menu designer.</p>
         </div>
         <button class="launch" onclick="__st.launch()">
-          <span>Launch the register</span>
+          <span>Open ${esc(CFG.site.name)}</span>
           <svg viewBox="0 0 20 20"><path d="M3 10h13M11 5l5 5-5 5" stroke="currentColor"
             stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </header>
 
-      <div class="stbody">
-        <aside class="sttools">
-          <div class="stsec">Start from</div>
-          <div class="stpresets">${LAYOUTS.map(l => `
-            <button class="${CFG.layout === l.k && !CFG.layoutCustom ? "on" : ""}"
-              onclick="__st.style('${l.k}')">${esc(l.n)}</button>`).join("")}</div>
-          ${CFG.layoutCustom ? `<button class="streset" onclick="__st.reset()">
-            You've changed this from ${esc(studioL().n)} — reset</button>` : ""}
+      <div class="pkbody">
+        <div class="pklist">${LAYOUTS.map(l => `
+          <button class="pkcard ${l.k === PICK ? "on" : ""}" onclick="__st.pick('${l.k}')">
+            <span class="pkswatch" style="background:${l.bg};border-color:${l.line}">
+              ${l.nav === "top"
+                ? `<i class="nv top" style="background:${l.panel}"></i>`
+                : `<i class="nv side" style="background:${l.panel}"></i>`}
+              <i class="tp ${l.tape}" style="background:${l.panel};border-color:${l.line}"></i>
+              <span class="kys ${l.keyStyle} ${l.nav} ${l.tape}">
+                ${[1,2,3,4].map(() => `<i style="background:${l.key};
+                  border-radius:${Math.min(l.radius, 7)}px;
+                  ${l.keyStyle === "card" ? `border-top:2px solid ${l.accent}` : ""}"></i>`).join("")}
+              </span>
+              <i class="ac" style="background:${l.accent}"></i>
+            </span>
+            <span class="pkmeta">
+              <b style="font-family:'${l.font}',Archivo,sans-serif">${esc(l.n)}</b>
+              <em>${esc(l.tag)}</em>
+            </span>
+          </button>`).join("")}
+        </div>
 
-          <div class="stsec">Products drawn as</div>
-          <div class="stchips">${[["tile", "Tiles"], ["pad", "Pads"], ["list", "Rows"], ["card", "Cards"]]
-            .map(([k, n]) => `<button class="${L.keyStyle === k ? "on" : ""}"
-              onclick="__st.keyStyle('${k}')">${n}</button>`).join("")}</div>
-
-          <div class="stsec">Arrangement</div>
-          <div class="stchips">
-            <button onclick="__st.tape()">Order: ${L.tape}</button>
-            <button onclick="__st.nav()">Menu: ${L.nav === "rail" ? "side" : "top"}</button>
-            <button onclick="__st.depts()">Sections: ${L.depts === "rail" ? "side" : "top"}</button>
-            <button class="${L.search ? "on" : ""}" onclick="__st.search()">Search bar</button>
-            <button class="${L.fkeys ? "on" : ""}" onclick="__st.fkeys()">Function row</button>
-          </div>
-
-          <div class="stsec">Sizing</div>
-          <label class="strange"><span>Key size</span>
-            <input type="range" min="120" max="280" value="${L.keyMin}"
-              oninput="__st.size(this.value)"><b>${L.keyMin}</b></label>
-          <label class="strange"><span>Spacing</span>
-            <input type="range" min="0.8" max="1.5" step="0.05" value="${L.density}"
-              oninput="__st.dense(this.value)"><b>${(+L.density).toFixed(2)}</b></label>
-          <label class="strange"><span>Rounding</span>
-            <input type="range" min="0" max="20" value="${L.radius}"
-              oninput="__st.radius(this.value)"><b>${L.radius}</b></label>
-
-          <div id="stSel">${selPanel()}</div>
-
-          <div class="stsec">Colour</div>
-          <div class="stchips">${[["dark", "Dark"], ["light", "Light"], ["contrast", "Contrast"]]
-            .map(([k, n]) => `<button class="${CFG.theme.mode === k ? "on" : ""}"
-              onclick="__st.mode('${k}')">${n}</button>`).join("")}</div>
-          <div class="stswatch">${ACCENTS.map(([hex]) =>
-            `<i class="${CFG.theme.accent === hex ? "on" : ""}" style="background:${hex}"
-              onclick="__st.accent('${hex}')"></i>`).join("")}</div>
-        </aside>
-
-        <div class="stcanvas">
-          <div class="stcbar">
-            <button class="stguide ${STUDIO_GUIDE ? "on" : ""}" onclick="__st.guide()">
-              ${STUDIO_GUIDE ? "Hide" : "Show"} what I can change</button>
-            <div class="stflash" id="stFlash"></div>
-          </div>
-          <div class="stmock ${STUDIO_GUIDE ? "guide" : ""}" style="background:${M.bg};color:${M.txt}">
-            <div class="stbar" style="background:${CFG.theme.mode === "light" ? "#E2E4DF" : "#141A1C"}">
-              <span class="sdot" style="background:${accent}"></span>
-              <b>${esc(CFG.site.name)}</b><em>Reg 1 · Store 001</em>
-            </div>
-            ${L.nav === "top" ? `<div class="snav top zone" onclick="__st.nav()"${
-              zone("Main menu", "move it to the side")}>
-              ${["Sale", "Office", "Reports", "Config"].map((n, i) =>
-                `<span class="${i === 0 ? "on" : ""}" style="--a:${accent}">${n}</span>`).join("")}</div>` : ""}
-            <div class="stinner ${L.tape} ${L.nav}">
-              ${L.nav === "rail" ? `<div class="snav rail zone" onclick="__st.nav()"${
-                zone("Main menu", "move it to the top")}>
-                ${["Sale", "Office", "Reports", "Config"].map((n, i) =>
-                  `<span class="${i === 0 ? "on" : ""}" style="--a:${accent}">${n}</span>`).join("")}</div>` : ""}
-              ${L.tape === "left" ? tape + board : board + tape}
+        <div class="pkstage">
+          <div class="pkshot" id="pkShot"></div>
+          <div class="pkwhy">
+            <b style="font-family:'${L.font}',Archivo,sans-serif">${esc(L.n)}</b>
+            <p>${esc(L.why)}</p>
+            <div class="pkfacts">
+              <span><em>Type</em>${esc(L.font)}</span>
+              <span><em>Products as</em>${({tile:"tiles",pad:"pads",list:"rows",card:"cards"})[L.keyStyle]}</span>
+              <span><em>Menu</em>${L.nav === "top" ? "across the top" : "down the side"}</span>
+              <span><em>Order</em>${L.tape === "bottom" ? "along the bottom" : "on the " + L.tape}</span>
             </div>
           </div>
-          <div class="sthint" id="stHint">${STUDIO_SEL != null
-            ? "<b>This key is selected.</b> Drag it to move it. The buttons on it change its width and height, the strip along the bottom sets its colour, and × takes it off this menu."
-            : "<b>Click any part of the register to change it.</b> Keys can be dragged, resized and recoloured. The panels around them move with a click."}</div>
         </div>
       </div>
     </div>`;
+  drawShot(L);
+}
 
-  /* Hovering any editable region explains it in the bar below, rather than
-     stamping a label over the top of it. */
-  const hint = document.getElementById("stHint");
-  const baseHint = hint ? hint.innerHTML : "";
-  document.querySelectorAll("#studio [data-zone]").forEach(z => {
-    z.addEventListener("mouseenter", () => {
-      if (hint) hint.innerHTML = `<b>${z.dataset.zone}</b> — click to ${z.dataset.act}.`;
-    });
-    z.addEventListener("mouseleave", () => { if (hint) hint.innerHTML = baseHint; });
-  });
+/* A real register at about half size, with this store's own products in it. */
+function drawShot(L) {
+  const el = document.getElementById("pkShot");
+  if (!el) return;
+  const menus = CFG.menus.filter(m => !m.fuel);
+  const menu = menus[0];
+  const keys = (menu ? menu.keys : []).slice(0, L.keyStyle === "list" ? 7 : 6);
+  const cols = L.keyStyle === "list" ? 1 : L.keyMin > 210 ? 2 : 3;
+  const F = `'${L.font}',Archivo,sans-serif`, M = `'${L.mono}',monospace`;
 
-  /* Drag to rearrange, with the same plain HTML5 events the menu designer uses. */
-  wireKeys();
+  const key = k => {
+    const p = byId(CFG.plus, k.pluId);
+    const d = p ? byId(CFG.depts, p.deptId) : null;
+    const col = k.color || d?.color || L.key;
+    const nm = esc(k.label || p?.n || "Product"), pr = p ? money(p.price) : "0.00";
+    if (L.keyStyle === "list") return `<div class="q list" style="border-color:${L.line};color:${L.mode==="light"?"#14181A":"#E6E9EA"}">
+      <i style="background:${col}"></i><b style="font-family:${F}">${nm}</b>
+      <s style="font-family:${M}">${pr}</s></div>`;
+    if (L.keyStyle === "card") return `<div class="q card" style="background:${L.panel};border-color:${L.line};
+      border-radius:${L.radius}px;color:${L.mode==="light"?"#14181A":"#E6E9EA"}">
+      <u style="background:${col}"></u>
+      <b style="font-family:${F}">${nm}</b>
+      <span style="border-color:${L.line}"><s style="font-family:${M}">${pr}</s>
+      <em style="color:${L.accent};border-color:${L.accent}55">Add</em></span></div>`;
+    return `<div class="q ${L.keyStyle}" style="background:${col};border-radius:${L.radius}px">
+      <b style="font-family:${F}">${nm}</b><s style="font-family:${M}">${pr}</s></div>`;
+  };
+
+  const nav = `<div class="qnav ${L.nav}" style="background:${L.panel};border-color:${L.line}">
+    ${["Sale","Office","Reports","Config"].map((n,i)=>
+      `<span style="font-family:${F};color:${i?(L.mode==="light"?"#6C7679":"#7C868A"):L.accent};
+        background:${i?"transparent":L.accent+"1A"}">${n}</span>`).join("")}</div>`;
+
+  const secs = `<div class="qsec ${L.depts}">${menus.slice(0,5).map((m,i)=>
+    `<span style="font-family:${F};color:${i?(L.mode==="light"?"#6C7679":"#7C868A"):(L.mode==="light"?"#14181A":"#E6E9EA")};
+      border-${L.depts==="rail"?"left":"bottom"}:2px solid ${i?"transparent":L.accent}">${esc(m.n)}</span>`).join("")}</div>`;
+
+  const first = CFG.plus[0], second = CFG.plus[1];
+  const tot = money((first?.price||0)+(second?.price||0));
+  const tape = `<div class="qtape ${L.tapeStyle}" style="background:${L.tapeStyle==="receipt"?L.panel:L.bg};
+    border-color:${L.line};color:${L.mode==="light"?"#14181A":"#E6E9EA"}">
+    <div class="qth" style="font-family:${F};border-color:${L.line}">Current sale</div>
+    ${[first,second].filter(Boolean).map(p=>`<div class="qtl" style="border-color:${L.line}">
+      <span style="font-family:${F}">${esc(p.n)}</span>
+      <span style="font-family:${M}">${money(p.price)}</span></div>`).join("")}
+    <div class="qtt" style="border-color:${L.line}">
+      <span style="font-family:${F}">Total</span>
+      <b style="font-family:${M};color:${L.accent}">${tot}</b></div>
+    <div class="qtp"><span style="border-color:${L.accent};color:${L.accent};font-family:${F}">Cash</span>
+      <span style="border-color:${L.line};font-family:${F}">Card</span></div></div>`;
+
+  const board = `<div class="qboard">
+    ${L.search?`<div class="qsrch" style="background:${L.panel};border-color:${L.line};
+      font-family:${F};color:${L.mode==="light"?"#8A9298":"#6C7679"}">Search the pricebook, or scan a barcode</div>`:""}
+    ${L.depts==="rail"
+      ? `<div class="qrail">${secs}<div class="qkeys" style="grid-template-columns:repeat(${cols},1fr)">
+           ${keys.map(key).join("")}</div></div>`
+      : secs+`<div class="qkeys" style="grid-template-columns:repeat(${cols},1fr)">${keys.map(key).join("")}</div>`}
+    ${L.fkeys?`<div class="qfk" style="border-color:${L.line}">${
+      ["Price check","Void","Discount","No sale","Suspend","Return"].map(f=>
+      `<span style="border-color:${L.line};font-family:${F};
+        color:${L.mode==="light"?"#8A9298":"#6C7679"}">${f}</span>`).join("")}</div>`:""}
+  </div>`;
+
+  el.innerHTML = `<div class="qmock" style="background:${L.bg};border-color:${L.line}">
+    <div class="qbar" style="background:${L.mode==="light"?L.key:"#0E1113"};border-color:${L.line}">
+      ${CFG.site.logo?`<img src="${esc(CFG.site.logo)}" alt="">`
+        :`<i style="background:${L.accent}"></i>`}
+      <b style="font-family:${F};color:${L.mode==="light"?"#14181A":"#E6E9EA"}">${esc(CFG.site.name)}</b>
+      <em style="font-family:${F};color:${L.mode==="light"?"#8A9298":"#6C7679"}">Reg 1 · Store 001</em>
+    </div>
+    ${L.nav==="top"?nav:""}
+    <div class="qbody ${L.tape} ${L.nav}">
+      ${L.nav==="rail"?nav:""}
+      ${L.tape==="left"?tape+board:board+tape}
+    </div>
+  </div>`;
 }
 
 /* ---------------------------- pre-flight ----------------------------

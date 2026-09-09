@@ -31,6 +31,14 @@ const clamp=(v,lo,hi)=>Math.min(hi,Math.max(lo,+v||lo));
 
 /* The theme is per store, not per browser. A café that picked amber and big keys
    gets amber and big keys on every terminal it signs into. */
+/* A register is a whole design, not a set of overrides — so applying one sets
+   the type, the palette and the arrangement together. */
+function applyRegister(k){
+  const L=LAYOUTS.find(x=>x.k===k)||LAYOUTS[0];
+  CFG.layout=L.k;
+  CFG.theme={mode:L.mode,accent:L.accent,keyMin:L.keyMin,density:L.density,radius:L.radius};
+  themeFromConfig();
+}
 function themeFromConfig(){
   if(!CFG)return;
   if(CFG.theme){
@@ -48,6 +56,8 @@ function themeFromConfig(){
     THEME.keyStyle=L.keyStyle;
     THEME.nav=L.nav;
     THEME.tapeStyle=L.tapeStyle;
+    THEME.font=L.font;THEME.mono=L.mono;
+    THEME.bg=L.bg;THEME.panel=L.panel;THEME.line=L.line;THEME.key=L.key;
     if(CFG.theme?.radius==null)THEME.radius=L.radius;
     if(CFG.theme?.fontScale==null)THEME.fontScale=L.fs;
   }
@@ -60,6 +70,13 @@ function saveTheme(){
 }
 function applyTheme(){
   const m=MODES[THEME.mode]||MODES.dark,r=document.documentElement.style;
+  /* The register's own palette wins over the generic mode, so Kitchen is warm
+     brown and Midnight is true black rather than both being "dark". */
+  if(THEME.bg){r.setProperty("--bg",THEME.bg);r.setProperty("--panel",THEME.panel);
+    r.setProperty("--panel-2",THEME.panel);r.setProperty("--line",THEME.line);
+    r.setProperty("--up",THEME.key);r.setProperty("--hi",THEME.key)}
+  if(THEME.font){r.setProperty("--ff",`"${THEME.font}",Archivo,system-ui,sans-serif`);
+    r.setProperty("--fm",`"${THEME.mono||"Azeret Mono"}",monospace`)}
   Object.entries({bg:m.bg,panel:m.panel,"panel-2":m.panel2,rail:m.rail,up:m.up,hi:m.hi,
     line:m.line,"line-2":m.line2,txt:m.txt,"txt-2":m.txt2,"txt-3":m.txt3,
     vfd:THEME.accent,keytxt:m.keytxt}).forEach(([k,v])=>r.setProperty("--"+k,v));
@@ -185,7 +202,7 @@ function tHealth(){
       Every product has a department, every department has a rate, every menu key points at something real,
       and somebody can still reach this screen.</div>`}
     <div class="sect">This terminal</div>
-    <div class="cbar" style="display:block">
+    <div class="buildbox">
       Build <b class="num">${BUILD}</b> · loaded ${new Date(performance.timeOrigin).toLocaleTimeString()}
       <br><span style="color:var(--txt-3)">If this doesn't match the build you just installed, the page is
       still running a cached copy — reload with Ctrl+Shift+R.</span>
@@ -197,7 +214,7 @@ function tHealth(){
 /* ============================ APPEARANCE TAB ============================ */
 function tLook(){
   window.__th=(k,v)=>{
-    if(k==="style"){CFG.layout=v;themeFromConfig();saveTheme();drawConfig();
+    if(k==="style"){applyRegister(v);saveTheme();drawConfig();
       return toast(`Interface set to <b>${esc((LAYOUTS.find(x=>x.k===v)||{}).n||v)}</b>.`)}
     if(k==="keyMin")v=clamp(v,110,260);
     if(k==="radius")v=clamp(v,0,14);
@@ -210,15 +227,19 @@ function tLook(){
   const m=MODES[THEME.mode],c=contrast(THEME.accent,m.panel);
   const ACC=["#5CE0A8","#6BA8D8","#E0B255","#D2664C","#B78BE0","#7FD858","#E08AB0","#4FD6D6","#F2F2F0"];
   $("cfgBody").innerHTML=`
-    <div class="sect">Interface</div>
-    <div class="stylegrid">${LAYOUTS.map(l=>`
-      <button class="stylecard ${CFG.layout===l.k?"on":""}" onclick="__th('style','${l.k}')">
-        <span class="stylemock ${l.keyStyle} ${l.nav}">
-          <i class="sm-nav"></i><i class="sm-tape"></i>
-          <span class="sm-keys">${[1,2,3,4].map(()=>`<i></i>`).join("")}</span>
+    <div class="sect">Your register</div>
+    <div class="regpick">${LAYOUTS.map(l=>`
+      <button class="rgp ${CFG.layout===l.k?"on":""}" onclick="__th('style','${l.k}')">
+        <span class="rgsw" style="background:${l.bg};border-color:${l.line}">
+          ${l.nav==="top"?`<i class="nv top" style="background:${l.panel}"></i>`
+            :`<i class="nv side" style="background:${l.panel}"></i>`}
+          <i class="tp ${l.tape}" style="background:${l.panel}"></i>
+          <span class="kys ${l.keyStyle} ${l.nav} ${l.tape}">${[1,2,3,4].map(()=>
+            `<i style="background:${l.key};border-radius:${Math.min(l.radius,7)}px"></i>`).join("")}</span>
+          <i class="ac" style="background:${l.accent}"></i>
         </span>
-        <b>${esc(l.n)}</b>
-        <em>${esc(l.why.split(".")[0])}.</em>
+        <b style="font-family:'${l.font}',Archivo,sans-serif">${esc(l.n)}</b>
+        <em>${esc(l.tag)}</em>
       </button>`).join("")}</div>
     <div class="sect">Mode</div>
     <div class="opts" style="margin-top:0">${[["dark","Dark","for indoor counters"],

@@ -23,7 +23,8 @@ const CGROUPS=[
   tabs:[["menus","Menu designer","Arrange the keys, sizes and colours"],
         ["look","Appearance","Layout, colours, spacing"],
         ["mops","Payment methods","Cash, card, EBT, gift cards"],
-        ["restricts","Age & time rules","ID checks and hours when things can't be sold"],
+        ["restricts","Age & time rules","ID checks and hours when things can't be sold",
+          ()=>CFG.caps.includes("age")||CFG.restricts.length>0],
         ["reasons","Reason codes","Why a void, a refund or a payout happened"]]},
  {n:"Your people",d:"Who can do what",
   tabs:[["people","Staff & permissions","Names, codes and what each role can reach"]]},
@@ -39,7 +40,10 @@ const CGROUPS=[
   tabs:[["ai","Ask for changes","Bulk edits in plain language"]]}
 ];
 function ctabs(){
-  const g=CGROUPS.map(x=>({...x,tabs:x.tabs.slice()}));
+  /* A clothing shop has no business being shown age restrictions. Anything with
+     a condition attached only appears when it applies — and can always be
+     switched on under Add features. */
+  const g=CGROUPS.map(x=>({...x,tabs:x.tabs.filter(t=>!t[3]||t[3]())}));
   /* Modules that are on get a home under Features, named for what they are. */
   const mods=Object.keys(MODULES).filter(modOn).map(k=>["mod_"+k,
     k==="records"?(listsCfg().lists[0]?.n||MODULES[k].n):MODULES[k].n,MODULES[k].what]);
@@ -68,8 +72,8 @@ function drawConfig(){
         </div>
         ${shown.map(g=>`<div class="cfggroup">
           <div class="cfggh">${esc(g.n)}</div>
-          ${g.tabs.map(t=>`<button class="cfgt ${TAB===t[0]?"on":""}" onclick="__w.tab('${t[0]}')">
-            ${esc(t[1])}</button>`).join("")}
+          ${g.tabs.map(t=>`<button class="cfgt ${TAB===t[0]?"on":""}" data-k="${t[0]}"
+            data-d="${esc(t[2]||"")}" onclick="__w.tab('${t[0]}')">${esc(t[1])}</button>`).join("")}
         </div>`).join("")||`<div class="cfgnone">Nothing matches “${esc(CQ)}”.</div>`}
       </aside>
       <section class="cfgmain">
@@ -81,11 +85,37 @@ function drawConfig(){
       </section>
     </div>`;
 
-  W.tab=k=>{TAB=k;CQ="";drawConfig()};
+  /* Re-rendering the sidebar on every keystroke made it blink and lose focus.
+     Typing filters in place; picking a screen only swaps the content. */
+  W.tab=k=>{
+    TAB=k;
+    document.querySelectorAll("#vConfig .cfgt").forEach(b=>
+      b.classList.toggle("on",b.dataset.k===k));
+    const home=document.querySelector("#vConfig .cfghome");
+    if(home)home.classList.toggle("on",k==="home");
+    const head=document.querySelector("#vConfig .cfghead");
+    const t=allTabs().find(x=>x.k===k);
+    if(head&&t)head.innerHTML=`<div><h2>${esc(t.n)}</h2><p>${esc(t.d)}</p></div>`;
+    if(head)head.style.display=k==="home"?"none":"";
+    drawBody();
+  };
   const s=$("cfgQ");
-  if(s){s.oninput=e=>{CQ=e.target.value;drawConfig();const n=$("cfgQ");
-    if(n){n.focus();n.setSelectionRange(n.value.length,n.value.length)}}}
+  if(s)s.oninput=e=>{
+    CQ=e.target.value;
+    const q=CQ.trim().toLowerCase();
+    document.querySelectorAll("#vConfig .cfgt").forEach(b=>{
+      const hit=!q||b.textContent.toLowerCase().includes(q)||(b.dataset.d||"").toLowerCase().includes(q);
+      b.style.display=hit?"":"none";
+    });
+    document.querySelectorAll("#vConfig .cfggroup").forEach(g=>{
+      const any=[...g.querySelectorAll(".cfgt")].some(b=>b.style.display!=="none");
+      g.style.display=any?"":"none";
+    });
+  };
 
+  drawBody();
+}
+function drawBody(){
   if(TAB==="home")return cfgHome();
   const views={import:importView,invoice:invoiceView,pricebook:tPricebook,depts:tDepts,
     menus:tMenus,mods:tMods,mops:tMops,restricts:tRestricts,promos:tPromos,people:tPeople,

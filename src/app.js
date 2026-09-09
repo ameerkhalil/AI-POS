@@ -87,25 +87,66 @@ const TYPES=TYPE_GROUPS.flatMap(g=>g[1]);
    are. Keys render as tiles, rows, cards or pads. Navigation is a rail or a top
    bar. The receipt is a till roll, a plain list, or a summary. A pizza shop and
    a grocery should not be the same screen with different words on it. */
+/* Eight registers, each designed as a whole rather than assembled from sliders.
+   Different type, different palette, different arrangement, different weight.
+   Every one has been drawn deliberately and works — which is worth more than
+   the freedom to build something that doesn't. */
 const LAYOUTS=[
- {k:"counter",n:"Counter",keyMin:150,density:1,search:true,fkeys:true,
-  tape:"left",depts:"tabs",keyStyle:"tile",nav:"rail",tapeStyle:"receipt",radius:4,fs:1,
-  why:"Compact tiles, sections across the top, receipt down the left. The general-purpose shape — convenience, hardware, anywhere with a broad pricebook and a scanner."},
- {k:"kitchen",n:"Kitchen",keyMin:210,density:1.25,search:false,fkeys:true,
-  tape:"right",depts:"tabs",keyStyle:"pad",nav:"top",tapeStyle:"list",radius:14,fs:1.12,
-  why:"Large soft pads with the price under the name, navigation across the top, order on the right. Built for a short menu and someone calling an order across a hot line."},
- {k:"ledger",n:"Ledger",keyMin:260,density:.82,search:true,fkeys:true,
-  tape:"left",depts:"rail",keyStyle:"list",nav:"rail",tapeStyle:"receipt",radius:2,fs:.94,
-  why:"Products as dense rows rather than tiles, sections down the side, sharp edges. Fits three times as many on screen — for a long pricebook you scan more than you tap."},
- {k:"boutique",n:"Boutique",keyMin:230,density:1.3,search:true,fkeys:false,
-  tape:"right",depts:"rail",keyStyle:"card",nav:"rail",tapeStyle:"plain",radius:12,fs:1.05,
-  why:"Roomy cards with space for sizes and colours, no function row, generous whitespace. For one sale that takes a conversation rather than forty that take seconds."},
- {k:"bar",n:"Bar",keyMin:176,density:1.1,search:false,fkeys:true,
-  tape:"right",depts:"rail",keyStyle:"tile",nav:"rail",tapeStyle:"list",radius:9,fs:1.04,
-  why:"Sections down the side so the whole menu is one tap away, tab on the right where it gets read back. Built for running tabs through a busy night."},
- {k:"kiosk",n:"Kiosk",keyMin:250,density:1.45,search:false,fkeys:false,
-  tape:"bottom",depts:"tabs",keyStyle:"pad",nav:"top",tapeStyle:"plain",radius:18,fs:1.18,
-  why:"Very large targets, almost no chrome, receipt along the bottom. For a tablet on a narrow counter, or anywhere the customer can see the screen."}
+ {k:"counter",n:"Counter",tag:"Convenience, hardware, anywhere with a scanner",
+  font:"Archivo",mono:"Azeret Mono",mode:"dark",accent:"#5CE0A8",
+  bg:"#1B2023",panel:"#242A2D",line:"#333B3E",key:"#394145",
+  keyMin:150,density:1,radius:4,fs:1,search:true,fkeys:true,
+  tape:"left",depts:"tabs",keyStyle:"tile",nav:"rail",tapeStyle:"receipt",
+  why:"Compact tiles, sections across the top, receipt down the left. The workhorse — a broad pricebook, a scanner, and a queue."},
+
+ {k:"kitchen",n:"Kitchen",tag:"Pizzerias, delis, anywhere with a hot line",
+  font:"Space Grotesk",mono:"Space Mono",mode:"dark",accent:"#F2762E",
+  bg:"#191512",panel:"#241D18",line:"#3A2F26",key:"#33291F",
+  keyMin:216,density:1.28,radius:16,fs:1.14,search:false,fkeys:true,
+  tape:"right",depts:"tabs",keyStyle:"pad",nav:"top",tapeStyle:"list",
+  why:"Big soft pads, warm and high-contrast, navigation across the top. Made to be read at arm's length in a hot kitchen."},
+
+ {k:"ledger",n:"Ledger",tag:"Grocery, pharmacy, thousands of lines",
+  font:"IBM Plex Sans",mono:"IBM Plex Mono",mode:"dark",accent:"#79A6E0",
+  bg:"#15181C",panel:"#1D2126",line:"#2C323A",key:"#232830",
+  keyMin:260,density:.82,radius:2,fs:.94,search:true,fkeys:true,
+  tape:"left",depts:"rail",keyStyle:"list",nav:"rail",tapeStyle:"receipt",
+  why:"Products as dense rows, sharp edges, sections down the side. Three times as many on screen for a pricebook you scan more than you tap."},
+
+ {k:"boutique",n:"Boutique",tag:"Clothing, jewellery, considered purchases",
+  font:"Fraunces",mono:"Azeret Mono",mode:"light",accent:"#8C6BC8",
+  bg:"#F4F1EC",panel:"#FBF9F6",line:"#DED8CF",key:"#EFEBE4",
+  keyMin:234,density:1.34,radius:14,fs:1.06,search:true,fkeys:false,
+  tape:"right",depts:"rail",keyStyle:"card",nav:"rail",tapeStyle:"plain",
+  why:"Light, serif, unhurried. Roomy cards with space for sizes and colours, no function row. For one sale that takes a conversation."},
+
+ {k:"bar",n:"Last Call",tag:"Bars, taprooms, running tabs",
+  font:"Archivo",mono:"Azeret Mono",mode:"dark",accent:"#E0A03C",
+  bg:"#0F1113",panel:"#181B1E",line:"#2A2F34",key:"#22272C",
+  keyMin:180,density:1.12,radius:9,fs:1.05,search:false,fkeys:true,
+  tape:"right",depts:"rail",keyStyle:"tile",nav:"rail",tapeStyle:"list",
+  why:"Near-black and amber, so it doesn't light up the room. Sections down the side, tab on the right where it gets read back."},
+
+ {k:"kiosk",n:"Kiosk",tag:"Tablets, food trucks, narrow counters",
+  font:"Space Grotesk",mono:"Space Mono",mode:"light",accent:"#0FA3A3",
+  bg:"#F2F4F3",panel:"#FFFFFF",line:"#DCE2E0",key:"#E7ECEA",
+  keyMin:250,density:1.5,radius:22,fs:1.22,search:false,fkeys:false,
+  tape:"bottom",depts:"tabs",keyStyle:"pad",nav:"top",tapeStyle:"plain",
+  why:"Very large targets, almost no chrome, order along the bottom. Bright enough to work outdoors and simple enough to hand over."},
+
+ {k:"market",n:"Market",tag:"Cafés, bakeries, farm stands",
+  font:"Fraunces",mono:"IBM Plex Mono",mode:"light",accent:"#4E8C48",
+  bg:"#F6F4EE",panel:"#FDFCF8",line:"#E0DACC",key:"#EDE9DE",
+  keyMin:186,density:1.16,radius:10,fs:1.06,search:true,fkeys:true,
+  tape:"left",depts:"tabs",keyStyle:"tile",nav:"top",tapeStyle:"receipt",
+  why:"Warm paper, a serif for the names, navigation across the top. Feels like a counter rather than a computer."},
+
+ {k:"midnight",n:"Midnight",tag:"Late trade, dim rooms, tired eyes",
+  font:"IBM Plex Sans",mono:"IBM Plex Mono",mode:"contrast",accent:"#33E0E0",
+  bg:"#000000",panel:"#0A0C0D",line:"#3A4448",key:"#141819",
+  keyMin:196,density:1.18,radius:0,fs:1.1,search:true,fkeys:true,
+  tape:"right",depts:"tabs",keyStyle:"tile",nav:"rail",tapeStyle:"list",
+  why:"True black, hard edges, one bright colour. Maximum contrast for a night shift or anyone who finds the others hard to read."}
 ];
 const ACCENTS=[
  ["#5CE0A8","Mint"],["#3FBF8F","Jade"],["#2FA3A3","Teal"],["#4FD6D6","Aqua"],
@@ -117,11 +158,13 @@ const ACCENTS=[
 ];
 function suggestLayout(){
   const t=(A.type+" "+A.desc).toLowerCase();
-  if(/bar|pub|brewery|taproom/.test(t))return "bar";
-  if(/pizz|restaurant|fast food|food truck|deli|juice|ice cream|caf|coffee|bakery/.test(t))return "kitchen";
-  if(/cloth|boutique|shoe|jewel|watch|handbag|furniture|camera|record|antique/.test(t))return "boutique";
-  if(/grocer|supermarket|market|convenience|liquor|pharmac|hardware|auto parts|feed/.test(t))return "ledger";
-  if(/kiosk|truck|stand/.test(t))return "kiosk";
+  if(/bar|pub|brewery|taproom|liquor/.test(t))return "bar";
+  if(/pizz|restaurant|fast food|deli|sandwich/.test(t))return "kitchen";
+  if(/food truck|kiosk|stand|juice|ice cream/.test(t))return "kiosk";
+  if(/caf|coffee|bakery|farm|cheese|produce|florist/.test(t))return "market";
+  if(/cloth|boutique|shoe|jewel|watch|handbag|furniture|antique|salon|spa/.test(t))return "boutique";
+  if(/grocer|supermarket|pharmac|hardware|auto parts|feed|market/.test(t))return "ledger";
+  if(/vape|smoke|tobacco|dispensary/.test(t))return "midnight";
   return "counter";
 }
 function suggestAccent(){
