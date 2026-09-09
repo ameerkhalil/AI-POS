@@ -132,6 +132,13 @@ button.go.busy .spin{display:block}
     transition-duration:.001ms!important}
   .tape .ln{opacity:1}
 }
+.forgot{margin-top:14px;text-align:center}
+.forgot button{background:none;border:none;color:var(--ink-soft,#5C6467);font:inherit;
+  font-size:13px;cursor:pointer;padding:6px 10px;border-radius:4px;text-decoration:underline;
+  text-underline-offset:3px}
+.forgot button:hover{color:var(--ink,#14181A)}
+.forgot button[disabled]{opacity:.5;cursor:default}
+.msg.ok{border-color:#2E7D5B;background:#E8F4EE;color:#1B5A3E}
 </style>
 </head>
 <body>
@@ -166,6 +173,10 @@ button.go.busy .spin{display:block}
       <button class="go" id="go" type="submit"><span>Sign in</span><i class="spin"></i></button>
     </form>
 
+    <div class="forgot" id="forgotWrap">
+      <button type="button" id="forgot">Forgotten your password?</button>
+    </div>
+
     <div class="msg" id="msg"></div>
     <div class="foot">Your sales and tax data stay yours. Nobody else can read them, and you can
       export or delete everything at any time.</div>
@@ -183,6 +194,34 @@ button.go.busy .spin{display:block}
 const $=id=>document.getElementById(id);
 let mode="in";
 
+/* Asking for a reset always answers the same way, whether or not the address has
+   an account — otherwise this page becomes a way to find out who has one. */
+function askReset(){
+  const email=($("email").value||"").trim();
+  const m=$("msg");
+  const show=(t,cls)=>{m.innerHTML=t;m.className="msg show "+(cls||"");};
+  if(!email||!email.includes("@")){
+    show("Put your email address in the box above first, then press this again.");
+    $("email").focus();
+    return;
+  }
+  const b=$("forgot");
+  b.disabled=true;b.textContent="Sending…";
+  fetch("/api/forgot",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({email})})
+    .then(()=>{
+      b.disabled=false;b.textContent="Forgotten your password?";
+      show(`If <b>${email.replace(/[&<>"]/g,"")}</b> has an account, a reset link has been issued and
+        is valid for thirty minutes.<br><br>
+        <span style="opacity:.75">No mail service is connected yet, so the link is written to the
+        server log — open your Render logs and look for PASSWORD RESET.</span>`,"ok");
+    })
+    .catch(()=>{
+      b.disabled=false;b.textContent="Forgotten your password?";
+      show("Couldn't reach the server. Try again in a moment.","bad");
+    });
+}
+
 function setMode(m){
   mode=m;
   $("tabs").classList.toggle("up",m==="up");
@@ -196,6 +235,8 @@ function setMode(m){
   $("go").querySelector("span").textContent = m==="in" ? "Sign in" : "Create the account";
   $("password").autocomplete = m==="in" ? "current-password" : "new-password";
   $("msg").textContent=""; $("msg").classList.remove("show");
+  /* Only offered when signing in — it makes no sense beside a new account. */
+  $("forgotWrap").style.display = m==="in" ? "block" : "none";
   ["h","sub"].forEach(id=>{const e=$(id);e.style.animation="none";void e.offsetWidth;
     e.style.animation="rise .4s var(--ease) both"});
 }
@@ -207,6 +248,8 @@ $("f").onsubmit=async e=>{
   const btn=$("go");
   btn.disabled=true; btn.classList.add("busy");
   $("msg").textContent=""; $("msg").classList.remove("show");
+  /* Only offered when signing in — it makes no sense beside a new account. */
+  $("forgotWrap").style.display = m==="in" ? "block" : "none";
   try{
     const r=await fetch(mode==="in"?"/api/login":"/api/signup",{
       method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",
@@ -282,6 +325,8 @@ if(matchMedia("(prefers-reduced-motion: reduce)").matches){
 
 setMode("in");
 $("email").focus();
+
+$("forgot").onclick=askReset;
 </script>
 </body>
 </html>

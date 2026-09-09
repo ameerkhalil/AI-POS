@@ -19,6 +19,7 @@ const LEARN = require("./lib/learn");
 const RET = require("./lib/retention");
 const TANKS = require("./lib/tanks");
 const ADMIN = require("./lib/admin");
+const MAIL = require("./lib/mail");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -363,6 +364,106 @@ app.post("/api/ai", auth, async (req, res) => {
   }
 });
 
+/* ---------------------------- password reset ------------------------------
+   No mail provider is configured yet, so the link is written to the server log
+   as well as emailed if one ever is. Reading your own log is a reasonable proof
+   of ownership when you're the one running the service, and it means recovery
+   works today rather than after a third-party signup.
+
+   Tokens are single use, expire in thirty minutes, and using one signs out
+   every existing session on that account. */
+db.exec(`
+CREATE TABLE IF NOT EXISTS resets (
+  token      TEXT PRIMARY KEY,
+  account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  expires_at TEXT NOT NULL,
+  used_at    TEXT
+);`);
+
+app.post("/api/forgot", (req, res) => {
+  const email = String(req.body.email || "").trim().toLowerCase();
+  /* The same answer either way — otherwise this becomes a way to find out which
+     email addresses have accounts. */
+  const same = { ok: true, sent: true };
+  if (!email) return res.json(same);
+
+  const a = db.prepare("SELECT id, email FROM accounts WHERE lower(email) = ?").get(email);
+  if (!a) { console.log(`  password reset asked for ${email} — no such account`); return res.json(same); }
+
+  const token = crypto.randomBytes(32).toString("hex");
+  db.prepare("INSERT INTO resets (token, account_id, expires_at) " +
+    "VALUES (?,?, datetime('now','+30 minutes'))").run(token, a.id);
+
+  const base = String(process.env.PUBLIC_URL || "").replace(/\/$/, "")
+    || `${req.protocol}://${req.get("host")}`;
+  const link = `${base}/reset.html?t=${token}`;
+
+  /* Try to send it. If mail isn't configured, or the provider refuses, the link
+     still goes to the log — recovery must not depend on a third party being
+     reachable, especially when the person recovering is the one running it. */
+  const msg = MAIL.resetEmail(link, null);
+  MAIL.send({ to: a.email, ...msg }).then(r => {
+    if (r.sent) {
+      console.log(`  password reset emailed to ${a.email} via ${r.provider}`);
+    } else {
+      console.log("");
+      console.log("  ─────────── PASSWORD RESET ───────────");
+      console.log(`  ${a.email}`);
+      console.log(`  ${link}`);
+      console.log("  valid for 30 minutes, single use");
+      console.log(`  email: ${r.reason}`);
+      console.log("  ──────────────────────────────────────");
+      console.log("");
+    }
+  });
+
+  try {
+    db.prepare("INSERT INTO activity (account_id, action, detail, ip) VALUES (?,?,?,?)")
+      .run(a.id, "password-reset-requested", "A reset link was issued",
+        req.headers["x-forwarded-for"] || req.ip || "");
+  } catch (e) {}
+
+  res.json(same);
+});
+
+/* Checked before the form is shown, so a dead link says so immediately rather
+   than after somebody has typed a new password twice. */
+app.get("/api/reset/check", (req, res) => {
+  const r = db.prepare(
+    "SELECT account_id FROM resets WHERE token = ? AND used_at IS NULL " +
+    "AND expires_at > datetime('now')").get(String(req.query.t || ""));
+  res.json({ valid: !!r });
+});
+
+app.post("/api/reset", (req, res) => {
+  const token = String(req.body.token || "");
+  const pass = String(req.body.password || "");
+  if (pass.length < 8)
+    return res.status(400).json({ error: "Use at least 8 characters." });
+
+  const r = db.prepare(
+    "SELECT account_id FROM resets WHERE token = ? AND used_at IS NULL " +
+    "AND expires_at > datetime('now')").get(token);
+  if (!r) return res.status(400).json({ error: "That link has expired or been used already." });
+
+  db.prepare("UPDATE accounts SET pass_hash = ? WHERE id = ?")
+    .run(bcrypt.hashSync(pass, 10), r.account_id);
+  db.prepare("UPDATE resets SET used_at = datetime('now') WHERE token = ?").run(token);
+  /* Any other reset outstanding for this account is now void too. */
+  db.prepare("UPDATE resets SET used_at = datetime('now') " +
+    "WHERE account_id = ? AND used_at IS NULL").run(r.account_id);
+  db.prepare("DELETE FROM sessions WHERE account_id = ?").run(r.account_id);
+
+  try {
+    db.prepare("INSERT INTO activity (account_id, action, detail, ip) VALUES (?,?,?,?)")
+      .run(r.account_id, "password-reset", "Password changed via a reset link; all sessions signed out",
+        req.headers["x-forwarded-for"] || req.ip || "");
+  } catch (e) {}
+
+  res.json({ ok: true });
+});
+
 /* --------------------------- recovering an account ------------------------
    Hosted with no shell and no mail server, a forgotten password is otherwise
    terminal. Setting ADMIN_RESET to "email:newpassword" applies it once at boot,
@@ -372,6 +473,7 @@ app.post("/api/ai", auth, async (req, res) => {
 function resetOnBoot() {
   const raw = String(process.env.ADMIN_RESET || "").trim();
   if (!raw) return;
+  console.log("  ADMIN_RESET is set — applying");
   const at = raw.indexOf(":");
   if (at < 1) return console.log("  ADMIN_RESET ignored — expected email:newpassword");
 
@@ -412,6 +514,25 @@ app.get("/api/admin/fleet", auth, operator, (req, res) => {
   res.json({ ...ADMIN.fleet(req.account.id), trend: ADMIN.trend(+req.query.days || 30),
     attention: ADMIN.attention(), grants: ADMIN.grants() });
 });
+
+/* Send yourself one, so the configuration is proved before somebody needs it. */
+app.post("/api/admin/mail-test", auth, operator, async (req, res) => {
+  const why = MAIL.whyNot();
+  if (why) return res.json({ ok: false, reason: why });
+  const r = await MAIL.send({
+    to: req.account.email,
+    subject: "AI POS mail is working",
+    text: "If you're reading this, mail is configured correctly.",
+    html: `<p style="font-family:sans-serif">If you're reading this, mail is configured
+      correctly.</p>`
+  });
+  ADMIN.log(req.account.id, null, "mail-test", r.sent ? "sent" : r.reason);
+  res.json({ ok: r.sent, reason: r.reason, provider: r.provider, to: req.account.email });
+});
+
+app.get("/api/admin/mail", auth, operator, (req, res) =>
+  res.json({ configured: MAIL.configured(), reason: MAIL.whyNot(),
+    provider: String(process.env.MAIL_PROVIDER || "") }));
 
 app.get("/api/admin/log", auth, operator, (req, res) =>
   res.json({ log: ADMIN.operatorLog() }));
@@ -912,8 +1033,21 @@ const runSweep = async () => {
 
 app.listen(PORT, () => {
   console.log(`AI POS listening on :${PORT}`);
+  /* Silence used to be ambiguous: a variable that was never set and one that
+     was set wrongly both produced no output, which is no help at 9pm. Say which
+     control variables are present, never their values. */
+  const seen = ["OPERATOR_EMAIL","OPERATOR_PASSWORD","ADMIN_RESET","DATA_DIR","NODE_ENV",
+    "MAIL_PROVIDER","MAIL_KEY","MAIL_FROM","MAIL_DOMAIN","PUBLIC_URL"]
+    .filter(k => String(process.env[k] || "").trim());
+  console.log(`  environment: ${seen.length ? seen.join(", ") : "none of the control variables are set"}`);
+
   ADMIN.seedOperator(bcrypt);
   resetOnBoot();
+
+  const ops = db.prepare("SELECT email FROM accounts WHERE is_operator = 1").all();
+  const mailWhy = MAIL.whyNot();
+  console.log(`  mail: ${mailWhy || "ready via " + process.env.MAIL_PROVIDER}`);
+  console.log(`  operators: ${ops.length ? ops.map(o => o.email).join(", ") : "none"}`);
   setTimeout(runSweep, 5000);
   setTimeout(pollGauges, 9000);
   setInterval(pollGauges, 15 * 60 * 1000);

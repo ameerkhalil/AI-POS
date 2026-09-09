@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Set a new password — AI POS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;display:grid;place-items:center;padding:24px;background:#E7E8E4;
+  color:#14181A;font-family:Archivo,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.box{width:100%;max-width:400px}
+h1{font-size:27px;font-weight:600;letter-spacing:-.02em;margin-bottom:9px}
+p{font-size:14.5px;color:#5C6467;line-height:1.6}
+label{display:block;font-size:12.5px;color:#5C6467;margin:20px 0 7px}
+input{width:100%;background:#F3F3F0;border:1px solid #CFD2CC;border-radius:4px;padding:13px 14px;
+  font:inherit;font-size:15px;color:#14181A}
+input:focus{outline:2px solid #14181A;outline-offset:1px}
+button{width:100%;margin-top:22px;background:#14181A;color:#E7E8E4;border:none;border-radius:4px;
+  padding:14px;font:inherit;font-size:15px;font-weight:500;cursor:pointer}
+button[disabled]{opacity:.4;cursor:not-allowed}
+.msg{margin-top:16px;padding:13px 15px;border-radius:4px;font-size:14px;line-height:1.55;
+  border:1px solid #CFD2CC;background:#F3F3F0}
+.msg.bad{border-color:#C05F48;background:#F7EAE6;color:#7A2E1B}
+.msg.ok{border-color:#2E7D5B;background:#E8F4EE;color:#1B5A3E}
+.hint{font-size:12.5px;color:#7A8285;margin-top:9px;line-height:1.55}
+a{color:#14181A}
+</style>
+</head>
+<body>
+<div class="box" id="box"><p>Checking that link…</p></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const token = new URLSearchParams(location.search).get("t") || "";
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, {
+    method: opts.method || "GET",
+    headers: { "Content-Type": "application/json" },
+    body: opts.body ? JSON.stringify(opts.body) : undefined
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || "Something went wrong.");
+  return d;
+}
+
+const dead = () => $("box").innerHTML = `
+  <h1>That link doesn't work</h1>
+  <p>Reset links last thirty minutes and can only be used once. Ask for a new one from the
+    sign-in page.</p>
+  <button onclick="location.href='/login.html'">Back to sign in</button>`;
+
+function form() {
+  $("box").innerHTML = `
+    <h1>Set a new password</h1>
+    <p>Once this is saved, every device signed into this account is signed out.</p>
+    <label for="p1">New password</label>
+    <input type="password" id="p1" autocomplete="new-password">
+    <label for="p2">Type it again</label>
+    <input type="password" id="p2" autocomplete="new-password">
+    <div class="hint">At least 8 characters.</div>
+    <button id="go">Save it</button>
+    <div class="msg" id="msg" style="display:none"></div>`;
+
+  const say = (t, cls) => {
+    const m = $("msg");
+    m.textContent = t;
+    m.className = "msg " + (cls || "");
+    m.style.display = "block";
+  };
+
+  const save = async () => {
+    const a = $("p1").value, b = $("p2").value;
+    if (a.length < 8) return say("Use at least 8 characters.", "bad");
+    if (a !== b) return say("Those two don't match.", "bad");
+    $("go").disabled = true;
+    $("go").textContent = "Saving…";
+    try {
+      await api("/api/reset", { method: "POST", body: { token, password: a } });
+      $("box").innerHTML = `
+        <h1>Done</h1>
+        <p>Your password has been changed and every other session signed out.</p>
+        <button onclick="location.href='/login.html'">Sign in</button>`;
+    } catch (e) {
+      $("go").disabled = false;
+      $("go").textContent = "Save it";
+      say(e.message, "bad");
+    }
+  };
+
+  $("go").onclick = save;
+  $("p2").onkeydown = e => { if (e.key === "Enter") save(); };
+  $("p1").focus();
+}
+
+if (!token) dead();
+else api("/api/reset/check?t=" + encodeURIComponent(token))
+  .then(r => r.valid ? form() : dead())
+  .catch(dead);
+</script>
+</body>
+</html>

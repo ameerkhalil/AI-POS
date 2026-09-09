@@ -226,11 +226,53 @@ function draw() {
       r => `<td><b>${esc(r.name)}</b></td><td style="color:var(--txt2)">${esc(r.email)}</td>
             <td style="color:var(--txt3)">open since ${ago(r.opened_at)}</td>`)}
 
+    <h2>Email</h2>
+    <div class="card" style="padding:16px 18px" id="mailBox">
+      <span style="color:var(--txt3)">Checking…</span>
+    </div>
+
     <div class="note" style="margin-top:34px;max-width:74ch">
       Everything above is shape and health — how many, how often, which modules. No product names,
       no customers, no receipt contents. Reading a tenant's actual data needs support access, which
       expires on its own and is written into their activity log where they can see it.
     </div>`;
+  drawMail();
+}
+
+/* Proving mail works before somebody locked out needs it to. */
+async function drawMail() {
+  const box = document.getElementById("mailBox");
+  if (!box) return;
+  let m;
+  try { m = await api("/api/admin/mail"); } catch (e) { return; }
+  box.innerHTML = m.configured
+    ? `<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <span class="pill ok">ready</span>
+        <span style="color:var(--txt2)">Sending through <b>${esc(m.provider)}</b>.</span>
+        <button class="act" style="margin-left:auto" onclick="testMail()">Send me a test</button>
+      </div><div id="mailResult"></div>`
+    : `<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <span class="pill warn">not sending</span>
+        <span style="color:var(--txt2)">${esc(m.reason || "")}</span>
+      </div>
+      <div class="note">Reset links are written to the server log instead, so nobody is ever
+        locked out. Set <b>MAIL_PROVIDER</b>, <b>MAIL_KEY</b> and <b>MAIL_FROM</b> to send them
+        properly.</div>`;
+}
+
+async function testMail() {
+  const out = document.getElementById("mailResult");
+  out.innerHTML = `<div class="note">Sending…</div>`;
+  try {
+    const r = await api("/api/admin/mail-test", { method: "POST", body: {} });
+    out.innerHTML = r.ok
+      ? `<div class="note" style="color:var(--ok)">Sent to ${esc(r.to)} via
+         ${esc(r.provider)}. If it doesn't arrive, check the spam folder and that the
+         sending domain is verified with your provider.</div>`
+      : `<div class="note" style="color:var(--bad)">${esc(r.reason)}</div>`;
+  } catch (e) {
+    out.innerHTML = `<div class="note" style="color:var(--bad)">${esc(e.message)}</div>`;
+  }
 }
 
 const section = (title, rows, cells) => !rows.length ? "" : `

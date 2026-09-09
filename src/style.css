@@ -2667,3 +2667,10 @@ body.tp-plain .grand .amt{font-size:40px}
   border:1px solid transparent;transition:color .14s,border-color .14s}
 .lockfoot button:hover{color:var(--txt);border-color:var(--line-2)}
 .lockfoot span{color:var(--txt-3);font-size:12px}
+
+/* the operator's way out of a merchant wizard */
+.opescape{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center;
+  margin:0 auto 6px;padding:12px 18px;border-radius:99px;background:#16181A;color:#E7E8E4;
+  font-size:13px;max-width:640px}
+.opescape a{color:var(--vfd,#5CE0A8);text-decoration:none;font-weight:500;white-space:nowrap}
+.opescape a:hover{text-decoration:underline}
