@@ -36,9 +36,9 @@ function drawStudio() {
         <div>
           <div class="pkkick">Last step</div>
           <h1>Pick your register</h1>
-          <p>Eight of them, each designed as a whole — different type, different colour, different
-            arrangement. Every one is finished and tested. You can change it whenever you like, and
-            rearrange the keys yourself later under Menu designer.</p>
+          <p>Five of them, and they are not one design in five colours — each is a different machine.
+            Different screens, different steps, different words. Pick the one that matches how your
+            counter actually works. You can change it whenever you like.</p>
         </div>
         <button class="launch" onclick="__st.launch()">
           <span>Open ${esc(CFG.site.name)}</span>
@@ -50,16 +50,8 @@ function drawStudio() {
       <div class="pkbody">
         <div class="pklist">${LAYOUTS.map(l => `
           <button class="pkcard ${l.k === PICK ? "on" : ""}" onclick="__st.pick('${l.k}')">
-            <span class="pkswatch" style="background:${l.bg};border-color:${l.line}">
-              ${l.nav === "top"
-                ? `<i class="nv top" style="background:${l.panel}"></i>`
-                : `<i class="nv side" style="background:${l.panel}"></i>`}
-              <i class="tp ${l.tape}" style="background:${l.panel};border-color:${l.line}"></i>
-              <span class="kys ${l.keyStyle} ${l.nav} ${l.tape}">
-                ${[1,2,3,4].map(() => `<i style="background:${l.key};
-                  border-radius:${Math.min(l.radius, 7)}px;
-                  ${l.keyStyle === "card" ? `border-top:2px solid ${l.accent}` : ""}"></i>`).join("")}
-              </span>
+            <span class="pkswatch sh-${l.shell}" style="background:${l.bg};border-color:${l.line}">
+              ${shellThumb(l)}
               <i class="ac" style="background:${l.accent}"></i>
             </span>
             <span class="pkmeta">
@@ -76,9 +68,7 @@ function drawStudio() {
             <p>${esc(L.why)}</p>
             <div class="pkfacts">
               <span><em>Type</em>${esc(L.font)}</span>
-              <span><em>Products as</em>${({tile:"tiles",pad:"pads",list:"rows",card:"cards"})[L.keyStyle]}</span>
-              <span><em>Menu</em>${L.nav === "top" ? "across the top" : "down the side"}</span>
-              <span><em>Order</em>${L.tape === "bottom" ? "along the bottom" : "on the " + L.tape}</span>
+              <span><em>Best for</em>${esc(L.tag)}</span>
             </div>
           </div>
         </div>
@@ -87,83 +77,230 @@ function drawStudio() {
   drawShot(L);
 }
 
-/* A real register at about half size, with this store's own products in it. */
+/* A miniature of the register that will actually open. Each of the five is
+   drawn from its own markup — the preview used to read layout properties that
+   no longer exist, so every register previewed as the same generic panel. */
+/* A ten-pixel sketch of each shell's actual shape. */
+function shellThumb(l) {
+  const p = `background:${l.panel}`, k = `background:${l.key}`, a = `background:${l.accent}`;
+  if (l.shell === "classic") return `
+    <i style="position:absolute;left:0;right:0;top:0;height:16px;${a};opacity:.55"></i>
+    <i style="position:absolute;left:0;top:16px;bottom:0;width:22px;${p}"></i>
+    <span style="position:absolute;left:26px;right:4px;top:20px;bottom:4px;display:grid;
+      grid-template-columns:repeat(3,1fr);gap:2px">${[1,2,3,4,5,6].map(() =>
+      `<i style="${k}"></i>`).join("")}</span>`;
+  if (l.shell === "menu") return `
+    <span style="position:absolute;left:4px;right:4px;top:12px;bottom:14px;display:grid;
+      grid-template-columns:1fr 1fr;gap:3px">${[1,2,3,4].map(() =>
+      `<i style="${k};border-radius:5px"></i>`).join("")}</span>
+    <i style="position:absolute;left:6px;right:6px;bottom:4px;height:8px;${a};border-radius:99px"></i>`;
+  if (l.shell === "terminal") return `
+    <i style="position:absolute;left:0;right:0;top:0;height:8px;${p}"></i>
+    <span style="position:absolute;left:4px;right:26px;top:12px;bottom:4px;display:grid;gap:2px;
+      grid-auto-rows:4px">${[1,2,3,4,5].map(() => `<i style="${k}"></i>`).join("")}</span>
+    <i style="position:absolute;right:0;top:8px;bottom:0;width:22px;${p}"></i>`;
+  if (l.shell === "catalogue") return `
+    <i style="position:absolute;left:0;top:0;bottom:0;width:24px;${p}"></i>
+    <span style="position:absolute;left:28px;right:4px;top:4px;bottom:14px;display:grid;
+      grid-template-columns:1fr 1fr;gap:3px">${[1,2].map(() =>
+      `<i style="${k};border-radius:3px;border-top:3px solid ${l.accent}"></i>`).join("")}</span>
+    <i style="position:absolute;left:24px;right:0;bottom:0;height:12px;${p}"></i>`;
+  return `
+    <span style="position:absolute;left:16px;right:16px;top:6px;bottom:18px;display:grid;gap:3px;
+      grid-auto-rows:12px">${[1,2].map(() => `<i style="${k};border-radius:5px"></i>`).join("")}</span>
+    <i style="position:absolute;left:10px;right:10px;bottom:0;height:16px;${p};
+      border-radius:7px 7px 0 0"></i>`;
+}
+
 function drawShot(L) {
   const el = document.getElementById("pkShot");
   if (!el) return;
-  const menus = CFG.menus.filter(m => !m.fuel);
-  const menu = menus[0];
-  const keys = (menu ? menu.keys : []).slice(0, L.keyStyle === "list" ? 7 : 6);
-  const cols = L.keyStyle === "list" ? 1 : L.keyMin > 210 ? 2 : 3;
   const F = `'${L.font}',Archivo,sans-serif`, M = `'${L.mono}',monospace`;
+  const light = L.mode === "light";
+  const txt = light ? "#1A1714" : "#E6E9EA", dim = light ? "#8A8078" : "#7C868A";
+  const menu = CFG.menus.filter(m => !m.fuel)[0];
+  const keys = (menu ? menu.keys : []).slice(0, 6)
+    .map(k => ({ k, p: byId(CFG.plus, k.pluId) })).filter(x => x.p);
+  const cats = CFG.menus.filter(m => !m.fuel).slice(0, 5);
+  const col = i => byId(CFG.depts, keys[i]?.p.deptId)?.color || L.accent;
+  const nm = i => esc(keys[i]?.k.label || keys[i]?.p.n || "Product");
+  const pr = i => keys[i] ? money(keys[i].p.price) : "0.00";
 
-  const key = k => {
-    const p = byId(CFG.plus, k.pluId);
-    const d = p ? byId(CFG.depts, p.deptId) : null;
-    const col = k.color || d?.color || L.key;
-    const nm = esc(k.label || p?.n || "Product"), pr = p ? money(p.price) : "0.00";
-    if (L.keyStyle === "list") return `<div class="q list" style="border-color:${L.line};color:${L.mode==="light"?"#14181A":"#E6E9EA"}">
-      <i style="background:${col}"></i><b style="font-family:${F}">${nm}</b>
-      <s style="font-family:${M}">${pr}</s></div>`;
-    if (L.keyStyle === "card") return `<div class="q card" style="background:${L.panel};border-color:${L.line};
-      border-radius:${L.radius}px;color:${L.mode==="light"?"#14181A":"#E6E9EA"}">
-      <u style="background:${col}"></u>
-      <b style="font-family:${F}">${nm}</b>
-      <span style="border-color:${L.line}"><s style="font-family:${M}">${pr}</s>
-      <em style="color:${L.accent};border-color:${L.accent}55">Add</em></span></div>`;
-    return `<div class="q ${L.keyStyle}" style="background:${col};border-radius:${L.radius}px">
-      <b style="font-family:${F}">${nm}</b><s style="font-family:${M}">${pr}</s></div>`;
+  const shots = {
+
+    classic: () => `
+      <div style="background:#0A0E0D;padding:16px 20px">
+        <div style="display:flex;justify-content:space-between;font-family:${M};font-size:13px;
+          color:${L.accent};letter-spacing:.06em">
+          <span>${nm(0).toUpperCase()}</span><span>${pr(0)}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;
+          border-top:1px solid rgba(255,255,255,.09);margin-top:10px;padding-top:10px">
+          <span style="font-size:10px;letter-spacing:.2em;color:rgba(255,255,255,.4)">TOTAL</span>
+          <b style="font-family:${M};font-size:38px;font-weight:500;color:${L.accent}">${pr(0)}</b></div>
+      </div>
+      <div style="display:grid;grid-template-columns:158px 1fr">
+        <div style="background:${L.panel};border-right:1px solid ${L.line};padding:11px 13px;
+          font-family:${M};font-size:11px;color:${txt}">
+          ${keys.slice(0, 3).map((_, i) => `<div style="display:flex;justify-content:space-between;
+            padding:5px 0"><span>${nm(i).slice(0, 14).toUpperCase()}</span><span>${pr(i)}</span></div>`).join("")}
+        </div>
+        <div style="padding:11px">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:8px">
+            ${cats.slice(0, 4).map((c, i) => `<div style="background:${byId(CFG.depts, "D" + c.id.slice(1))?.color || col(i)};
+              border-radius:${L.radius}px;padding:12px 9px;color:#fff;font-family:${F};
+              font-size:11px">${esc(c.n).slice(0, 12)}</div>`).join("")}
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px">
+            ${["7","8","9","4","5","6"].map(k => `<div style="background:${L.key};
+              border:1px solid ${L.line};border-radius:${L.radius}px;padding:10px;text-align:center;
+              font-family:${M};font-size:14px;color:${txt}">${k}</div>`).join("")}
+          </div>
+        </div>
+      </div>`,
+
+    menu: () => `
+      <div style="display:flex;align-items:center;gap:10px;padding:14px 16px 6px">
+        <span style="width:8px;height:8px;border-radius:99px;background:${L.accent}"></span>
+        <b style="font-family:${F};font-size:17px;color:${txt}">${esc(CFG.site.name)}</b></div>
+      <div style="display:flex;gap:6px;padding:8px 16px 12px">
+        ${cats.slice(0, 3).map((c, i) => `<span style="font-family:${F};font-size:12px;
+          border-radius:99px;padding:7px 16px;${i === 0
+            ? `background:${L.accent};color:#3A1607`
+            : `border:1px solid ${L.line};color:${dim}`}">${esc(c.n).slice(0, 14)}</span>`).join("")}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;padding:0 16px 60px">
+        ${keys.slice(0, 3).map((_, i) => `<div style="background:${col(i)};border-radius:${L.radius}px;
+          padding:16px;min-height:86px;display:flex;flex-direction:column;justify-content:space-between;
+          color:#fff;font-family:${F}">
+          <span style="font-size:15px;font-weight:600;line-height:1.2">${nm(i).slice(0, 18)}</span>
+          <span style="font-family:${M};font-size:17px">${pr(i)}</span></div>`).join("")}
+      </div>
+      <div style="margin:0 16px 14px;display:flex;align-items:center;gap:12px;background:${L.accent};
+        border-radius:99px;padding:13px 18px;color:#3A1607;font-family:${F}">
+        <span style="background:rgba(0,0,0,.2);border-radius:99px;padding:3px 11px;font-weight:600;
+          font-size:13px">3</span>
+        <span style="flex:1;font-size:14px;font-weight:600">Review the order</span>
+        <span style="font-family:${M};font-size:17px;font-weight:600">${money(
+          keys.slice(0, 3).reduce((a, x) => a + x.p.price, 0))}</span></div>`,
+
+    terminal: () => `
+      <div style="font-family:${M};font-size:12px;color:${L.accent}">
+        <div style="display:flex;gap:18px;padding:8px 14px;background:${L.panel};
+          border-bottom:1px solid ${L.line};font-size:10px;letter-spacing:.1em">
+          <span>${esc(CFG.site.name).toUpperCase().slice(0, 26)}</span><span>REG 1</span>
+          <span style="margin-left:auto">SALE</span><span>[MENU]</span></div>
+        <div style="display:grid;grid-template-columns:1fr 150px">
+          <div style="border-right:1px solid ${L.line}">
+            <div style="display:grid;grid-template-columns:36px 1fr 64px 70px;gap:8px;padding:6px 14px;
+              border-bottom:1px solid ${L.line};font-size:9px;letter-spacing:.12em;opacity:.6">
+              <span>QTY</span><span>DESCRIPTION</span><span style="text-align:right">PRICE</span>
+              <span style="text-align:right">AMOUNT</span></div>
+            ${keys.slice(0, 3).map((_, i) => `<div style="display:grid;
+              grid-template-columns:36px 1fr 64px 70px;gap:8px;padding:5px 14px">
+              <span>1</span><span>${nm(i).toUpperCase().slice(0, 22)}</span>
+              <span style="text-align:right">${pr(i)}</span>
+              <span style="text-align:right">${pr(i)}</span></div>`).join("")}
+            <div style="border-top:1px solid ${L.line};padding:7px 14px;display:flex;
+              justify-content:space-between;font-size:15px">
+              <span>TOTAL</span><b style="font-weight:500">${money(
+                keys.slice(0, 3).reduce((a, x) => a + x.p.price, 0))}</b></div>
+            <div style="display:flex;gap:8px;padding:9px 14px;border-top:1px solid ${L.line};
+              background:${L.panel}"><span style="font-size:14px">&gt;</span>
+              <span style="opacity:.55">3*4011_</span></div>
+          </div>
+          <div style="padding:9px;background:${L.panel}">
+            <div style="font-size:9px;letter-spacing:.16em;opacity:.5;padding-bottom:6px">FUNCTION KEYS</div>
+            ${[["F1","PRICE CHECK"],["F2","VOID LINE"],["F3","DISCOUNT"]].map(([k, n]) =>
+              `<div style="display:flex;gap:8px;border:1px solid ${L.line};padding:6px 8px;
+                margin-bottom:3px;font-size:10px"><b style="font-weight:500">${k}</b>
+                <span style="opacity:.75">${n}</span></div>`).join("")}
+          </div>
+        </div>
+      </div>`,
+
+    catalogue: () => `
+      <div style="display:grid;grid-template-columns:150px 1fr">
+        <div style="background:${L.panel};border-right:1px solid ${L.line};padding:16px 14px">
+          <b style="font-family:${F};font-size:15px;color:${txt};display:block;margin-bottom:16px;
+            line-height:1.25">${esc(CFG.site.name)}</b>
+          ${cats.slice(0, 3).map((c, i) => `<div style="font-family:${F};font-size:13px;padding:8px 10px;
+            border-radius:8px;display:flex;justify-content:space-between;margin-bottom:2px;${i === 0
+              ? `background:color-mix(in srgb,${L.accent} 14%,transparent);color:${txt}`
+              : `color:${dim}`}"><span>${esc(c.n).slice(0, 14)}</span>
+            <span style="font-size:11px;opacity:.6">${c.keys.length}</span></div>`).join("")}
+        </div>
+        <div style="padding:18px 20px">
+          <h3 style="font-family:${F};font-size:22px;font-weight:500;color:${txt};margin:0 0 14px">
+            ${esc(cats[0] ? cats[0].n : "")}</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            ${keys.slice(0, 2).map((_, i) => `<div style="background:${L.panel};
+              border:1px solid ${L.line};border-radius:${L.radius}px;overflow:hidden">
+              <div style="height:44px;background:${col(i)}"></div>
+              <div style="padding:12px 13px 9px;font-family:${F};font-size:15px;color:${txt}">
+                ${nm(i).slice(0, 22)}</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 13px;
+                border-top:1px solid ${L.line}">
+                <span style="font-family:${M};font-size:14px;color:${txt}">${pr(i)}</span>
+                <span style="font-family:${F};font-size:11px;color:${L.accent};
+                  border:1px solid color-mix(in srgb,${L.accent} 45%,transparent);
+                  border-radius:99px;padding:3px 11px">Add</span></div></div>`).join("")}
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;padding:12px 20px;
+        border-top:1px solid ${L.line};background:${L.panel}">
+        <div style="flex:1;display:flex;gap:6px">
+          ${keys.slice(0, 2).map((_, i) => `<span style="background:${L.bg};border:1px solid ${L.line};
+            border-radius:99px;padding:5px 12px;font-family:${F};font-size:12px;color:${txt}">
+            ${nm(i).slice(0, 14)} ×</span>`).join("")}
+        </div>
+        <div><span style="display:block;font-family:${F};font-size:10px;letter-spacing:.1em;
+          color:${dim}">TOTAL</span>
+          <b style="font-family:${M};font-size:20px;color:${txt}">${money(
+            keys.slice(0, 2).reduce((a, x) => a + x.p.price, 0))}</b></div>
+        <span style="background:${L.accent};color:#fff;border-radius:10px;padding:11px 20px;
+          font-family:${F};font-size:13px">Cash</span>
+      </div>`,
+
+    pad: () => `
+      <div style="max-width:360px;margin:0 auto;border-left:1px solid ${L.line};
+        border-right:1px solid ${L.line};min-height:100%">
+        <div style="display:flex;align-items:center;gap:10px;padding:14px 16px 10px">
+          <b style="font-family:${F};font-size:17px;color:${txt}">${esc(CFG.site.name)}</b>
+          <span style="margin-left:auto;width:30px;height:30px;border-radius:99px;
+            border:1px solid ${L.line}"></span></div>
+        <div style="display:flex;gap:6px;padding:0 16px 12px">
+          ${cats.slice(0, 2).map((c, i) => `<span style="font-family:${F};font-size:12px;
+            border-radius:99px;padding:7px 15px;${i === 0
+              ? `background:${L.accent};color:#04211E;font-weight:600`
+              : `border:1px solid ${L.line};color:${dim}`}">${esc(c.n).slice(0, 12)}</span>`).join("")}
+        </div>
+        <div style="padding:0 16px 96px">
+          ${keys.slice(0, 2).map((_, i) => `<div style="display:flex;align-items:center;gap:12px;
+            background:${L.panel};border:1px solid ${L.line};border-radius:${L.radius}px;
+            padding:15px 16px;margin-bottom:8px">
+            <span style="width:10px;height:10px;border-radius:99px;background:${col(i)}"></span>
+            <span style="flex:1;font-family:${F};font-size:15px;font-weight:600;color:${txt}">
+              ${nm(i).slice(0, 20)}</span>
+            <span style="font-family:${M};font-size:15px;color:${txt}">${pr(i)}</span>
+            <span style="width:30px;height:30px;border-radius:99px;background:${L.accent};
+              color:#04211E;display:flex;align-items:center;justify-content:center;
+              font-size:18px">+</span></div>`).join("")}
+        </div>
+        <div style="background:${L.panel};border-top:1px solid ${L.line};
+          border-radius:22px 22px 0 0;padding:16px 20px 18px">
+          <div style="width:40px;height:4px;border-radius:99px;background:${L.line};
+            margin:0 auto 12px"></div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <span style="font-family:${F};font-size:15px;font-weight:600;color:${txt}">2 items</span>
+            <b style="font-family:${M};font-size:21px;color:${L.accent}">${money(
+              keys.slice(0, 2).reduce((a, x) => a + x.p.price, 0))}</b></div>
+        </div>
+      </div>`
   };
 
-  const nav = `<div class="qnav ${L.nav}" style="background:${L.panel};border-color:${L.line}">
-    ${["Sale","Office","Reports","Config"].map((n,i)=>
-      `<span style="font-family:${F};color:${i?(L.mode==="light"?"#6C7679":"#7C868A"):L.accent};
-        background:${i?"transparent":L.accent+"1A"}">${n}</span>`).join("")}</div>`;
-
-  const secs = `<div class="qsec ${L.depts}">${menus.slice(0,5).map((m,i)=>
-    `<span style="font-family:${F};color:${i?(L.mode==="light"?"#6C7679":"#7C868A"):(L.mode==="light"?"#14181A":"#E6E9EA")};
-      border-${L.depts==="rail"?"left":"bottom"}:2px solid ${i?"transparent":L.accent}">${esc(m.n)}</span>`).join("")}</div>`;
-
-  const first = CFG.plus[0], second = CFG.plus[1];
-  const tot = money((first?.price||0)+(second?.price||0));
-  const tape = `<div class="qtape ${L.tapeStyle}" style="background:${L.tapeStyle==="receipt"?L.panel:L.bg};
-    border-color:${L.line};color:${L.mode==="light"?"#14181A":"#E6E9EA"}">
-    <div class="qth" style="font-family:${F};border-color:${L.line}">Current sale</div>
-    ${[first,second].filter(Boolean).map(p=>`<div class="qtl" style="border-color:${L.line}">
-      <span style="font-family:${F}">${esc(p.n)}</span>
-      <span style="font-family:${M}">${money(p.price)}</span></div>`).join("")}
-    <div class="qtt" style="border-color:${L.line}">
-      <span style="font-family:${F}">Total</span>
-      <b style="font-family:${M};color:${L.accent}">${tot}</b></div>
-    <div class="qtp"><span style="border-color:${L.accent};color:${L.accent};font-family:${F}">Cash</span>
-      <span style="border-color:${L.line};font-family:${F}">Card</span></div></div>`;
-
-  const board = `<div class="qboard">
-    ${L.search?`<div class="qsrch" style="background:${L.panel};border-color:${L.line};
-      font-family:${F};color:${L.mode==="light"?"#8A9298":"#6C7679"}">Search the pricebook, or scan a barcode</div>`:""}
-    ${L.depts==="rail"
-      ? `<div class="qrail">${secs}<div class="qkeys" style="grid-template-columns:repeat(${cols},1fr)">
-           ${keys.map(key).join("")}</div></div>`
-      : secs+`<div class="qkeys" style="grid-template-columns:repeat(${cols},1fr)">${keys.map(key).join("")}</div>`}
-    ${L.fkeys?`<div class="qfk" style="border-color:${L.line}">${
-      ["Price check","Void","Discount","No sale","Suspend","Return"].map(f=>
-      `<span style="border-color:${L.line};font-family:${F};
-        color:${L.mode==="light"?"#8A9298":"#6C7679"}">${f}</span>`).join("")}</div>`:""}
-  </div>`;
-
-  el.innerHTML = `<div class="qmock" style="background:${L.bg};border-color:${L.line}">
-    <div class="qbar" style="background:${L.mode==="light"?L.key:"#0E1113"};border-color:${L.line}">
-      ${CFG.site.logo?`<img src="${esc(CFG.site.logo)}" alt="">`
-        :`<i style="background:${L.accent}"></i>`}
-      <b style="font-family:${F};color:${L.mode==="light"?"#14181A":"#E6E9EA"}">${esc(CFG.site.name)}</b>
-      <em style="font-family:${F};color:${L.mode==="light"?"#8A9298":"#6C7679"}">Reg 1 · Store 001</em>
-    </div>
-    ${L.nav==="top"?nav:""}
-    <div class="qbody ${L.tape} ${L.nav}">
-      ${L.nav==="rail"?nav:""}
-      ${L.tape==="left"?tape+board:board+tape}
-    </div>
-  </div>`;
+  el.innerHTML = `<div class="qmock" style="background:${L.bg};border-color:${L.line};
+    color:${txt};min-height:340px">${(shots[L.shell] || shots.classic)()}</div>`;
 }
 
 /* ---------------------------- pre-flight ----------------------------

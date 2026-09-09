@@ -6,7 +6,7 @@
 <title>AI POS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Azeret+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Azeret+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --paper:#E9EAE6;--paper-2:#F4F4F1;--paper-line:#D2D5CF;--ink:#121618;--ink-soft:#5C6467;
@@ -2125,210 +2125,6 @@ body.tp-plain .grand .amt{font-size:40px}
 .mn-pay button:nth-child(n+2){background:var(--up);color:var(--txt);border:1px solid var(--line-2)}
 .mn-pay button[disabled]{opacity:.3}
 
-/* ============================== TERMINAL ============================== */
-#vSale.on.shell-terminal{display:block;padding:0;overflow:hidden;background:#000}
-.tm{display:grid;grid-template-rows:auto minmax(0,1fr);height:100%;
-  font-family:"IBM Plex Mono",monospace;font-size:13px;color:#FFB000}
-.tm-head{display:flex;gap:26px;padding:9px 16px;border-bottom:1px solid #3A3320;
-  letter-spacing:.1em;font-size:11.5px;background:#080A08}
-.tm-head span:last-child{margin-left:auto}
-.tm-cols{display:grid;grid-template-columns:minmax(0,1fr) 250px;min-height:0}
-.tm-main{display:flex;flex-direction:column;min-height:0;border-right:1px solid #3A3320}
-.tm-hdr,.tm-l{display:grid;grid-template-columns:52px minmax(0,1fr) 92px 104px;gap:10px;
-  padding:6px 16px}
-.tm-hdr{border-bottom:1px solid #3A3320;font-size:11px;letter-spacing:.12em;color:#8A7333}
-.tm-hdr span:nth-child(3),.tm-hdr span:nth-child(4),
-.tm-l span:nth-child(3),.tm-l span:nth-child(4){text-align:right}
-.tm-lines{flex:1;overflow-y:auto;padding:5px 0}
-.tm-l{cursor:pointer;white-space:pre}
-.tm-l:hover{background:rgba(255,176,0,.08)}
-.tm-l.on{background:rgba(255,176,0,.16);box-shadow:inset 3px 0 0 #FFB000}
-.tm-idle{padding:30px 16px;color:#6B5A28;letter-spacing:.14em}
-.tm-sums{border-top:1px solid #3A3320;padding:9px 16px}
-.tm-sums div{display:flex;justify-content:space-between;padding:2px 0;font-size:12.5px;color:#C89A38}
-.tm-sums div.tot{border-top:1px solid #3A3320;margin-top:6px;padding-top:8px;font-size:17px;color:#FFB000}
-.tm-sums b{font-weight:500}
-.tm-cmd{display:flex;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid #3A3320;
-  background:#0B0D09}
-.tm-prompt{color:#FFB000;font-size:17px}
-.tm-cmd input{flex:1;background:none;border:none;color:#FFB000;font-family:inherit;font-size:15px;
-  outline:none;caret-color:#FFB000}
-.tm-cmd input::placeholder{color:#6B5A28}
-.tm-log{padding:0 16px 10px;min-height:56px;font-size:11.5px;color:#8A7333;background:#0B0D09}
-.tm-log .bad{color:#E0603C}
-.tm-side{padding:12px;overflow-y:auto;background:#050705}
-.tm-sh{font-size:10.5px;letter-spacing:.16em;color:#6B5A28;padding:0 2px 8px}
-.tm-fk{display:flex;gap:11px;align-items:baseline;width:100%;padding:9px 11px;
-  border:1px solid #2C2716;border-radius:0;margin-bottom:4px;text-align:left;
-  transition:background .1s,border-color .1s}
-.tm-fk:hover{background:rgba(255,176,0,.09);border-color:#3A3320}
-.tm-fk b{font-weight:500;color:#FFB000;font-size:12px;width:26px;flex:none}
-.tm-fk span{font-size:11.5px;color:#C89A38;letter-spacing:.06em}
-.tm-pay{display:block;width:100%;padding:13px;margin-bottom:5px;border:1px solid #3A3320;
-  background:rgba(255,176,0,.07);color:#FFB000;font-family:inherit;font-size:12.5px;
-  letter-spacing:.12em;text-align:center}
-.tm-pay:hover{background:rgba(255,176,0,.16)}
-.tm-pay[disabled]{opacity:.3}
-
-/* ============================= CATALOGUE ============================= */
-#vSale.on.shell-catalogue{display:block;padding:0;overflow:hidden}
-.ct{display:grid;grid-template-columns:236px minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;
-  height:100%;background:var(--bg)}
-.ct-side{grid-row:1/3;border-right:1px solid var(--line);padding:24px 18px;overflow-y:auto;
-  background:var(--panel)}
-.ct-brand{display:flex;align-items:center;gap:11px;margin-bottom:26px}
-.ct-brand img{width:34px;height:34px;object-fit:contain;border-radius:8px;background:#fff;padding:3px}
-.ct-brand b{font-size:17px;font-weight:600;letter-spacing:-.02em;line-height:1.2}
-.ct-cats{display:flex;flex-direction:column;gap:1px}
-.ct-cats button{display:flex;justify-content:space-between;align-items:baseline;padding:11px 12px;
-  text-align:left;font-size:15px;color:var(--txt-2);border-radius:8px;transition:all .14s}
-.ct-cats button:hover{background:rgba(0,0,0,.04);color:var(--txt)}
-.ct-cats button.on{background:color-mix(in srgb,var(--vfd) 14%,transparent);color:var(--txt);
-  font-weight:600}
-.ct-cats em{font-style:normal;font-size:11.5px;color:var(--txt-3);font-family:var(--fm),monospace}
-.ct-srch{margin-top:22px}
-.ct-srch input{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:9px;
-  background:var(--bg);color:var(--txt);font-size:14px}
-.ct-main{overflow-y:auto;padding:28px 30px 24px;min-height:0}
-.ct-h{display:flex;align-items:baseline;gap:14px;margin-bottom:20px}
-.ct-h h2{font-size:30px;font-weight:600;letter-spacing:-.025em}
-.ct-h span{font-size:13px;color:var(--txt-3)}
-.ct-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(238px,1fr));gap:16px}
-.ct-c{background:var(--panel);border:1px solid var(--line);border-radius:var(--r2);overflow:hidden;
-  display:flex;flex-direction:column;text-align:left;
-  animation:keyLand .45s cubic-bezier(.16,1.3,.4,1) both;
-  transition:transform .15s,box-shadow .18s,border-color .15s}
-.ct-c:hover{transform:translateY(-3px);border-color:var(--vfd);box-shadow:0 14px 34px rgba(0,0,0,.09)}
-.ct-swatch{display:block;height:76px}
-.ct-body{padding:16px 17px 12px;flex:1}
-.ct-n{display:block;font-size:16px;font-weight:600;line-height:1.3}
-.ct-o{display:block;font-size:12px;color:var(--txt-3);margin-top:5px}
-.ct-f{display:flex;justify-content:space-between;align-items:center;padding:13px 17px;
-  border-top:1px solid var(--line)}
-.ct-p{font-size:17px;font-weight:500}
-.ct-add{font-size:12px;color:var(--vfd);border:1px solid color-mix(in srgb,var(--vfd) 45%,transparent);
-  border-radius:99px;padding:4px 13px}
-.ct-empty{grid-column:1/-1;padding:60px;text-align:center;color:var(--txt-3)}
-.ct-bar{grid-column:2;display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:22px;
-  align-items:center;padding:16px 30px;border-top:1px solid var(--line);background:var(--panel);
-  opacity:.55;transition:opacity .2s}
-.ct-bar.on{opacity:1}
-.ct-items{display:flex;gap:7px;flex-wrap:wrap;min-width:0}
-.ct-chip{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:99px;
-  background:var(--bg);border:1px solid var(--line);font-size:13px;cursor:pointer}
-.ct-chip:hover{border-color:var(--void);color:var(--void)}
-.ct-chip em{font-style:normal;opacity:.5}
-.ct-none,.ct-more{font-size:13px;color:var(--txt-3)}
-.ct-tot span{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--txt-3)}
-.ct-tot b{font-size:26px;font-weight:600}
-.ct-pay{display:flex;gap:8px}
-.ct-pay button{padding:14px 22px;border-radius:10px;background:var(--vfd);color:#1A1226;
-  font-size:14.5px;font-weight:600}
-.ct-pay button:nth-child(n+2){background:var(--bg);color:var(--txt);border:1px solid var(--line)}
-.ct-pay button[disabled]{opacity:.35}
-
-/* ================================ PAD ================================ */
-#vSale.on.shell-pad{display:block;padding:0;overflow:hidden}
-.pd{display:grid;grid-template-rows:auto auto minmax(0,1fr);height:100%;background:var(--bg);
-  position:relative;max-width:760px;margin:0 auto;width:100%;border-left:1px solid var(--line);
-  border-right:1px solid var(--line)}
-.pd-top{display:flex;justify-content:space-between;align-items:baseline;padding:18px 20px 12px}
-.pd-top b{font-size:21px;font-weight:600;letter-spacing:-.02em}
-.pd-top span{font-size:13px;color:var(--txt-3)}
-.pd-cats{display:flex;gap:7px;padding:0 20px 14px;overflow-x:auto}
-.pd-cats button{flex:none;padding:11px 20px;border-radius:99px;font-size:14.5px;font-weight:600;
-  border:1.5px solid var(--line);color:var(--txt-2)}
-.pd-cats button.on{background:var(--vfd);border-color:var(--vfd);color:#08211F}
-.pd-list{overflow-y:auto;padding:0 20px 150px}
-.pd-r{display:grid;grid-template-columns:12px minmax(0,1fr) auto 44px;gap:14px;align-items:center;
-  width:100%;padding:20px 18px;margin-bottom:9px;border-radius:var(--r2);background:var(--panel);
-  border:1px solid var(--line);text-align:left;
-  animation:keyLand .4s cubic-bezier(.16,1.3,.4,1) both;transition:transform .12s,border-color .14s}
-.pd-r:hover{border-color:var(--vfd)}
-.pd-r:active{transform:scale(.985)}
-.pd-dot{width:12px;height:12px;border-radius:99px}
-.pd-n{font-size:18px;font-weight:600;line-height:1.25}
-.pd-p{font-size:19px;font-weight:500}
-.pd-plus{width:38px;height:38px;border-radius:99px;background:var(--vfd);color:#08211F;
-  display:grid;place-items:center;font-size:23px;font-weight:600;line-height:1}
-.pd-empty,.pd-empty2{padding:50px;text-align:center;color:var(--txt-3)}
-.pd-sheet{position:absolute;left:0;right:0;bottom:0;background:var(--panel);
-  border-top:1px solid var(--line);border-radius:22px 22px 0 0;z-index:3;
-  box-shadow:0 -14px 46px rgba(0,0,0,.16);
-  transform:translateY(calc(100% - 88px));transition:transform .4s cubic-bezier(.16,1,.3,1)}
-.pd-sheet.up{transform:translateY(0)}
-.pd-handle{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;
-  width:100%;padding:20px 24px 16px;position:relative}
-.pd-grip{position:absolute;left:50%;top:9px;transform:translateX(-50%);width:42px;height:4px;
-  border-radius:99px;background:var(--line-2)}
-.pd-hl{font-size:16px;font-weight:600;text-align:left}
-.pd-ht{font-size:24px;font-weight:600;color:var(--vfd)}
-.pd-inner{max-height:56vh;display:flex;flex-direction:column}
-.pd-lines{flex:1;overflow-y:auto;padding:0 24px}
-.pd-l{display:grid;grid-template-columns:30px minmax(0,1fr) auto 30px;gap:12px;align-items:center;
-  padding:14px 0;border-top:1px solid var(--line);font-size:15.5px}
-.pd-lq{font-family:var(--fm),monospace;color:var(--vfd);font-weight:600}
-.pd-l button{color:var(--txt-3);font-size:19px}
-.pd-pay{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:9px;padding:16px 24px 24px}
-.pd-pay button{padding:20px 8px;border-radius:14px;background:var(--vfd);color:#08211F;
-  font-size:16px;font-weight:600}
-.pd-pay button:nth-child(n+2){background:var(--bg);color:var(--txt);border:1px solid var(--line)}
-.pd-pay button[disabled]{opacity:.32}
-
-@media(max-width:900px){
-  .tm-cols{grid-template-columns:1fr}
-  .ct{grid-template-columns:1fr}
-  .ct-side{grid-row:auto;border-right:none;border-bottom:1px solid var(--line)}
-  .ct-bar{grid-column:1}
-}
-
-/* Each register brings its own chrome. The shared top bar and rail are what
-   made five different screens read as one product, so shells that draw their
-   own navigation get the app's out of the way entirely. */
-body.own-chrome .topbar,body.own-chrome .rail{display:none}
-body.own-chrome #app.on{grid-template-columns:1fr;grid-template-rows:1fr}
-body.own-chrome .view,body.own-chrome #vSale{grid-column:1;grid-row:1}
-
-/* the small navigation each shell renders for itself */
-.shnav{display:flex;align-items:center;gap:8px}
-.shnav button{display:flex;align-items:center;gap:7px;border-radius:99px;padding:8px 14px;
-  font-size:12.5px;border:1px solid transparent;transition:all .14s}
-.shnav .live{width:6px;height:6px;border-radius:99px;background:var(--vfd);flex:none}
-.shnav .live.off{background:var(--void)}
-
-/* --- Menu: its own masthead --- */
-.mn-top{display:flex;align-items:center;gap:12px;padding:16px 18px 4px}
-.mn-top img{width:30px;height:30px;object-fit:contain;border-radius:8px;background:#fff;padding:3px}
-.mn-dot{width:9px;height:9px;border-radius:99px;background:var(--vfd);flex:none;display:block}
-.mn-top b{font-size:21px;font-weight:700;letter-spacing:-.02em}
-.mn-top em{font-style:normal;font-size:12.5px;color:var(--txt-3)}
-.mn-who{margin-left:auto;font-size:13px;color:var(--txt-2)}
-.mn-menu{width:38px;height:38px;border-radius:99px;border:1px solid var(--line);display:grid;
-  place-items:center;color:var(--txt-2)}
-.mn-menu:hover{background:rgba(255,255,255,.06);color:var(--txt)}
-
-/* --- Terminal: a status line, not a bar --- */
-.tm-mode{margin-left:auto}
-.tm-nav{background:none;border:none;color:#FFB000;font-family:inherit;font-size:11.5px;
-  letter-spacing:.1em;padding:0 0 0 20px;cursor:pointer}
-.tm-nav:hover{text-decoration:underline}
-.tm-head span:last-of-type{margin-left:0}
-
-/* --- Catalogue: nav lives at the foot of its own sidebar --- */
-.ct-foot{display:flex;justify-content:space-between;align-items:center;margin-top:26px;
-  padding-top:16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--txt-3)}
-.ct-foot button{font-size:12.5px;color:var(--txt-2);border:1px solid var(--line);border-radius:99px;
-  padding:7px 15px}
-.ct-foot button:hover{color:var(--txt);border-color:var(--line-2)}
-
-/* --- Pad: a phone-shaped header --- */
-.pd-top img{width:28px;height:28px;object-fit:contain;border-radius:8px;background:#fff;padding:2px}
-.pd-top{gap:11px}
-.pd-menu{margin-left:auto;width:38px;height:38px;border-radius:99px;border:1px solid var(--line);
-  display:grid;place-items:center;color:var(--txt-2)}
-.pd-menu:hover{background:rgba(0,0,0,.04);color:var(--txt)}
-
 /* ==================== MENU: its own screens ====================
    Full-screen steps rather than dialogs over a board. Nothing here is shared
    with the other four registers. */
@@ -2421,6 +2217,196 @@ body.own-chrome .view,body.own-chrome #vSale{grid-column:1;grid-row:1}
 .mn-change span{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--txt-3)}
 .mn-change b{font-size:32px;font-weight:700;color:var(--vfd)}
 .mn-dact{display:flex;gap:12px}
+
+/* ================================ COMMANDER ================================
+   Steel grey, hard edges, dense keys. Sharpened from the Classic shell to match
+   what a forecourt terminal actually looks like. */
+#vSale.on.shell-classic{display:block;padding:0;overflow:hidden}
+.shell-classic .cls-vfd{background:#101619}
+.shell-classic .cls-vn,.shell-classic .cls-va,.shell-classic .cls-vtot b{
+  color:#7FC4F5;text-shadow:0 0 10px rgba(61,139,214,.45)}
+.shell-classic .cls-dk{border-radius:2px;border:1px solid #5A6266;
+  background:linear-gradient(180deg,var(--dc) 0%,color-mix(in srgb,var(--dc) 68%,black) 130%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14)}
+.shell-classic .cls-nk{border-radius:2px;background:#454C50;border:1px solid #5A6266;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12);font-size:17px}
+.shell-classic .cls-tender{border-radius:2px;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+.shell-classic .cls-fn button{border-radius:2px;background:#3C4347;border:1px solid #5A6266}
+.shell-classic .cls-entry{background:#373D41;border-left:1px solid #4A5155}
+
+/* ================================== RETAIL ==================================
+   White, blue, a tile library on the left and the basket held to the right. */
+#vSale.on.shell-retail{display:block;padding:0;overflow:hidden;background:#F7F7F7}
+.rt{display:grid;grid-template-rows:auto minmax(0,1fr);height:100%;font-family:Inter,var(--ff),sans-serif}
+.rt-top{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:18px;align-items:center;
+  padding:12px 18px;background:#fff;border-bottom:1px solid #E3E3E3}
+.rt-brand{display:flex;align-items:center;gap:10px}
+.rt-brand img{width:26px;height:26px;object-fit:contain;border-radius:5px}
+.rt-brand b{font-size:15px;font-weight:600;color:#1A1A1A}
+.rt-search input{width:100%;max-width:460px;padding:10px 14px;border:1px solid #D9D9D9;
+  border-radius:6px;font-size:14px;background:#F7F7F7;color:#1A1A1A}
+.rt-search input:focus{outline:none;border-color:#006AFF;background:#fff}
+.rt-more{font-size:19px;color:#5A5A5A;padding:4px 12px;letter-spacing:.08em}
+.rt-body{display:grid;grid-template-columns:minmax(0,1fr) 340px;min-height:0}
+.rt-left{display:flex;flex-direction:column;min-height:0}
+.rt-tabs{display:flex;gap:0;overflow-x:auto;background:#fff;border-bottom:1px solid #E3E3E3;padding:0 12px}
+.rt-tabs button{padding:13px 18px;font-size:14px;color:#5A5A5A;white-space:nowrap;
+  border-bottom:2px solid transparent;font-weight:500}
+.rt-tabs button.on{color:#006AFF;border-bottom-color:#006AFF}
+.rt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(146px,1fr));gap:10px;
+  padding:16px;overflow-y:auto;align-content:start}
+.rt-t{background:var(--c);border-radius:6px;padding:14px 13px;min-height:96px;display:flex;
+  flex-direction:column;justify-content:space-between;color:#fff;text-align:left;
+  animation:keyLand .4s cubic-bezier(.16,1.3,.4,1) both;transition:filter .12s,transform .1s}
+.rt-t:hover{filter:brightness(1.08)}
+.rt-t:active{transform:scale(.98)}
+.rt-n{font-size:14px;font-weight:600;line-height:1.28;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+.rt-p{font-size:14px;font-weight:500;opacity:.95}
+.rt-empty{grid-column:1/-1;padding:50px;text-align:center;color:#8A8A8A;font-size:14px}
+.rt-cart{background:#fff;border-left:1px solid #E3E3E3;display:flex;flex-direction:column;min-height:0}
+.rt-ch{padding:15px 18px 11px;font-size:13px;font-weight:600;color:#5A5A5A;
+  border-bottom:1px solid #EFEFEF}
+.rt-lines{flex:1;overflow-y:auto;padding:6px 0}
+.rt-l{display:flex;justify-content:space-between;gap:12px;padding:12px 18px;
+  border-bottom:1px solid #F2F2F2}
+.rt-ln b{display:block;font-size:14px;font-weight:500;color:#1A1A1A;line-height:1.3}
+.rt-ln em{display:block;font-style:normal;font-size:12px;color:#8A8A8A;margin-top:2px}
+.rt-lq{display:block;font-size:12px;color:#8A8A8A;margin-top:3px}
+.rt-lr{display:flex;align-items:flex-start;gap:9px}
+.rt-la{font-size:14px;font-weight:500;color:#1A1A1A}
+.rt-lr button{color:#B0B0B0;font-size:17px}
+.rt-lr button:hover{color:#D0342C}
+.rt-none{padding:44px 18px;text-align:center;color:#9A9A9A;font-size:13.5px;line-height:1.6}
+.rt-sums{padding:12px 18px;border-top:1px solid #EFEFEF}
+.rt-sums div{display:flex;justify-content:space-between;padding:3px 0;font-size:13px;color:#5A5A5A}
+.rt-sums b{color:#1A1A1A;font-weight:500}
+.rt-charge{margin:12px 16px 16px;padding:17px;border-radius:6px;background:#006AFF;color:#fff;
+  font-size:16px;font-weight:600;border:none}
+.rt-charge:hover{background:#0057D1}
+.rt-charge[disabled]{background:#D6D6D6;color:#8A8A8A}
+
+/* ================================= COMMERCE =================================
+   Search-led, a product list with thumbnails, and a cart that totals like a web
+   checkout. */
+#vSale.on.shell-commerce{display:block;padding:0;overflow:hidden;background:#F1F2F4}
+.cm{display:grid;grid-template-columns:186px minmax(0,1fr) 316px;height:100%;
+  font-family:Inter,var(--ff),sans-serif}
+.cm-nav{background:#1A1F26;padding:16px 12px;display:flex;flex-direction:column;gap:2px}
+.cm-brand{display:flex;align-items:center;gap:9px;padding:4px 8px 18px}
+.cm-brand img{width:24px;height:24px;object-fit:contain;border-radius:5px;background:#fff;padding:2px}
+.cm-brand i{width:9px;height:9px;border-radius:99px;background:#008060;display:block}
+.cm-brand b{font-size:14px;font-weight:600;color:#F1F2F4;line-height:1.2}
+.cm-nb{text-align:left;padding:9px 11px;border-radius:6px;font-size:13.5px;color:#A9B2BD}
+.cm-nb:hover{background:rgba(255,255,255,.06);color:#fff}
+.cm-nb.on{background:rgba(0,128,96,.18);color:#4FD1A5;font-weight:500}
+.cm-navfoot{margin-top:auto;padding:11px;font-size:12px;color:#6C7783;border-top:1px solid #2A313A}
+.cm-main{display:flex;flex-direction:column;min-height:0;background:#F1F2F4}
+.cm-searchbar{padding:14px 18px 10px;background:#fff;border-bottom:1px solid #DFE3E8}
+.cm-searchbar input{width:100%;padding:11px 14px;border:1px solid #C9CFD6;border-radius:8px;
+  font-size:14px;background:#fff;color:#1F2933}
+.cm-searchbar input:focus{outline:none;border-color:#008060;box-shadow:0 0 0 3px rgba(0,128,96,.12)}
+.cm-cats{display:flex;gap:6px;padding:11px 18px;overflow-x:auto;background:#fff;
+  border-bottom:1px solid #DFE3E8}
+.cm-cats button{flex:none;padding:7px 15px;border-radius:99px;font-size:13px;color:#5C6975;
+  border:1px solid #DFE3E8;background:#fff}
+.cm-cats button.on{background:#E3F1EC;border-color:#008060;color:#00654D;font-weight:500}
+.cm-list{flex:1;overflow-y:auto;padding:10px 18px 18px}
+.cm-row{display:grid;grid-template-columns:44px minmax(0,1fr) auto auto;gap:14px;align-items:center;
+  width:100%;padding:11px 13px;background:#fff;border:1px solid #DFE3E8;border-radius:8px;
+  margin-bottom:7px;text-align:left;animation:keyLand .35s cubic-bezier(.16,1.3,.4,1) both;
+  transition:border-color .13s,box-shadow .15s}
+.cm-row:hover{border-color:#008060;box-shadow:0 2px 8px rgba(31,41,51,.07)}
+.cm-thumb{width:44px;height:44px;border-radius:6px;display:grid;place-items:center;color:#fff;
+  font-size:17px;font-weight:600}
+.cm-info b{display:block;font-size:14px;font-weight:500;color:#1F2933;line-height:1.3}
+.cm-info em{display:block;font-style:normal;font-size:12px;color:#8A94A0;margin-top:2px}
+.cm-price{font-size:14px;font-weight:500;color:#1F2933}
+.cm-addbtn{font-size:12.5px;color:#008060;border:1px solid #008060;border-radius:6px;padding:6px 14px}
+.cm-empty{padding:50px;text-align:center;color:#8A94A0;font-size:14px}
+.cm-cart{background:#fff;border-left:1px solid #DFE3E8;display:flex;flex-direction:column;min-height:0}
+.cm-ch{display:flex;justify-content:space-between;align-items:baseline;padding:16px 18px 12px;
+  border-bottom:1px solid #EDEFF2}
+.cm-ch b{font-size:15px;font-weight:600;color:#1F2933}
+.cm-ch span{font-size:12.5px;color:#8A94A0}
+.cm-lines{flex:1;overflow-y:auto;padding:6px 0}
+.cm-cl{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:11px;align-items:center;
+  padding:11px 18px;border-bottom:1px solid #F4F5F7}
+.cm-cn b{display:block;font-size:13.5px;font-weight:500;color:#1F2933;line-height:1.3}
+.cm-cn em{display:block;font-style:normal;font-size:12px;color:#8A94A0;margin-top:2px}
+.cm-ca{font-size:13.5px;font-weight:500;color:#1F2933}
+.cm-cl button{color:#B4BCC5;font-size:17px}
+.cm-cl button:hover{color:#D0342C}
+.cm-none{padding:44px 18px;text-align:center;color:#9AA3AD;font-size:13.5px}
+.cm-sums{padding:13px 18px;border-top:1px solid #EDEFF2}
+.cm-sums div{display:flex;justify-content:space-between;padding:3px 0;font-size:13px;color:#5C6975}
+.cm-sums div.disc{color:#B26B00}
+.cm-sums div.tot{font-size:16px;color:#1F2933;font-weight:600;padding-top:9px;margin-top:6px;
+  border-top:1px solid #EDEFF2}
+.cm-checkout{margin:12px 16px 16px;padding:16px;border-radius:8px;background:#008060;color:#fff;
+  font-size:15.5px;font-weight:600;border:none}
+.cm-checkout:hover{background:#006E52}
+.cm-checkout[disabled]{background:#D3D8DE;color:#8A94A0}
+
+/* ================================== COUNTER ==================================
+   Round category buttons, a soft tile grid, and a wide pay bar along the bottom. */
+#vSale.on.shell-counter{display:block;padding:0;overflow:hidden;background:#fff}
+.cn{display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;height:100%;
+  font-family:Inter,var(--ff),sans-serif}
+.cn-top{display:flex;align-items:center;gap:14px;padding:13px 18px;border-bottom:1px solid #E1E4E6}
+.cn-mn{width:36px;height:36px;border-radius:99px;border:1px solid #E1E4E6;display:grid;
+  place-items:center;color:#4A5157}
+.cn-top b{font-size:16px;font-weight:600;color:#1B1F22}
+.cn-top span{margin-left:auto;font-size:13px;color:#7B848B}
+.cn-cats{display:flex;gap:20px;padding:16px 20px 12px;overflow-x:auto}
+.cn-cats button{flex:none;display:flex;flex-direction:column;align-items:center;gap:7px;width:74px}
+.cn-circle{width:56px;height:56px;border-radius:99px;display:grid;place-items:center;color:#fff;
+  font-size:21px;font-weight:600;transition:transform .13s,box-shadow .15s;opacity:.5}
+.cn-cats button.on .cn-circle{opacity:1;transform:scale(1.06);
+  box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.cn-cats em{font-style:normal;font-size:11.5px;color:#7B848B;text-align:center;line-height:1.3}
+.cn-cats button.on em{color:#1B1F22;font-weight:500}
+.cn-body{display:grid;grid-template-columns:minmax(0,1fr) 288px;min-height:0}
+.cn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;
+  padding:8px 20px 20px;overflow-y:auto;align-content:start}
+.cn-t{background:#F6F7F8;border:1px solid #E1E4E6;border-radius:10px;padding:16px 14px;
+  min-height:92px;display:flex;flex-direction:column;justify-content:space-between;text-align:left;
+  animation:keyLand .38s cubic-bezier(.16,1.3,.4,1) both;transition:border-color .13s,transform .1s}
+.cn-t:hover{border-color:#00A05A;background:#F1F8F4}
+.cn-t:active{transform:scale(.98)}
+.cn-n{font-size:14.5px;font-weight:600;color:#1B1F22;line-height:1.3}
+.cn-p{font-size:15px;font-weight:500;color:#00A05A}
+.cn-empty{grid-column:1/-1;padding:50px;text-align:center;color:#8A9298}
+.cn-tick{border-left:1px solid #E1E4E6;display:flex;flex-direction:column;min-height:0;background:#FCFCFD}
+.cn-th{padding:14px 18px 10px;font-size:13px;font-weight:600;color:#7B848B;
+  border-bottom:1px solid #EDEFF0}
+.cn-lines{flex:1;overflow-y:auto;padding:4px 0}
+.cn-l{display:grid;grid-template-columns:26px minmax(0,1fr) auto 26px;gap:10px;align-items:center;
+  padding:11px 18px;font-size:14px;color:#1B1F22;border-bottom:1px solid #F2F4F5}
+.cn-lq{color:#00A05A;font-weight:600}
+.cn-l button{color:#B6BCC1;font-size:16px}
+.cn-none{padding:40px 18px;text-align:center;color:#9AA1A7;font-size:13.5px}
+.cn-pay{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center;
+  padding:14px 20px;border-top:1px solid #E1E4E6;background:#fff}
+.cn-total span{display:block;font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:#7B848B}
+.cn-total b{font-size:29px;font-weight:700;color:#1B1F22;letter-spacing:-.02em}
+.cn-btn{padding:19px 62px;border-radius:10px;background:#00A05A;color:#fff;font-size:18px;
+  font-weight:600;border:none}
+.cn-btn:hover{background:#008C4E}
+.cn-btn[disabled]{background:#DDE1E3;color:#98A0A6}
+
+/* the payment sheet takes on each register's manner */
+.paysheet{max-width:430px}
+.pay-due{display:flex;justify-content:space-between;align-items:baseline;padding:14px 0 4px}
+.pay-due span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--txt-3)}
+.pay-due b{font-size:37px;font-weight:700;color:var(--vfd)}
+.pay-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}
+.pay-grid button{padding:19px 15px;border-radius:var(--r2);border:1px solid var(--line-2);
+  background:rgba(255,255,255,.03);text-align:left}
+.pay-grid button:hover{border-color:var(--vfd)}
+.pay-grid button.cash{border-color:var(--vfd);background:color-mix(in srgb,var(--vfd) 12%,transparent)}
+.pay-grid b{display:block;font-size:16px;font-weight:600;margin-bottom:4px}
+.pay-grid em{display:block;font-style:normal;font-size:12px;color:var(--txt-3)}
 
 .tchip.save{transition:color .2s,border-color .2s}
 .tchip.save.pending{color:var(--warn);border-color:rgba(224,178,85,.4)}
@@ -2609,31 +2595,41 @@ const TYPES=TYPE_GROUPS.flatMap(g=>g[1]);
    that happen to share a database. Different shell, different interaction,
    different typeface, different palette. Somebody shown two of these would not
    guess they were the same software. */
+/* Five registers, each built to the conventions of a different corner of the
+   market. A cashier who has used one of these before should recognise the
+   shape of it immediately — that familiarity is the point.
+
+   Named for what they are rather than who they resemble. */
 const LAYOUTS=[
- {k:"classic",chrome:"own",n:"Classic",tag:"Convenience, liquor, hardware",
-  shell:"classic",font:"Archivo",mono:"Azeret Mono",mode:"dark",accent:"#5CE0A8",
-  bg:"#141819",panel:"#1C2123",line:"#2E3639",key:"#262C2F",radius:3,
-  why:"A keypad, department keys and a line display. No product grid at all — type a price and press a department, or scan. What a Verifone or an NCR looks like, and what most counters have actually run for thirty years."},
+ {k:"commander",n:"Commander",tag:"Fuel, convenience, liquor — the industry standard",
+  shell:"classic",font:"Archivo",mono:"Azeret Mono",mode:"dark",accent:"#3D8BD6",
+  bg:"#2B3033",panel:"#373D41",line:"#4A5155",key:"#454C50",radius:2,chrome:"own",
+  ref:"Steel grey, hard edges, dense function keys and a blue line display. The shape every forecourt and convenience counter in America already runs.",
+  why:"A keypad and department keys with no product grid. Sharp corners, small type, everything reachable without scrolling."},
 
- {k:"menu",chrome:"own",n:"Menu",tag:"Cafés, pizzerias, bars, food trucks",
-  shell:"menu",font:"Space Grotesk",mono:"Space Mono",mode:"dark",accent:"#FF7A45",
-  bg:"#17110E",panel:"#231A15",line:"#3B2B22",key:"#2E211A",radius:18,
-  why:"Products edge to edge, as big and colourful as the screen allows. No order panel taking up room — it lives behind one button and slides up over the top when you want it."},
+ {k:"service",n:"Service",tag:"Restaurants, cafés, bars — table and counter service",
+  shell:"menu",font:"Space Grotesk",mono:"Space Mono",mode:"dark",accent:"#FF4C00",
+  bg:"#1A1A1A",panel:"#242424",line:"#333333",key:"#2E2E2E",radius:8,chrome:"own",
+  ref:"Near-black with a hot orange, heavy type, full-bleed tiles and an order that reads back before payment.",
+  why:"Built for a hot line and a queue. Options open as a full screen, the order is confirmed once, and the ticket number fills the display at the end."},
 
- {k:"terminal",chrome:"own",n:"Terminal",tag:"Parts counters, pharmacy, wholesale",
-  shell:"terminal",font:"IBM Plex Mono",mono:"IBM Plex Mono",mode:"contrast",accent:"#FFB000",
-  bg:"#000000",panel:"#080A08",line:"#3A3320",key:"#141208",radius:0,
-  why:"A command line. Type a barcode, or three-times-a-code, and press enter. Amber on black, no pictures, function keys down the side. Nobody needs to lift a hand off the keyboard."},
+ {k:"retail",n:"Retail",tag:"Shops, market stalls, anywhere with a card reader",
+  shell:"retail",font:"Inter",mono:"Inter",mode:"light",accent:"#006AFF",
+  bg:"#F7F7F7",panel:"#FFFFFF",line:"#E3E3E3",key:"#FFFFFF",radius:6,chrome:"own",
+  ref:"White, generous, a blue action colour and a library of coloured tiles with the basket held to the right.",
+  why:"The one most people have already used. Tiles on the left, running basket on the right, and one large charge button."},
 
- {k:"catalogue",chrome:"own",n:"Catalogue",tag:"Clothing, jewellery, furniture",
-  shell:"catalogue",font:"Fraunces",mono:"Azeret Mono",mode:"light",accent:"#7B5EA7",
-  bg:"#F5F2ED",panel:"#FDFBF8",line:"#E2DBD1",key:"#EFEAE2",radius:14,
-  why:"Browse first. Large cards with room for sizes, categories set in a serif down the side, and the order along the bottom where it isn't competing for attention."},
+ {k:"commerce",n:"Commerce",tag:"Clothing, gifts, anything with a catalogue behind it",
+  shell:"commerce",font:"Inter",mono:"Inter",mode:"light",accent:"#008060",
+  bg:"#F1F2F4",panel:"#FFFFFF",line:"#DFE3E8",key:"#FFFFFF",radius:8,chrome:"own",
+  ref:"Search-led, products as a list rather than a grid, a green checkout button and a cart panel that behaves like an online one.",
+  why:"For a shop with more products than fit on a screen. You search or scan rather than browse, and the cart totals like a web checkout."},
 
- {k:"pad",chrome:"own",n:"Pad",tag:"Market stalls, pop-ups, tablets",
-  shell:"pad",font:"Space Grotesk",mono:"Space Mono",mode:"light",accent:"#0E9B8E",
-  bg:"#F1F5F4",panel:"#FFFFFF",line:"#DCE5E3",key:"#E8EFED",radius:20,
-  why:"One column, everything oversized, order as a sheet you pull up from the bottom. Built for a tablet held in one hand."}
+ {k:"counter",n:"Counter",tag:"Bakeries, delis, takeaways — quick service",
+  shell:"counter",font:"Inter",mono:"Inter",mode:"light",accent:"#00A05A",
+  bg:"#FFFFFF",panel:"#F6F7F8",line:"#E1E4E6",key:"#F6F7F8",radius:10,chrome:"own",
+  ref:"Round category buttons across the top, a soft tile grid, and a wide green pay bar pinned to the bottom.",
+  why:"Fast and forgiving. Big targets, few steps, and the total always visible along the bottom."}
 ];
 const ACCENTS=[
  ["#5CE0A8","Mint"],["#3FBF8F","Jade"],["#2FA3A3","Teal"],["#4FD6D6","Aqua"],
@@ -2645,11 +2641,11 @@ const ACCENTS=[
 ];
 function suggestLayout(){
   const t=(A.type+" "+A.desc).toLowerCase();
-  if(/caf|coffee|pizz|restaurant|bar|pub|brewery|deli|bakery|juice|ice cream/.test(t))return "menu";
-  if(/food truck|kiosk|stand|market stall|pop/.test(t))return "pad";
-  if(/cloth|boutique|shoe|jewel|watch|handbag|furniture|antique|gift|book|record/.test(t))return "catalogue";
-  if(/pharmac|auto parts|wholesale|electrical|plumb|supply|feed/.test(t))return "terminal";
-  return "classic";
+  if(/restaurant|pizz|bar|pub|brewery|taproom|caf|coffee/.test(t))return "service";
+  if(/bakery|deli|sandwich|juice|ice cream|food truck|takeaway|fast food/.test(t))return "counter";
+  if(/cloth|boutique|shoe|jewel|watch|handbag|furniture|gift|book|record|toy|craft/.test(t))return "commerce";
+  if(/convenience|gas|fuel|truck stop|liquor|tobacco|vape|hardware|auto parts|pharmac/.test(t))return "commander";
+  return "retail";
 }
 function suggestAccent(){
   const t=(A.type+" "+A.desc).toLowerCase();
@@ -4052,7 +4048,7 @@ function setTotal(v){
 /* Two shells now render the same sale. Everything that changes the cart calls
    this instead of assuming the panel-and-grid layout is on screen. */
 const SHELLS={classic:()=>drawClassic(),menu:()=>drawMenuShell(),
-  terminal:()=>drawTerminalShell(),catalogue:()=>drawCatalogueShell(),pad:()=>drawPadShell()};
+  retail:()=>drawRetailShell(),commerce:()=>drawCommerceShell(),counter:()=>drawCounterShell()};
 function refreshSale(){
   const s=typeof THEME!=="undefined"&&THEME.shell;
   if(s&&SHELLS[s])return SHELLS[s]();
@@ -5578,7 +5574,7 @@ function applyTheme(){
   document.body.classList.toggle("own-chrome",THEME.chrome==="own"&&VIEW==="sale");
   const sale=$("vSale");
   if(sale){
-    ["classic","menu","terminal","catalogue","pad","panels"].forEach(s=>
+    ["classic","menu","retail","commerce","counter","panels"].forEach(s=>
       sale.classList.remove("shell-"+s));
     sale.classList.add("shell-"+(THEME.shell||"panels"));
     sale.classList.remove("tape-left","tape-right","tape-bottom");
@@ -5658,7 +5654,7 @@ function health(){
   themeIssues().forEach(i=>f.push({sev:i.t==="warn"?"warn":"info",t:"Appearance",d:i.m,fix:null}));
   return f;
 }
-const BUILD="96a4a3fd7c";
+const BUILD="483a2a661a";
 function tHealth(){
   const f=health();
   window.__fix=i=>{f[i].fix&&f[i].fix();reload();drawConfig()};
@@ -7384,9 +7380,9 @@ function drawStudio() {
         <div>
           <div class="pkkick">Last step</div>
           <h1>Pick your register</h1>
-          <p>Eight of them, each designed as a whole — different type, different colour, different
-            arrangement. Every one is finished and tested. You can change it whenever you like, and
-            rearrange the keys yourself later under Menu designer.</p>
+          <p>Five of them, and they are not one design in five colours — each is a different machine.
+            Different screens, different steps, different words. Pick the one that matches how your
+            counter actually works. You can change it whenever you like.</p>
         </div>
         <button class="launch" onclick="__st.launch()">
           <span>Open ${esc(CFG.site.name)}</span>
@@ -7398,16 +7394,8 @@ function drawStudio() {
       <div class="pkbody">
         <div class="pklist">${LAYOUTS.map(l => `
           <button class="pkcard ${l.k === PICK ? "on" : ""}" onclick="__st.pick('${l.k}')">
-            <span class="pkswatch" style="background:${l.bg};border-color:${l.line}">
-              ${l.nav === "top"
-                ? `<i class="nv top" style="background:${l.panel}"></i>`
-                : `<i class="nv side" style="background:${l.panel}"></i>`}
-              <i class="tp ${l.tape}" style="background:${l.panel};border-color:${l.line}"></i>
-              <span class="kys ${l.keyStyle} ${l.nav} ${l.tape}">
-                ${[1,2,3,4].map(() => `<i style="background:${l.key};
-                  border-radius:${Math.min(l.radius, 7)}px;
-                  ${l.keyStyle === "card" ? `border-top:2px solid ${l.accent}` : ""}"></i>`).join("")}
-              </span>
+            <span class="pkswatch sh-${l.shell}" style="background:${l.bg};border-color:${l.line}">
+              ${shellThumb(l)}
               <i class="ac" style="background:${l.accent}"></i>
             </span>
             <span class="pkmeta">
@@ -7424,9 +7412,7 @@ function drawStudio() {
             <p>${esc(L.why)}</p>
             <div class="pkfacts">
               <span><em>Type</em>${esc(L.font)}</span>
-              <span><em>Products as</em>${({tile:"tiles",pad:"pads",list:"rows",card:"cards"})[L.keyStyle]}</span>
-              <span><em>Menu</em>${L.nav === "top" ? "across the top" : "down the side"}</span>
-              <span><em>Order</em>${L.tape === "bottom" ? "along the bottom" : "on the " + L.tape}</span>
+              <span><em>Best for</em>${esc(L.tag)}</span>
             </div>
           </div>
         </div>
@@ -7435,83 +7421,230 @@ function drawStudio() {
   drawShot(L);
 }
 
-/* A real register at about half size, with this store's own products in it. */
+/* A miniature of the register that will actually open. Each of the five is
+   drawn from its own markup — the preview used to read layout properties that
+   no longer exist, so every register previewed as the same generic panel. */
+/* A ten-pixel sketch of each shell's actual shape. */
+function shellThumb(l) {
+  const p = `background:${l.panel}`, k = `background:${l.key}`, a = `background:${l.accent}`;
+  if (l.shell === "classic") return `
+    <i style="position:absolute;left:0;right:0;top:0;height:16px;${a};opacity:.55"></i>
+    <i style="position:absolute;left:0;top:16px;bottom:0;width:22px;${p}"></i>
+    <span style="position:absolute;left:26px;right:4px;top:20px;bottom:4px;display:grid;
+      grid-template-columns:repeat(3,1fr);gap:2px">${[1,2,3,4,5,6].map(() =>
+      `<i style="${k}"></i>`).join("")}</span>`;
+  if (l.shell === "menu") return `
+    <span style="position:absolute;left:4px;right:4px;top:12px;bottom:14px;display:grid;
+      grid-template-columns:1fr 1fr;gap:3px">${[1,2,3,4].map(() =>
+      `<i style="${k};border-radius:5px"></i>`).join("")}</span>
+    <i style="position:absolute;left:6px;right:6px;bottom:4px;height:8px;${a};border-radius:99px"></i>`;
+  if (l.shell === "terminal") return `
+    <i style="position:absolute;left:0;right:0;top:0;height:8px;${p}"></i>
+    <span style="position:absolute;left:4px;right:26px;top:12px;bottom:4px;display:grid;gap:2px;
+      grid-auto-rows:4px">${[1,2,3,4,5].map(() => `<i style="${k}"></i>`).join("")}</span>
+    <i style="position:absolute;right:0;top:8px;bottom:0;width:22px;${p}"></i>`;
+  if (l.shell === "catalogue") return `
+    <i style="position:absolute;left:0;top:0;bottom:0;width:24px;${p}"></i>
+    <span style="position:absolute;left:28px;right:4px;top:4px;bottom:14px;display:grid;
+      grid-template-columns:1fr 1fr;gap:3px">${[1,2].map(() =>
+      `<i style="${k};border-radius:3px;border-top:3px solid ${l.accent}"></i>`).join("")}</span>
+    <i style="position:absolute;left:24px;right:0;bottom:0;height:12px;${p}"></i>`;
+  return `
+    <span style="position:absolute;left:16px;right:16px;top:6px;bottom:18px;display:grid;gap:3px;
+      grid-auto-rows:12px">${[1,2].map(() => `<i style="${k};border-radius:5px"></i>`).join("")}</span>
+    <i style="position:absolute;left:10px;right:10px;bottom:0;height:16px;${p};
+      border-radius:7px 7px 0 0"></i>`;
+}
+
 function drawShot(L) {
   const el = document.getElementById("pkShot");
   if (!el) return;
-  const menus = CFG.menus.filter(m => !m.fuel);
-  const menu = menus[0];
-  const keys = (menu ? menu.keys : []).slice(0, L.keyStyle === "list" ? 7 : 6);
-  const cols = L.keyStyle === "list" ? 1 : L.keyMin > 210 ? 2 : 3;
   const F = `'${L.font}',Archivo,sans-serif`, M = `'${L.mono}',monospace`;
+  const light = L.mode === "light";
+  const txt = light ? "#1A1714" : "#E6E9EA", dim = light ? "#8A8078" : "#7C868A";
+  const menu = CFG.menus.filter(m => !m.fuel)[0];
+  const keys = (menu ? menu.keys : []).slice(0, 6)
+    .map(k => ({ k, p: byId(CFG.plus, k.pluId) })).filter(x => x.p);
+  const cats = CFG.menus.filter(m => !m.fuel).slice(0, 5);
+  const col = i => byId(CFG.depts, keys[i]?.p.deptId)?.color || L.accent;
+  const nm = i => esc(keys[i]?.k.label || keys[i]?.p.n || "Product");
+  const pr = i => keys[i] ? money(keys[i].p.price) : "0.00";
 
-  const key = k => {
-    const p = byId(CFG.plus, k.pluId);
-    const d = p ? byId(CFG.depts, p.deptId) : null;
-    const col = k.color || d?.color || L.key;
-    const nm = esc(k.label || p?.n || "Product"), pr = p ? money(p.price) : "0.00";
-    if (L.keyStyle === "list") return `<div class="q list" style="border-color:${L.line};color:${L.mode==="light"?"#14181A":"#E6E9EA"}">
-      <i style="background:${col}"></i><b style="font-family:${F}">${nm}</b>
-      <s style="font-family:${M}">${pr}</s></div>`;
-    if (L.keyStyle === "card") return `<div class="q card" style="background:${L.panel};border-color:${L.line};
-      border-radius:${L.radius}px;color:${L.mode==="light"?"#14181A":"#E6E9EA"}">
-      <u style="background:${col}"></u>
-      <b style="font-family:${F}">${nm}</b>
-      <span style="border-color:${L.line}"><s style="font-family:${M}">${pr}</s>
-      <em style="color:${L.accent};border-color:${L.accent}55">Add</em></span></div>`;
-    return `<div class="q ${L.keyStyle}" style="background:${col};border-radius:${L.radius}px">
-      <b style="font-family:${F}">${nm}</b><s style="font-family:${M}">${pr}</s></div>`;
+  const shots = {
+
+    classic: () => `
+      <div style="background:#0A0E0D;padding:16px 20px">
+        <div style="display:flex;justify-content:space-between;font-family:${M};font-size:13px;
+          color:${L.accent};letter-spacing:.06em">
+          <span>${nm(0).toUpperCase()}</span><span>${pr(0)}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;
+          border-top:1px solid rgba(255,255,255,.09);margin-top:10px;padding-top:10px">
+          <span style="font-size:10px;letter-spacing:.2em;color:rgba(255,255,255,.4)">TOTAL</span>
+          <b style="font-family:${M};font-size:38px;font-weight:500;color:${L.accent}">${pr(0)}</b></div>
+      </div>
+      <div style="display:grid;grid-template-columns:158px 1fr">
+        <div style="background:${L.panel};border-right:1px solid ${L.line};padding:11px 13px;
+          font-family:${M};font-size:11px;color:${txt}">
+          ${keys.slice(0, 3).map((_, i) => `<div style="display:flex;justify-content:space-between;
+            padding:5px 0"><span>${nm(i).slice(0, 14).toUpperCase()}</span><span>${pr(i)}</span></div>`).join("")}
+        </div>
+        <div style="padding:11px">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:8px">
+            ${cats.slice(0, 4).map((c, i) => `<div style="background:${byId(CFG.depts, "D" + c.id.slice(1))?.color || col(i)};
+              border-radius:${L.radius}px;padding:12px 9px;color:#fff;font-family:${F};
+              font-size:11px">${esc(c.n).slice(0, 12)}</div>`).join("")}
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px">
+            ${["7","8","9","4","5","6"].map(k => `<div style="background:${L.key};
+              border:1px solid ${L.line};border-radius:${L.radius}px;padding:10px;text-align:center;
+              font-family:${M};font-size:14px;color:${txt}">${k}</div>`).join("")}
+          </div>
+        </div>
+      </div>`,
+
+    menu: () => `
+      <div style="display:flex;align-items:center;gap:10px;padding:14px 16px 6px">
+        <span style="width:8px;height:8px;border-radius:99px;background:${L.accent}"></span>
+        <b style="font-family:${F};font-size:17px;color:${txt}">${esc(CFG.site.name)}</b></div>
+      <div style="display:flex;gap:6px;padding:8px 16px 12px">
+        ${cats.slice(0, 3).map((c, i) => `<span style="font-family:${F};font-size:12px;
+          border-radius:99px;padding:7px 16px;${i === 0
+            ? `background:${L.accent};color:#3A1607`
+            : `border:1px solid ${L.line};color:${dim}`}">${esc(c.n).slice(0, 14)}</span>`).join("")}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;padding:0 16px 60px">
+        ${keys.slice(0, 3).map((_, i) => `<div style="background:${col(i)};border-radius:${L.radius}px;
+          padding:16px;min-height:86px;display:flex;flex-direction:column;justify-content:space-between;
+          color:#fff;font-family:${F}">
+          <span style="font-size:15px;font-weight:600;line-height:1.2">${nm(i).slice(0, 18)}</span>
+          <span style="font-family:${M};font-size:17px">${pr(i)}</span></div>`).join("")}
+      </div>
+      <div style="margin:0 16px 14px;display:flex;align-items:center;gap:12px;background:${L.accent};
+        border-radius:99px;padding:13px 18px;color:#3A1607;font-family:${F}">
+        <span style="background:rgba(0,0,0,.2);border-radius:99px;padding:3px 11px;font-weight:600;
+          font-size:13px">3</span>
+        <span style="flex:1;font-size:14px;font-weight:600">Review the order</span>
+        <span style="font-family:${M};font-size:17px;font-weight:600">${money(
+          keys.slice(0, 3).reduce((a, x) => a + x.p.price, 0))}</span></div>`,
+
+    terminal: () => `
+      <div style="font-family:${M};font-size:12px;color:${L.accent}">
+        <div style="display:flex;gap:18px;padding:8px 14px;background:${L.panel};
+          border-bottom:1px solid ${L.line};font-size:10px;letter-spacing:.1em">
+          <span>${esc(CFG.site.name).toUpperCase().slice(0, 26)}</span><span>REG 1</span>
+          <span style="margin-left:auto">SALE</span><span>[MENU]</span></div>
+        <div style="display:grid;grid-template-columns:1fr 150px">
+          <div style="border-right:1px solid ${L.line}">
+            <div style="display:grid;grid-template-columns:36px 1fr 64px 70px;gap:8px;padding:6px 14px;
+              border-bottom:1px solid ${L.line};font-size:9px;letter-spacing:.12em;opacity:.6">
+              <span>QTY</span><span>DESCRIPTION</span><span style="text-align:right">PRICE</span>
+              <span style="text-align:right">AMOUNT</span></div>
+            ${keys.slice(0, 3).map((_, i) => `<div style="display:grid;
+              grid-template-columns:36px 1fr 64px 70px;gap:8px;padding:5px 14px">
+              <span>1</span><span>${nm(i).toUpperCase().slice(0, 22)}</span>
+              <span style="text-align:right">${pr(i)}</span>
+              <span style="text-align:right">${pr(i)}</span></div>`).join("")}
+            <div style="border-top:1px solid ${L.line};padding:7px 14px;display:flex;
+              justify-content:space-between;font-size:15px">
+              <span>TOTAL</span><b style="font-weight:500">${money(
+                keys.slice(0, 3).reduce((a, x) => a + x.p.price, 0))}</b></div>
+            <div style="display:flex;gap:8px;padding:9px 14px;border-top:1px solid ${L.line};
+              background:${L.panel}"><span style="font-size:14px">&gt;</span>
+              <span style="opacity:.55">3*4011_</span></div>
+          </div>
+          <div style="padding:9px;background:${L.panel}">
+            <div style="font-size:9px;letter-spacing:.16em;opacity:.5;padding-bottom:6px">FUNCTION KEYS</div>
+            ${[["F1","PRICE CHECK"],["F2","VOID LINE"],["F3","DISCOUNT"]].map(([k, n]) =>
+              `<div style="display:flex;gap:8px;border:1px solid ${L.line};padding:6px 8px;
+                margin-bottom:3px;font-size:10px"><b style="font-weight:500">${k}</b>
+                <span style="opacity:.75">${n}</span></div>`).join("")}
+          </div>
+        </div>
+      </div>`,
+
+    catalogue: () => `
+      <div style="display:grid;grid-template-columns:150px 1fr">
+        <div style="background:${L.panel};border-right:1px solid ${L.line};padding:16px 14px">
+          <b style="font-family:${F};font-size:15px;color:${txt};display:block;margin-bottom:16px;
+            line-height:1.25">${esc(CFG.site.name)}</b>
+          ${cats.slice(0, 3).map((c, i) => `<div style="font-family:${F};font-size:13px;padding:8px 10px;
+            border-radius:8px;display:flex;justify-content:space-between;margin-bottom:2px;${i === 0
+              ? `background:color-mix(in srgb,${L.accent} 14%,transparent);color:${txt}`
+              : `color:${dim}`}"><span>${esc(c.n).slice(0, 14)}</span>
+            <span style="font-size:11px;opacity:.6">${c.keys.length}</span></div>`).join("")}
+        </div>
+        <div style="padding:18px 20px">
+          <h3 style="font-family:${F};font-size:22px;font-weight:500;color:${txt};margin:0 0 14px">
+            ${esc(cats[0] ? cats[0].n : "")}</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            ${keys.slice(0, 2).map((_, i) => `<div style="background:${L.panel};
+              border:1px solid ${L.line};border-radius:${L.radius}px;overflow:hidden">
+              <div style="height:44px;background:${col(i)}"></div>
+              <div style="padding:12px 13px 9px;font-family:${F};font-size:15px;color:${txt}">
+                ${nm(i).slice(0, 22)}</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 13px;
+                border-top:1px solid ${L.line}">
+                <span style="font-family:${M};font-size:14px;color:${txt}">${pr(i)}</span>
+                <span style="font-family:${F};font-size:11px;color:${L.accent};
+                  border:1px solid color-mix(in srgb,${L.accent} 45%,transparent);
+                  border-radius:99px;padding:3px 11px">Add</span></div></div>`).join("")}
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;padding:12px 20px;
+        border-top:1px solid ${L.line};background:${L.panel}">
+        <div style="flex:1;display:flex;gap:6px">
+          ${keys.slice(0, 2).map((_, i) => `<span style="background:${L.bg};border:1px solid ${L.line};
+            border-radius:99px;padding:5px 12px;font-family:${F};font-size:12px;color:${txt}">
+            ${nm(i).slice(0, 14)} ×</span>`).join("")}
+        </div>
+        <div><span style="display:block;font-family:${F};font-size:10px;letter-spacing:.1em;
+          color:${dim}">TOTAL</span>
+          <b style="font-family:${M};font-size:20px;color:${txt}">${money(
+            keys.slice(0, 2).reduce((a, x) => a + x.p.price, 0))}</b></div>
+        <span style="background:${L.accent};color:#fff;border-radius:10px;padding:11px 20px;
+          font-family:${F};font-size:13px">Cash</span>
+      </div>`,
+
+    pad: () => `
+      <div style="max-width:360px;margin:0 auto;border-left:1px solid ${L.line};
+        border-right:1px solid ${L.line};min-height:100%">
+        <div style="display:flex;align-items:center;gap:10px;padding:14px 16px 10px">
+          <b style="font-family:${F};font-size:17px;color:${txt}">${esc(CFG.site.name)}</b>
+          <span style="margin-left:auto;width:30px;height:30px;border-radius:99px;
+            border:1px solid ${L.line}"></span></div>
+        <div style="display:flex;gap:6px;padding:0 16px 12px">
+          ${cats.slice(0, 2).map((c, i) => `<span style="font-family:${F};font-size:12px;
+            border-radius:99px;padding:7px 15px;${i === 0
+              ? `background:${L.accent};color:#04211E;font-weight:600`
+              : `border:1px solid ${L.line};color:${dim}`}">${esc(c.n).slice(0, 12)}</span>`).join("")}
+        </div>
+        <div style="padding:0 16px 96px">
+          ${keys.slice(0, 2).map((_, i) => `<div style="display:flex;align-items:center;gap:12px;
+            background:${L.panel};border:1px solid ${L.line};border-radius:${L.radius}px;
+            padding:15px 16px;margin-bottom:8px">
+            <span style="width:10px;height:10px;border-radius:99px;background:${col(i)}"></span>
+            <span style="flex:1;font-family:${F};font-size:15px;font-weight:600;color:${txt}">
+              ${nm(i).slice(0, 20)}</span>
+            <span style="font-family:${M};font-size:15px;color:${txt}">${pr(i)}</span>
+            <span style="width:30px;height:30px;border-radius:99px;background:${L.accent};
+              color:#04211E;display:flex;align-items:center;justify-content:center;
+              font-size:18px">+</span></div>`).join("")}
+        </div>
+        <div style="background:${L.panel};border-top:1px solid ${L.line};
+          border-radius:22px 22px 0 0;padding:16px 20px 18px">
+          <div style="width:40px;height:4px;border-radius:99px;background:${L.line};
+            margin:0 auto 12px"></div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <span style="font-family:${F};font-size:15px;font-weight:600;color:${txt}">2 items</span>
+            <b style="font-family:${M};font-size:21px;color:${L.accent}">${money(
+              keys.slice(0, 2).reduce((a, x) => a + x.p.price, 0))}</b></div>
+        </div>
+      </div>`
   };
 
-  const nav = `<div class="qnav ${L.nav}" style="background:${L.panel};border-color:${L.line}">
-    ${["Sale","Office","Reports","Config"].map((n,i)=>
-      `<span style="font-family:${F};color:${i?(L.mode==="light"?"#6C7679":"#7C868A"):L.accent};
-        background:${i?"transparent":L.accent+"1A"}">${n}</span>`).join("")}</div>`;
-
-  const secs = `<div class="qsec ${L.depts}">${menus.slice(0,5).map((m,i)=>
-    `<span style="font-family:${F};color:${i?(L.mode==="light"?"#6C7679":"#7C868A"):(L.mode==="light"?"#14181A":"#E6E9EA")};
-      border-${L.depts==="rail"?"left":"bottom"}:2px solid ${i?"transparent":L.accent}">${esc(m.n)}</span>`).join("")}</div>`;
-
-  const first = CFG.plus[0], second = CFG.plus[1];
-  const tot = money((first?.price||0)+(second?.price||0));
-  const tape = `<div class="qtape ${L.tapeStyle}" style="background:${L.tapeStyle==="receipt"?L.panel:L.bg};
-    border-color:${L.line};color:${L.mode==="light"?"#14181A":"#E6E9EA"}">
-    <div class="qth" style="font-family:${F};border-color:${L.line}">Current sale</div>
-    ${[first,second].filter(Boolean).map(p=>`<div class="qtl" style="border-color:${L.line}">
-      <span style="font-family:${F}">${esc(p.n)}</span>
-      <span style="font-family:${M}">${money(p.price)}</span></div>`).join("")}
-    <div class="qtt" style="border-color:${L.line}">
-      <span style="font-family:${F}">Total</span>
-      <b style="font-family:${M};color:${L.accent}">${tot}</b></div>
-    <div class="qtp"><span style="border-color:${L.accent};color:${L.accent};font-family:${F}">Cash</span>
-      <span style="border-color:${L.line};font-family:${F}">Card</span></div></div>`;
-
-  const board = `<div class="qboard">
-    ${L.search?`<div class="qsrch" style="background:${L.panel};border-color:${L.line};
-      font-family:${F};color:${L.mode==="light"?"#8A9298":"#6C7679"}">Search the pricebook, or scan a barcode</div>`:""}
-    ${L.depts==="rail"
-      ? `<div class="qrail">${secs}<div class="qkeys" style="grid-template-columns:repeat(${cols},1fr)">
-           ${keys.map(key).join("")}</div></div>`
-      : secs+`<div class="qkeys" style="grid-template-columns:repeat(${cols},1fr)">${keys.map(key).join("")}</div>`}
-    ${L.fkeys?`<div class="qfk" style="border-color:${L.line}">${
-      ["Price check","Void","Discount","No sale","Suspend","Return"].map(f=>
-      `<span style="border-color:${L.line};font-family:${F};
-        color:${L.mode==="light"?"#8A9298":"#6C7679"}">${f}</span>`).join("")}</div>`:""}
-  </div>`;
-
-  el.innerHTML = `<div class="qmock" style="background:${L.bg};border-color:${L.line}">
-    <div class="qbar" style="background:${L.mode==="light"?L.key:"#0E1113"};border-color:${L.line}">
-      ${CFG.site.logo?`<img src="${esc(CFG.site.logo)}" alt="">`
-        :`<i style="background:${L.accent}"></i>`}
-      <b style="font-family:${F};color:${L.mode==="light"?"#14181A":"#E6E9EA"}">${esc(CFG.site.name)}</b>
-      <em style="font-family:${F};color:${L.mode==="light"?"#8A9298":"#6C7679"}">Reg 1 · Store 001</em>
-    </div>
-    ${L.nav==="top"?nav:""}
-    <div class="qbody ${L.tape} ${L.nav}">
-      ${L.nav==="rail"?nav:""}
-      ${L.tape==="left"?tape+board:board+tape}
-    </div>
-  </div>`;
+  el.innerHTML = `<div class="qmock" style="background:${L.bg};border-color:${L.line};
+    color:${txt};min-height:340px">${(shots[L.shell] || shots.classic)()}</div>`;
 }
 
 /* ---------------------------- pre-flight ----------------------------
@@ -7914,189 +8047,6 @@ const shKeys = () => {
 };
 const shCount = () => CART.reduce((a, c) => a + c.q, 0);
 
-/* ============================ TERMINAL ============================
-   A command line. Type a barcode, a PLU number, or a quantity and a code, and
-   press enter. No mouse required and no pictures — which is what a parts
-   counter, a pharmacy or a wholesale desk actually wants. */
-function drawTerminalShell() {
-  const t = calc();
-  document.getElementById("vSale").innerHTML = `
-    <div class="tm">
-      <div class="tm-head">
-        <span>${esc(CFG.site.name).toUpperCase()}</span>
-        <span>REG ${esc(CFG.site.register)}</span>
-        <span>${esc(ME ? ME.n.toUpperCase() : "")}</span>
-        <span>${new Date().toTimeString().slice(0, 5)}</span>
-        <span class="tm-mode">${RETURN ? "** RETURN **" : "SALE"}</span>
-        <button class="tm-nav" onclick="__sh.nav()">[MENU]</button>
-      </div>
-      <div class="tm-cols">
-        <div class="tm-main">
-          <div class="tm-hdr">
-            <span>QTY</span><span>DESCRIPTION</span><span>PRICE</span><span>AMOUNT</span>
-          </div>
-          <div class="tm-lines" id="tmLines">
-            ${CART.map((c, i) => `<div class="tm-l ${SEL === i ? "on" : ""}" onclick="__sh.sel(${i})">
-              <span>${String(c.q).padStart(3)}</span>
-              <span>${esc(c.n.toUpperCase().slice(0, 40))}</span>
-              <span>${money(c.price)}</span>
-              <span>${money(c.price * c.q * (1 - (c.disc || 0) / 100))}</span>
-            </div>`).join("") || `<div class="tm-idle">-- NO ITEMS --</div>`}
-          </div>
-          <div class="tm-sums">
-            <div><span>SUBTOTAL</span><b>${money(t.sub)}</b></div>
-            ${CFG.taxRates.filter(r => r.rate > 0 && Math.abs(t.taxes[r.id] || 0) > 0.001)
-              .map(r => `<div><span>${esc(r.n.toUpperCase())} ${r.rate}%</span><b>${money(t.taxes[r.id])}</b></div>`).join("")}
-            <div class="tot"><span>${RETURN ? "REFUND" : "TOTAL"}</span><b>${money(Math.abs(t.tot))}</b></div>
-          </div>
-          <div class="tm-cmd">
-            <span class="tm-prompt">&gt;</span>
-            <input id="tmIn" autocomplete="off" spellcheck="false"
-              placeholder="barcode, or QTY*CODE, or ? to search">
-          </div>
-          <div class="tm-log">${SH_LOG.slice(-4).map(l =>
-            `<div class="${l.bad ? "bad" : ""}">${esc(l.t)}</div>`).join("")}</div>
-        </div>
-        <div class="tm-side">
-          <div class="tm-sh">FUNCTION KEYS</div>
-          ${[["F1", "PRICE CHECK", "look"], ["F2", "VOID LINE", "void"], ["F3", "DISCOUNT", "disc"],
-             ["F4", "NO SALE", "nosale"], ["F5", "SUSPEND", "hold"], ["F6", "RECALL", "recall"],
-             ["F7", "RETURN", "ret"], ["F8", "MENU", "menu"]].map(([k, n, a]) =>
-            `<button class="tm-fk" onclick="__sh.fn('${a}')"><b>${k}</b><span>${n}</span></button>`).join("")}
-          <div class="tm-sh" style="margin-top:14px">TENDER</div>
-          ${CFG.mops.map(m => `<button class="tm-pay" onclick="__sh.tender('${m.id}')"
-            ${CART.length ? "" : "disabled"}>${esc(m.n.toUpperCase())}</button>`).join("")}
-        </div>
-      </div>
-    </div>`;
-  const inp = document.getElementById("tmIn");
-  if (inp) {
-    inp.value = SH_CMD;
-    inp.oninput = e => { SH_CMD = e.target.value; };
-    inp.onkeydown = e => { if (e.key === "Enter") { __sh.run(); e.preventDefault(); } };
-    if (!document.querySelector(".veil")) inp.focus();
-  }
-  const box = document.getElementById("tmLines");
-  if (box) box.scrollTop = box.scrollHeight;
-}
-
-/* =========================== CATALOGUE ===========================
-   Browse-first. Large cards with room for options, categories spelled out down
-   the side in a serif, and the order along the bottom where it doesn't compete
-   for attention. For a shop where one sale takes a conversation. */
-function drawCatalogueShell() {
-  const t = calc(), items = shKeys(), cats = shDepts();
-  document.getElementById("vSale").innerHTML = `
-    <div class="ct">
-      <aside class="ct-side">
-        <div class="ct-brand">
-          ${CFG.site.logo ? `<img src="${esc(CFG.site.logo)}" alt="">` : ""}
-          <b>${esc(CFG.site.name)}</b>
-        </div>
-        <div class="ct-cats">
-          ${cats.map((m, i) => `<button class="${i === SH_CAT ? "on" : ""}"
-            onclick="__sh.cat(${i})">${esc(m.n)}<em>${m.keys.length}</em></button>`).join("")}
-        </div>
-        <div class="ct-srch">
-          <input id="ctQ" placeholder="Search" autocomplete="off">
-        </div>
-        <div class="ct-foot">
-          <span>${esc(ME ? ME.n : "")}</span>
-          <button onclick="__sh.nav()">Menu</button>
-        </div>
-      </aside>
-      <main class="ct-main">
-        <div class="ct-h">
-          <h2>${esc(cats[SH_CAT] ? cats[SH_CAT].n : "")}</h2>
-          <span>${items.length} item${items.length === 1 ? "" : "s"}</span>
-        </div>
-        <div class="ct-grid">
-          ${items.map(({ k, p }, i) => {
-            const d = byId(CFG.depts, p.deptId);
-            return `<button class="ct-c" onclick="__sh.ring('${p.id}')"
-              style="animation-delay:${Math.min(i * 26, 340)}ms">
-              <span class="ct-swatch" style="background:${k.color || d?.color || "#8C6BC8"}"></span>
-              <span class="ct-body">
-                <span class="ct-n">${esc(k.label || p.n)}</span>
-                ${p.modIds?.length ? `<span class="ct-o">Sizes and options</span>` : ""}
-              </span>
-              <span class="ct-f"><span class="ct-p num">${money(p.price)}</span>
-                <span class="ct-add">Add</span></span>
-            </button>`;
-          }).join("") || `<div class="ct-empty">Nothing in this section</div>`}
-        </div>
-      </main>
-      <div class="ct-bar ${CART.length ? "on" : ""}">
-        <div class="ct-items">
-          ${CART.slice(-4).map((c, i) => `<span class="ct-chip" onclick="__sh.drop(${CART.indexOf(c)})">
-            ${c.q > 1 ? c.q + "× " : ""}${esc(c.n)}<em>×</em></span>`).join("")
-            || `<span class="ct-none">Nothing selected yet</span>`}
-          ${CART.length > 4 ? `<span class="ct-more">+${CART.length - 4} more</span>` : ""}
-        </div>
-        <div class="ct-tot"><span>Total</span><b class="num">${money(Math.abs(t.tot))}</b></div>
-        <div class="ct-pay">
-          ${CFG.mops.slice(0, 3).map(m => `<button onclick="__sh.tender('${m.id}')"
-            ${CART.length ? "" : "disabled"}>${esc(m.n)}</button>`).join("")}
-        </div>
-      </div>
-    </div>`;
-  const q = document.getElementById("ctQ");
-  if (q) q.oninput = e => { FILTER = e.target.value; drawCatalogueShell(); };
-}
-
-/* ============================== PAD ==============================
-   One column, everything oversized, order as a sheet you pull up from the
-   bottom. Built for a tablet held in one hand — a food truck, a market stall,
-   a pop-up. */
-function drawPadShell() {
-  const t = calc(), items = shKeys(), cats = shDepts();
-  document.getElementById("vSale").innerHTML = `
-    <div class="pd">
-      <div class="pd-top">
-        ${CFG.site.logo ? `<img src="${esc(CFG.site.logo)}" alt="">` : ""}
-        <b>${esc(CFG.site.name)}</b>
-        ${shMenuBtn("pd-menu")}
-      </div>
-      <div class="pd-cats">
-        ${cats.map((m, i) => `<button class="${i === SH_CAT ? "on" : ""}"
-          onclick="__sh.cat(${i})">${esc(m.n)}</button>`).join("")}
-      </div>
-      <div class="pd-list">
-        ${items.map(({ k, p }, i) => {
-          const d = byId(CFG.depts, p.deptId);
-          return `<button class="pd-r" onclick="__sh.ring('${p.id}')"
-            style="animation-delay:${Math.min(i * 20, 280)}ms">
-            <span class="pd-dot" style="background:${k.color || d?.color || "#0FA3A3"}"></span>
-            <span class="pd-n">${esc(k.label || p.n)}</span>
-            <span class="pd-p num">${money(p.price)}</span>
-            <span class="pd-plus">+</span>
-          </button>`;
-        }).join("") || `<div class="pd-empty">Nothing here yet</div>`}
-      </div>
-      <div class="pd-sheet ${SH_OPEN ? "up" : ""}">
-        <button class="pd-handle" onclick="__sh.toggle()">
-          <span class="pd-grip"></span>
-          <span class="pd-hl">${shCount()} item${shCount() === 1 ? "" : "s"}</span>
-          <span class="pd-ht num">${money(Math.abs(t.tot))}</span>
-        </button>
-        <div class="pd-inner">
-          <div class="pd-lines">
-            ${CART.map((c, i) => `<div class="pd-l">
-              <span class="pd-lq">${c.q}</span>
-              <span class="pd-ln">${esc(c.n)}</span>
-              <span class="pd-la num">${money(c.price * c.q * (1 - (c.disc || 0) / 100))}</span>
-              <button onclick="__sh.drop(${i})">×</button>
-            </div>`).join("") || `<div class="pd-empty2">Tap a product to start</div>`}
-          </div>
-          <div class="pd-pay">
-            ${CFG.mops.map(m => `<button onclick="__sh.tender('${m.id}')"
-              ${CART.length ? "" : "disabled"}>${esc(m.n)}</button>`).join("")}
-          </div>
-        </div>
-      </div>
-    </div>`;
-}
-
 /* ------------------------- shared interactions ------------------------- */
 window.__sh = {
   /* One way out, drawn in whatever style the shell is wearing. */
@@ -8428,6 +8378,221 @@ function mnFinished(sale) {
   MN_DONE = sale; MN_STEP = "done"; MN_PICK = {}; MN_P = null; MN_ERR = "";
   drawMenuShell();
 }
+
+/* ===========================================================================
+   Retail, Commerce and Counter.
+
+   Three more registers, each following the conventions of a different corner of
+   the market so a cashier who has used one before recognises the shape of it.
+
+     retail     coloured tile library on the left, basket held on the right,
+                one large charge button. White and blue.
+     commerce   search-led, products as a list with thumbnails, a cart panel
+                that totals like a web checkout. White and green.
+     counter    round category buttons across the top, soft tile grid, a wide
+                pay bar pinned along the bottom.
+   =========================================================================== */
+
+/* ------------------------------- RETAIL ------------------------------- */
+function drawRetailShell() {
+  const t = calc(), items = shKeys(), cats = shDepts();
+  document.getElementById("vSale").innerHTML = `
+    <div class="rt">
+      <header class="rt-top">
+        <div class="rt-brand">
+          ${CFG.site.logo ? `<img src="${esc(CFG.site.logo)}" alt="">` : ""}
+          <b>${esc(CFG.site.name)}</b>
+        </div>
+        <div class="rt-search">
+          <input id="rtQ" placeholder="Search library" autocomplete="off" value="${esc(FILTER)}">
+        </div>
+        <button class="rt-more" onclick="__sh.nav()" aria-label="Menu">···</button>
+      </header>
+      <div class="rt-body">
+        <div class="rt-left">
+          <div class="rt-tabs">
+            ${cats.map((m, i) => `<button class="${i === SH_CAT ? "on" : ""}"
+              onclick="__sh.cat(${i})">${esc(m.n)}</button>`).join("")}
+          </div>
+          <div class="rt-grid">
+            ${items.map(({ k, p }, i) => {
+              const d = byId(CFG.depts, p.deptId);
+              return `<button class="rt-t" onclick="__sh.ring('${p.id}')"
+                style="--c:${k.color || d?.color || "#006AFF"};animation-delay:${Math.min(i * 18, 260)}ms">
+                <span class="rt-n">${esc(k.label || p.n)}</span>
+                <span class="rt-p">${money(p.price)}</span>
+              </button>`;
+            }).join("") || `<div class="rt-empty">Nothing in this section</div>`}
+          </div>
+        </div>
+        <aside class="rt-cart">
+          <div class="rt-ch">Current sale</div>
+          <div class="rt-lines">
+            ${CART.map((c, i) => `<div class="rt-l">
+              <div class="rt-ln"><b>${esc(c.n)}</b>
+                ${c.mods?.length ? `<em>${esc(c.mods.join(", "))}</em>` : ""}
+                <span class="rt-lq">${c.q} × ${money(c.price)}</span></div>
+              <div class="rt-lr">
+                <span class="rt-la">${money(c.price * c.q * (1 - (c.disc || 0) / 100))}</span>
+                <button onclick="__sh.drop(${i})" aria-label="Remove">×</button>
+              </div>
+            </div>`).join("") || `<div class="rt-none">Add an item to start a sale</div>`}
+          </div>
+          <div class="rt-sums">
+            <div><span>Subtotal</span><b>${money(t.sub)}</b></div>
+            ${CFG.taxRates.filter(r => r.rate > 0 && Math.abs(t.taxes[r.id] || 0) > 0.001)
+              .map(r => `<div><span>${esc(r.n)}</span><b>${money(t.taxes[r.id])}</b></div>`).join("")}
+          </div>
+          <button class="rt-charge" onclick="__sh.pay()" ${CART.length ? "" : "disabled"}>
+            Charge ${money(Math.abs(t.tot))}
+          </button>
+        </aside>
+      </div>
+    </div>`;
+  const q = document.getElementById("rtQ");
+  if (q) q.oninput = e => { FILTER = e.target.value; drawRetailShell(); };
+}
+
+/* ------------------------------ COMMERCE ------------------------------ */
+function drawCommerceShell() {
+  const t = calc(), cats = shDepts();
+  const q = FILTER.trim().toLowerCase();
+  const pool = q
+    ? CFG.plus.filter(p => p.n.toLowerCase().includes(q) || (p.upc || "").includes(q))
+    : shKeys().map(x => x.p);
+  document.getElementById("vSale").innerHTML = `
+    <div class="cm">
+      <aside class="cm-nav">
+        <div class="cm-brand">
+          ${CFG.site.logo ? `<img src="${esc(CFG.site.logo)}" alt="">` : `<i></i>`}
+          <b>${esc(CFG.site.name)}</b>
+        </div>
+        <button class="cm-nb on">Sell</button>
+        <button class="cm-nb" onclick="go('office')">Office</button>
+        <button class="cm-nb" onclick="go('reports')">Reports</button>
+        <button class="cm-nb" onclick="go('config')">Settings</button>
+        <div class="cm-navfoot">${esc(ME ? ME.n : "")}</div>
+      </aside>
+      <main class="cm-main">
+        <div class="cm-searchbar">
+          <input id="cmQ" placeholder="Search products or scan a barcode" autocomplete="off"
+            value="${esc(FILTER)}">
+        </div>
+        <div class="cm-cats">
+          ${cats.map((m, i) => `<button class="${i === SH_CAT && !q ? "on" : ""}"
+            onclick="__sh.cat(${i})">${esc(m.n)}</button>`).join("")}
+        </div>
+        <div class="cm-list">
+          ${pool.slice(0, 60).map((p, i) => {
+            const d = byId(CFG.depts, p.deptId);
+            return `<button class="cm-row" onclick="__sh.ring('${p.id}')"
+              style="animation-delay:${Math.min(i * 14, 220)}ms">
+              <span class="cm-thumb" style="background:${d?.color || "#008060"}">
+                ${esc((p.n || "?").trim()[0] || "?")}</span>
+              <span class="cm-info"><b>${esc(p.n)}</b>
+                <em>${esc(d ? d.n : "")}${p.upc ? " · " + esc(p.upc) : ""}</em></span>
+              <span class="cm-price">${money(p.price)}</span>
+              <span class="cm-addbtn">Add</span>
+            </button>`;
+          }).join("") || `<div class="cm-empty">Nothing matches</div>`}
+        </div>
+      </main>
+      <aside class="cm-cart">
+        <div class="cm-ch"><b>Cart</b><span>${CART.reduce((a, c) => a + c.q, 0)} items</span></div>
+        <div class="cm-lines">
+          ${CART.map((c, i) => `<div class="cm-cl">
+            <div class="cm-cn"><b>${esc(c.n)}</b>
+              <em>${c.q} × ${money(c.price)}</em></div>
+            <span class="cm-ca">${money(c.price * c.q * (1 - (c.disc || 0) / 100))}</span>
+            <button onclick="__sh.drop(${i})" aria-label="Remove">×</button>
+          </div>`).join("") || `<div class="cm-none">Your cart is empty</div>`}
+        </div>
+        <div class="cm-sums">
+          <div><span>Subtotal</span><b>${money(t.sub)}</b></div>
+          ${Math.abs(t.promoOff) > 0.001
+            ? `<div class="disc"><span>Discounts</span><b>−${money(Math.abs(t.promoOff))}</b></div>` : ""}
+          ${CFG.taxRates.filter(r => r.rate > 0 && Math.abs(t.taxes[r.id] || 0) > 0.001)
+            .map(r => `<div><span>${esc(r.n)}</span><b>${money(t.taxes[r.id])}</b></div>`).join("")}
+          <div class="tot"><span>Total</span><b>${money(Math.abs(t.tot))}</b></div>
+        </div>
+        <button class="cm-checkout" onclick="__sh.pay()" ${CART.length ? "" : "disabled"}>
+          Checkout</button>
+      </aside>
+    </div>`;
+  const s = document.getElementById("cmQ");
+  if (s) s.oninput = e => { FILTER = e.target.value; drawCommerceShell(); };
+}
+
+/* ------------------------------- COUNTER ------------------------------- */
+function drawCounterShell() {
+  const t = calc(), items = shKeys(), cats = shDepts();
+  document.getElementById("vSale").innerHTML = `
+    <div class="cn">
+      <header class="cn-top">
+        <button class="cn-mn" onclick="__sh.nav()" aria-label="Menu">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+        <b>${esc(CFG.site.name)}</b>
+        <span>${esc(ME ? ME.n : "")}</span>
+      </header>
+      <div class="cn-cats">
+        ${cats.map((m, i) => {
+          const d = CFG.depts.find(x => "M" + x.id === m.id);
+          return `<button class="${i === SH_CAT ? "on" : ""}" onclick="__sh.cat(${i})">
+            <span class="cn-circle" style="background:${d?.color || "#00A05A"}">
+              ${esc(m.n.trim()[0] || "?")}</span>
+            <em>${esc(m.n)}</em></button>`;
+        }).join("")}
+      </div>
+      <div class="cn-body">
+        <div class="cn-grid">
+          ${items.map(({ k, p }, i) => `<button class="cn-t" onclick="__sh.ring('${p.id}')"
+            style="animation-delay:${Math.min(i * 18, 260)}ms">
+            <span class="cn-n">${esc(k.label || p.n)}</span>
+            <span class="cn-p">${money(p.price)}</span>
+          </button>`).join("") || `<div class="cn-empty">Nothing here yet</div>`}
+        </div>
+        <aside class="cn-tick">
+          <div class="cn-th">Order</div>
+          <div class="cn-lines">
+            ${CART.map((c, i) => `<div class="cn-l">
+              <span class="cn-lq">${c.q}</span>
+              <span class="cn-ln">${esc(c.n)}</span>
+              <span class="cn-la">${money(c.price * c.q * (1 - (c.disc || 0) / 100))}</span>
+              <button onclick="__sh.drop(${i})" aria-label="Remove">×</button>
+            </div>`).join("") || `<div class="cn-none">Tap an item</div>`}
+          </div>
+        </aside>
+      </div>
+      <div class="cn-pay">
+        <div class="cn-total"><span>Total</span><b>${money(Math.abs(t.tot))}</b></div>
+        <button class="cn-btn" onclick="__sh.pay()" ${CART.length ? "" : "disabled"}>Pay</button>
+      </div>
+    </div>`;
+}
+
+/* A payment picker in each register's own manner, rather than one shared modal. */
+window.__sh.pay = function () {
+  if (!CART.length) return;
+  const t = calc(), style = THEME.shell;
+  const el = veil(`<div class="card paysheet ${style}">
+    <h3>${style === "commerce" ? "Checkout" : "Take payment"}</h3>
+    <div class="pay-due"><span>Due</span><b>${money(Math.abs(t.tot))}</b></div>
+    <div class="pay-grid">
+      ${CFG.mops.map(m => `<button data-m="${m.id}" class="${m.kind}">
+        <b>${esc(m.n)}</b><em>${m.kind === "cash" ? "Opens the drawer"
+          : m.kind === "gift" ? "Scan the card" : m.kind === "ebt" ? "Eligible items"
+          : "Reader takes it"}</em></button>`).join("")}
+    </div>
+    <div class="row"><button class="no" id="payx">Back</button></div></div>`);
+  el.querySelector("#payx").onclick = () => el.remove();
+  el.querySelectorAll("[data-m]").forEach(b => b.onclick = () => {
+    const m = byId(CFG.mops, b.dataset.m);
+    el.remove();
+    if (m) tender(m);
+  });
+};
 
 /* ============================ CONFIGURATION CLIENT ============================
    Modelled on Commander's Config Client and Passport's Manager Workstation:

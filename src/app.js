@@ -95,31 +95,41 @@ const TYPES=TYPE_GROUPS.flatMap(g=>g[1]);
    that happen to share a database. Different shell, different interaction,
    different typeface, different palette. Somebody shown two of these would not
    guess they were the same software. */
+/* Five registers, each built to the conventions of a different corner of the
+   market. A cashier who has used one of these before should recognise the
+   shape of it immediately — that familiarity is the point.
+
+   Named for what they are rather than who they resemble. */
 const LAYOUTS=[
- {k:"classic",chrome:"own",n:"Classic",tag:"Convenience, liquor, hardware",
-  shell:"classic",font:"Archivo",mono:"Azeret Mono",mode:"dark",accent:"#5CE0A8",
-  bg:"#141819",panel:"#1C2123",line:"#2E3639",key:"#262C2F",radius:3,
-  why:"A keypad, department keys and a line display. No product grid at all — type a price and press a department, or scan. What a Verifone or an NCR looks like, and what most counters have actually run for thirty years."},
+ {k:"commander",n:"Commander",tag:"Fuel, convenience, liquor — the industry standard",
+  shell:"classic",font:"Archivo",mono:"Azeret Mono",mode:"dark",accent:"#3D8BD6",
+  bg:"#2B3033",panel:"#373D41",line:"#4A5155",key:"#454C50",radius:2,chrome:"own",
+  ref:"Steel grey, hard edges, dense function keys and a blue line display. The shape every forecourt and convenience counter in America already runs.",
+  why:"A keypad and department keys with no product grid. Sharp corners, small type, everything reachable without scrolling."},
 
- {k:"menu",chrome:"own",n:"Menu",tag:"Cafés, pizzerias, bars, food trucks",
-  shell:"menu",font:"Space Grotesk",mono:"Space Mono",mode:"dark",accent:"#FF7A45",
-  bg:"#17110E",panel:"#231A15",line:"#3B2B22",key:"#2E211A",radius:18,
-  why:"Products edge to edge, as big and colourful as the screen allows. No order panel taking up room — it lives behind one button and slides up over the top when you want it."},
+ {k:"service",n:"Service",tag:"Restaurants, cafés, bars — table and counter service",
+  shell:"menu",font:"Space Grotesk",mono:"Space Mono",mode:"dark",accent:"#FF4C00",
+  bg:"#1A1A1A",panel:"#242424",line:"#333333",key:"#2E2E2E",radius:8,chrome:"own",
+  ref:"Near-black with a hot orange, heavy type, full-bleed tiles and an order that reads back before payment.",
+  why:"Built for a hot line and a queue. Options open as a full screen, the order is confirmed once, and the ticket number fills the display at the end."},
 
- {k:"terminal",chrome:"own",n:"Terminal",tag:"Parts counters, pharmacy, wholesale",
-  shell:"terminal",font:"IBM Plex Mono",mono:"IBM Plex Mono",mode:"contrast",accent:"#FFB000",
-  bg:"#000000",panel:"#080A08",line:"#3A3320",key:"#141208",radius:0,
-  why:"A command line. Type a barcode, or three-times-a-code, and press enter. Amber on black, no pictures, function keys down the side. Nobody needs to lift a hand off the keyboard."},
+ {k:"retail",n:"Retail",tag:"Shops, market stalls, anywhere with a card reader",
+  shell:"retail",font:"Inter",mono:"Inter",mode:"light",accent:"#006AFF",
+  bg:"#F7F7F7",panel:"#FFFFFF",line:"#E3E3E3",key:"#FFFFFF",radius:6,chrome:"own",
+  ref:"White, generous, a blue action colour and a library of coloured tiles with the basket held to the right.",
+  why:"The one most people have already used. Tiles on the left, running basket on the right, and one large charge button."},
 
- {k:"catalogue",chrome:"own",n:"Catalogue",tag:"Clothing, jewellery, furniture",
-  shell:"catalogue",font:"Fraunces",mono:"Azeret Mono",mode:"light",accent:"#7B5EA7",
-  bg:"#F5F2ED",panel:"#FDFBF8",line:"#E2DBD1",key:"#EFEAE2",radius:14,
-  why:"Browse first. Large cards with room for sizes, categories set in a serif down the side, and the order along the bottom where it isn't competing for attention."},
+ {k:"commerce",n:"Commerce",tag:"Clothing, gifts, anything with a catalogue behind it",
+  shell:"commerce",font:"Inter",mono:"Inter",mode:"light",accent:"#008060",
+  bg:"#F1F2F4",panel:"#FFFFFF",line:"#DFE3E8",key:"#FFFFFF",radius:8,chrome:"own",
+  ref:"Search-led, products as a list rather than a grid, a green checkout button and a cart panel that behaves like an online one.",
+  why:"For a shop with more products than fit on a screen. You search or scan rather than browse, and the cart totals like a web checkout."},
 
- {k:"pad",chrome:"own",n:"Pad",tag:"Market stalls, pop-ups, tablets",
-  shell:"pad",font:"Space Grotesk",mono:"Space Mono",mode:"light",accent:"#0E9B8E",
-  bg:"#F1F5F4",panel:"#FFFFFF",line:"#DCE5E3",key:"#E8EFED",radius:20,
-  why:"One column, everything oversized, order as a sheet you pull up from the bottom. Built for a tablet held in one hand."}
+ {k:"counter",n:"Counter",tag:"Bakeries, delis, takeaways — quick service",
+  shell:"counter",font:"Inter",mono:"Inter",mode:"light",accent:"#00A05A",
+  bg:"#FFFFFF",panel:"#F6F7F8",line:"#E1E4E6",key:"#F6F7F8",radius:10,chrome:"own",
+  ref:"Round category buttons across the top, a soft tile grid, and a wide green pay bar pinned to the bottom.",
+  why:"Fast and forgiving. Big targets, few steps, and the total always visible along the bottom."}
 ];
 const ACCENTS=[
  ["#5CE0A8","Mint"],["#3FBF8F","Jade"],["#2FA3A3","Teal"],["#4FD6D6","Aqua"],
@@ -131,11 +141,11 @@ const ACCENTS=[
 ];
 function suggestLayout(){
   const t=(A.type+" "+A.desc).toLowerCase();
-  if(/caf|coffee|pizz|restaurant|bar|pub|brewery|deli|bakery|juice|ice cream/.test(t))return "menu";
-  if(/food truck|kiosk|stand|market stall|pop/.test(t))return "pad";
-  if(/cloth|boutique|shoe|jewel|watch|handbag|furniture|antique|gift|book|record/.test(t))return "catalogue";
-  if(/pharmac|auto parts|wholesale|electrical|plumb|supply|feed/.test(t))return "terminal";
-  return "classic";
+  if(/restaurant|pizz|bar|pub|brewery|taproom|caf|coffee/.test(t))return "service";
+  if(/bakery|deli|sandwich|juice|ice cream|food truck|takeaway|fast food/.test(t))return "counter";
+  if(/cloth|boutique|shoe|jewel|watch|handbag|furniture|gift|book|record|toy|craft/.test(t))return "commerce";
+  if(/convenience|gas|fuel|truck stop|liquor|tobacco|vape|hardware|auto parts|pharmac/.test(t))return "commander";
+  return "retail";
 }
 function suggestAccent(){
   const t=(A.type+" "+A.desc).toLowerCase();
@@ -1547,7 +1557,7 @@ function setTotal(v){
 /* Two shells now render the same sale. Everything that changes the cart calls
    this instead of assuming the panel-and-grid layout is on screen. */
 const SHELLS={classic:()=>drawClassic(),menu:()=>drawMenuShell(),
-  terminal:()=>drawTerminalShell(),catalogue:()=>drawCatalogueShell(),pad:()=>drawPadShell()};
+  retail:()=>drawRetailShell(),commerce:()=>drawCommerceShell(),counter:()=>drawCounterShell()};
 function refreshSale(){
   const s=typeof THEME!=="undefined"&&THEME.shell;
   if(s&&SHELLS[s])return SHELLS[s]();
