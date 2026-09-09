@@ -534,6 +534,31 @@ app.get("/api/admin/mail", auth, operator, (req, res) =>
   res.json({ configured: MAIL.configured(), reason: MAIL.whyNot(),
     provider: String(process.env.MAIL_PROVIDER || "") }));
 
+app.get("/api/admin/ai", auth, operator, (req, res) =>
+  res.json(ADMIN.aiUsage(+req.query.days || 30)));
+
+app.get("/api/admin/storage", auth, operator, (req, res) =>
+  res.json(ADMIN.storage(process.env.DATA_DIR || "./data",
+    process.env.BACKUP_DIR || "./data/backups")));
+
+/* Shown before anything is destroyed: exactly what would go. */
+app.post("/api/admin/accounts/preview", auth, operator, (req, res) =>
+  res.json({ accounts: ADMIN.deletionPreview(req.body.ids) }));
+
+app.post("/api/admin/accounts/delete", auth, operator, (req, res) => {
+  /* Typing the word is the last gate. Nothing here can be undone, and a
+     mis-click on a checkbox shouldn't be able to end somebody's business. */
+  if (String(req.body.confirm || "").trim().toLowerCase() !== "delete")
+    return res.status(400).json({ error: 'Type "delete" to confirm.' });
+  const r = ADMIN.deleteAccounts(req.account.id, req.body.ids, id => P.deleteAccount(id));
+  res.json(r);
+});
+
+app.post("/api/admin/operator", auth, operator, (req, res) => {
+  try { res.json(ADMIN.setOperator(req.account.id, +req.body.account, !!req.body.on)); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
 app.get("/api/admin/log", auth, operator, (req, res) =>
   res.json({ log: ADMIN.operatorLog() }));
 

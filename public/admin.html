@@ -68,6 +68,24 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .go{background:var(--ok);color:#0E241C}
 .no{background:#262C33;border:1px solid var(--line2)}
 .err{margin-top:11px;font-size:13px;color:#F2BCAC}
+.toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:11px}
+.toolbar input{background:var(--panel);border:1px solid var(--line2);color:var(--txt);
+  padding:9px 13px;border-radius:99px;font:inherit;font-size:13px;min-width:220px}
+.toolbar input:focus{outline:none;border-color:var(--ok)}
+.act.danger{border-color:rgba(210,102,76,.5);color:var(--bad)}
+.act.danger:hover{background:rgba(210,102,76,.12)}
+.act[disabled]{opacity:.35;cursor:not-allowed}
+.selcount{font-size:12.5px;color:var(--txt2);margin-left:auto}
+.sub{font-size:11.5px;color:var(--txt3);margin-top:2px}
+input[type=checkbox]{width:16px;height:16px;accent-color:var(--ok);cursor:pointer}
+.warnbox{margin-top:14px;padding:12px 15px;border-radius:6px;font-size:13px;line-height:1.6;
+  border:1px solid rgba(224,178,85,.45);background:rgba(224,178,85,.09);color:#F0D9A6}
+.aitop{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1px;
+  background:var(--line);border-bottom:1px solid var(--line)}
+.aitop div{background:var(--panel);padding:14px 16px}
+.aitop span{display:block;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--txt3)}
+.aitop b{display:block;font-size:22px;font-weight:600;margin-top:4px}
 </style>
 </head>
 <body>
@@ -165,28 +183,40 @@ function draw() {
         </tr>`).join("")}
       </tbody></table></div>` : ""}
 
-    <h2>Accounts</h2>
+    <h2>Accounts — ${F.accounts.length}</h2>
+    <div class="toolbar">
+      <input id="acctQ" placeholder="Filter by email" oninput="filterAccounts(this.value)">
+      <button class="act" onclick="selectAll(true)">Select all</button>
+      <button class="act" onclick="selectAll(false)">Clear</button>
+      <span class="selcount" id="selCount"></span>
+      <button class="act danger" id="delBtn" onclick="askDelete()" disabled>Delete selected</button>
+    </div>
     <div class="card"><table>
-      <thead><tr><th>Account</th><th>Stores</th><th>Trade</th><th>Modules</th>
-        <th>Sales · 7d</th><th>Last sale</th><th></th></tr></thead>
-      <tbody>
-        ${F.accounts.map(a => {
-          const st = byAccount[a.id] || [];
-          const first = st[0] ? shape[st[0].id] : null;
+      <thead><tr><th style="width:34px"></th><th>Account</th><th>Stores</th><th>Trade</th>
+        <th>Modules</th><th>Sales · 7d</th><th>Last sale</th><th></th></tr></thead>
+      <tbody id="acctRows">
+        ${F.accounts.map(acc => {
+          const st = byAccount[acc.id] || [];
+          const first = st.map(s => shape[s.id]).find(Boolean);
           const s7 = st.reduce((n, s) => n + s.sales_7d, 0);
           const last = st.map(s => s.last_sale).filter(Boolean).sort().pop();
-          return `<tr>
-            <td><b>${esc(a.email)}</b>${a.is_operator ? ` <span class="pill ok">operator</span>` : ""}
-              <div style="font-size:11.5px;color:var(--txt3);margin-top:2px">
-                joined ${esc(String(a.created_at).slice(0, 10))}</div></td>
+          const totalSales = st.reduce((n, s) => n + s.sales, 0);
+          return `<tr data-email="${esc(acc.email.toLowerCase())}">
+            <td>${acc.is_operator ? `<span class="pill ok" title="operators can't be deleted">op</span>`
+              : `<input type="checkbox" class="asel" value="${acc.id}" onchange="selChanged()">`}</td>
+            <td><b>${esc(acc.email)}</b>
+              <div class="sub">joined ${esc(String(acc.created_at).slice(0, 10))} ·
+                ${totalSales} sale${totalSales === 1 ? "" : "s"} all time</div></td>
             <td>${st.length}</td>
             <td style="color:var(--txt2)">${esc(first?.trade || "—")}</td>
             <td><div class="mods">${(first?.modules || []).slice(0, 4)
-              .map(m => `<span>${esc(m)}</span>`).join("") || `<span style="color:var(--txt3)">—</span>`}</div></td>
+              .map(m => `<span>${esc(m)}</span>`).join("") || `<span class="sub">—</span>`}</div></td>
             <td class="num">${s7}</td>
             <td style="color:var(--txt2)">${ago(last)}</td>
-            <td style="text-align:right">
-              <button class="act" onclick="openS(${a.id},'${esc(a.email)}')">Support…</button></td>
+            <td style="text-align:right;white-space:nowrap">
+              <button class="act" onclick="openS(${acc.id},'${esc(acc.email)}')">Support…</button>
+              <button class="act" onclick="toggleOp(${acc.id}, ${acc.is_operator ? "false" : "true"})">
+                ${acc.is_operator ? "Revoke op" : "Make op"}</button></td>
           </tr>`;
         }).join("")}
       </tbody></table></div>
@@ -226,6 +256,12 @@ function draw() {
       r => `<td><b>${esc(r.name)}</b></td><td style="color:var(--txt2)">${esc(r.email)}</td>
             <td style="color:var(--txt3)">open since ${ago(r.opened_at)}</td>`)}
 
+    <h2>Model usage — last 30 days</h2>
+    <div class="card" id="aiBox"><div class="empty">Loading…</div></div>
+
+    <h2>Storage</h2>
+    <div class="card" id="storeBox"><div class="empty">Loading…</div></div>
+
     <h2>Email</h2>
     <div class="card" style="padding:16px 18px" id="mailBox">
       <span style="color:var(--txt3)">Checking…</span>
@@ -237,6 +273,9 @@ function draw() {
       expires on its own and is written into their activity log where they can see it.
     </div>`;
   drawMail();
+  drawAI();
+  drawStorage();
+  selChanged();
 }
 
 /* Proving mail works before somebody locked out needs it to. */
@@ -280,6 +319,149 @@ const section = (title, rows, cells) => !rows.length ? "" : `
   <div class="card"><table><tbody>
     ${rows.map(r => `<tr>${cells(r)}</tr>`).join("")}
   </tbody></table></div>`;
+
+/* ------------------------------ selection ------------------------------- */
+const selected = () => [...document.querySelectorAll(".asel:checked")].map(c => +c.value);
+
+function selChanged() {
+  const n = selected().length;
+  const b = document.getElementById("delBtn");
+  const c = document.getElementById("selCount");
+  if (b) b.disabled = !n;
+  if (c) c.textContent = n ? `${n} selected` : "";
+}
+
+function selectAll(on) {
+  document.querySelectorAll("#acctRows tr").forEach(tr => {
+    if (tr.style.display === "none") return;          // never select what's filtered out
+    const c = tr.querySelector(".asel");
+    if (c) c.checked = on;
+  });
+  selChanged();
+}
+
+function filterAccounts(q) {
+  const t = q.trim().toLowerCase();
+  document.querySelectorAll("#acctRows tr").forEach(tr => {
+    tr.style.display = !t || (tr.dataset.email || "").includes(t) ? "" : "none";
+  });
+}
+
+/* Deleting shows what would actually go first, then asks for the word to be
+   typed. There is no undo behind this. */
+async function askDelete() {
+  const ids = selected();
+  if (!ids.length) return;
+  let list = [];
+  try { const r = await api("/api/admin/accounts/preview", { method: "POST", body: { ids } });
+    list = r.accounts; } catch (e) { return alert(e.message); }
+
+  const totalStores = list.reduce((n, a) => n + (a.stores || 0), 0);
+  const totalSales = list.reduce((n, a) => n + (a.sales || 0), 0);
+  const withData = list.filter(a => a.sales > 0);
+
+  const el = veil(`<div class="modal">
+    <h3>Delete ${list.length} account${list.length === 1 ? "" : "s"}?</h3>
+    <p>This removes the accounts, their stores, pricebooks, shifts, sales and audit trails.
+      It cannot be undone.</p>
+    <div class="card" style="margin-top:14px"><table><tbody>
+      ${list.map(a => `<tr>
+        <td><b>${esc(a.email || "#" + a.id)}</b></td>
+        <td style="color:var(--txt2)">${a.stores} store${a.stores === 1 ? "" : "s"}</td>
+        <td style="color:${a.sales ? "var(--warn)" : "var(--txt3)"}">${a.sales} sale${
+          a.sales === 1 ? "" : "s"}</td>
+        <td class="num" style="text-align:right">${a.taken ? money(a.taken) : ""}</td>
+      </tr>`).join("")}
+    </tbody></table></div>
+    ${withData.length ? `<div class="warnbox">${withData.length} of these ${
+      withData.length === 1 ? "has" : "have"} real sales against ${totalStores} store${
+      totalStores === 1 ? "" : "s"} — ${totalSales} transaction${totalSales === 1 ? "" : "s"} in
+      total. If any of these are live businesses rather than tests, stop here.</div>` : ""}
+    <input id="delWord" placeholder='Type delete to confirm' autocomplete="off">
+    <div class="err" id="delErr" style="display:none"></div>
+    <div class="row"><button class="no" id="dx">Keep them</button>
+      <button class="go" id="dy" style="background:var(--bad);color:#fff">Delete permanently</button>
+    </div></div>`);
+
+  el.querySelector("#dx").onclick = () => el.remove();
+  el.querySelector("#dy").onclick = async () => {
+    const err = el.querySelector("#delErr");
+    try {
+      const r = await api("/api/admin/accounts/delete", { method: "POST",
+        body: { ids, confirm: el.querySelector("#delWord").value } });
+      el.remove();
+      if (r.skipped && r.skipped.length)
+        alert("Kept " + r.skipped.length + ": " + r.skipped.map(s => s.why).join("; "));
+      load();
+    } catch (e) { err.textContent = e.message; err.style.display = "block"; }
+  };
+  setTimeout(() => el.querySelector("#delWord").focus(), 40);
+}
+
+async function toggleOp(id, on) {
+  if (!confirm(on ? "Give this account operator access?" : "Remove operator access?")) return;
+  try { await api("/api/admin/operator", { method: "POST", body: { account: id, on } }); load(); }
+  catch (e) { alert(e.message); }
+}
+
+/* ------------------------------ model usage ------------------------------ */
+const fmt = n => n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "k" : n;
+
+async function drawAI() {
+  const box = document.getElementById("aiBox");
+  if (!box) return;
+  let d;
+  try { d = await api("/api/admin/ai?days=30"); }
+  catch (e) { box.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+
+  if (!d.totals.calls) {
+    box.innerHTML = `<div class="empty">No model calls in the last 30 days.</div>`;
+    return;
+  }
+  box.innerHTML = `
+    <div class="aitop">
+      <div><span>Calls</span><b>${d.totals.calls.toLocaleString()}</b></div>
+      <div><span>Tokens in</span><b>${fmt(d.totals.tin)}</b></div>
+      <div><span>Tokens out</span><b>${fmt(d.totals.tout)}</b></div>
+      <div><span>Failed</span><b style="${d.totals.failed ? "color:var(--bad)" : ""}">${
+        d.totals.failed || 0}</b></div>
+    </div>
+    <table><thead><tr><th>Account</th><th>Calls</th><th>In</th><th>Out</th><th>Failed</th></tr></thead>
+      <tbody>${d.byAccount.map(r => `<tr>
+        <td><b>${esc(r.email || "deleted account")}</b></td>
+        <td class="num">${r.calls}</td>
+        <td class="num">${fmt(r.tin)}</td>
+        <td class="num">${fmt(r.tout)}</td>
+        <td class="num" style="${r.failed ? "color:var(--bad)" : "color:var(--txt3)"}">${r.failed || 0}</td>
+      </tr>`).join("")}</tbody></table>
+    <div class="note" style="padding:0 14px 14px">By kind: ${d.byKind.slice(0, 6)
+      .map(k => `${esc(k.kind)} ${k.calls}`).join(" · ")}</div>`;
+}
+
+/* ------------------------------- storage -------------------------------- */
+const mb = n => n == null ? "—" : n > 1e6 ? (n / 1048576).toFixed(1) + " MB"
+  : (n / 1024).toFixed(0) + " KB";
+
+async function drawStorage() {
+  const box = document.getElementById("storeBox");
+  if (!box) return;
+  let d;
+  try { d = await api("/api/admin/storage"); }
+  catch (e) { box.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  box.innerHTML = `
+    <div class="aitop">
+      <div><span>Database</span><b>${mb(d.db)}</b></div>
+      <div><span>Sales rows</span><b>${d.rows.sales.toLocaleString()}</b></div>
+      <div><span>Configs</span><b>${d.rows.configs}</b></div>
+      <div><span>Audit rows</span><b>${d.rows.audit.toLocaleString()}</b></div>
+    </div>
+    ${d.backups.length ? `<table><thead><tr><th>Recent backups</th><th>Size</th><th>When</th></tr></thead>
+      <tbody>${d.backups.map(b => `<tr>
+        <td style="color:var(--txt2)">${esc(b.name)}</td>
+        <td class="num">${mb(b.size)}</td>
+        <td style="color:var(--txt3)">${ago(b.at)}</td></tr>`).join("")}</tbody></table>`
+      : `<div class="note" style="padding:0 14px 14px">No backups found on disk.</div>`}`;
+}
 
 function veil(html) {
   const el = document.createElement("div");
