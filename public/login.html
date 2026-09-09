@@ -209,12 +209,20 @@ function askReset(){
   b.disabled=true;b.textContent="Sending…";
   fetch("/api/forgot",{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({email})})
-    .then(()=>{
+    .then(r=>r.json().catch(()=>({})))
+    .then(d=>{
       b.disabled=false;b.textContent="Forgotten your password?";
-      show(`If <b>${email.replace(/[&<>"]/g,"")}</b> has an account, a reset link has been issued and
-        is valid for thirty minutes.<br><br>
-        <span style="opacity:.75">No mail service is connected yet, so the link is written to the
-        server log — open your Render logs and look for PASSWORD RESET.</span>`,"ok");
+      const who=email.replace(/[&<>"]/g,"");
+      /* Whether this server can send mail at all is not a fact about the
+         account, so saying it reveals nothing — but claiming an email was sent
+         when none can be is just a lie that wastes somebody's afternoon. */
+      show(d.mail
+        ? `If <b>${who}</b> has an account, a reset link is on its way. It is valid for thirty
+           minutes.<br><br><span style="opacity:.75">Nothing after a minute or two? Check the spam
+           folder.</span>`
+        : `If <b>${who}</b> has an account, a reset link has been issued and is valid for thirty
+           minutes.<br><br><span style="opacity:.75">No mail service is connected to this server,
+           so the link is written to the server log rather than sent.</span>`,"ok");
     })
     .catch(()=>{
       b.disabled=false;b.textContent="Forgotten your password?";
@@ -248,8 +256,6 @@ $("f").onsubmit=async e=>{
   const btn=$("go");
   btn.disabled=true; btn.classList.add("busy");
   $("msg").textContent=""; $("msg").classList.remove("show");
-  /* Only offered when signing in — it makes no sense beside a new account. */
-  $("forgotWrap").style.display = m==="in" ? "block" : "none";
   try{
     const r=await fetch(mode==="in"?"/api/login":"/api/signup",{
       method:"POST",headers:{"content-type":"application/json"},credentials:"same-origin",
@@ -259,9 +265,16 @@ $("f").onsubmit=async e=>{
     if(!r.ok)throw new Error(d.error||"That didn't work.");
     location.href="/app.html";
   }catch(err){
-    $("msg").textContent=err.message;
+    $("msg").textContent=err.message||"Couldn't reach the server.";
     $("msg").classList.add("show");
     btn.disabled=false; btn.classList.remove("busy");
+  }finally{
+    /* Anything that throws before the redirect must still give the button back.
+       A spinner with no way out tells the person nothing and leaves them
+       stuck — which is exactly what a stray reference in here just did. */
+    if(location.pathname.endsWith("login.html")){
+      btn.disabled=false; btn.classList.remove("busy");
+    }
   }
 };
 

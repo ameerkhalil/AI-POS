@@ -385,7 +385,7 @@ app.post("/api/forgot", (req, res) => {
   const email = String(req.body.email || "").trim().toLowerCase();
   /* The same answer either way — otherwise this becomes a way to find out which
      email addresses have accounts. */
-  const same = { ok: true, sent: true };
+  const same = { ok: true, sent: true, mail: MAIL.configured() };
   if (!email) return res.json(same);
 
   const a = db.prepare("SELECT id, email FROM accounts WHERE lower(email) = ?").get(email);
