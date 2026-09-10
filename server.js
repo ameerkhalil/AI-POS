@@ -25,6 +25,7 @@ const REP = require("./lib/reports");
 const PUR = require("./lib/purchasing");
 const LOY = require("./lib/loyalty");
 const TOB = require("./lib/tobacco");
+const SCHEMA = require("./lib/schema");
 const MAIL = require("./lib/mail");
 
 const app = express();
@@ -992,6 +993,9 @@ app.post("/api/admin/operator", auth, operator, (req, res) => {
   catch (e) { res.status(400).json({ error: e.message }); }
 });
 
+app.get("/api/admin/schema", auth, operator, (req, res) =>
+  res.json({ ...SCHEMA.verify(), counts: SCHEMA.counts() }));
+
 app.get("/api/admin/health", auth, operator, (req, res) => {
   const rows = TERM.health();
   res.json({ terminals: rows,
@@ -1507,6 +1511,19 @@ app.listen(PORT, () => {
     "MAIL_PROVIDER","MAIL_KEY","MAIL_FROM","MAIL_DOMAIN","PUBLIC_URL"]
     .filter(k => String(process.env[k] || "").trim());
   console.log(`  environment: ${seen.length ? seen.join(", ") : "none of the control variables are set"}`);
+
+  /* Every module has created its own tables by now, so this is the moment to
+     ask the database whether the code's assumptions actually hold. Both of the
+     worst bugs in this codebase were schema mismatches that failed at query
+     time — this turns that into a line at startup. */
+  try {
+    SCHEMA.migrate(console.log);
+    const v = SCHEMA.check(console.log);
+    if (!v.ok) console.log("  the server will still start; the affected screens will error");
+  } catch (e) {
+    console.log("  MIGRATION FAILED — " + e.message);
+    console.log("  the database is unchanged past the last successful migration");
+  }
 
   ADMIN.seedOperator(bcrypt);
   resetOnBoot();

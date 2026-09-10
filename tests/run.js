@@ -5,6 +5,7 @@ const { spawnSync } = require("child_process");
 const path = require("path");
 
 const suites = [
+  { name: "the schema itself", file: "schema.test.js", flags: ["--experimental-sqlite"] },
   { name: "inventory engine", file: "stock.test.js", flags: ["--experimental-sqlite"] },
   { name: "sales cannot double-count stock", file: "sale-stock.test.js",
     flags: ["--experimental-sqlite"] },

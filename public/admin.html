@@ -256,6 +256,9 @@ function draw() {
       r => `<td><b>${esc(r.name)}</b></td><td style="color:var(--txt2)">${esc(r.email)}</td>
             <td style="color:var(--txt3)">open since ${ago(r.opened_at)}</td>`)}
 
+    <h2>Database</h2>
+    <div class="card" id="schemaBox"><div class="empty">Loading…</div></div>
+
     <h2>Registers</h2>
     <div class="card" id="healthBox"><div class="empty">Loading…</div></div>
 
@@ -276,6 +279,7 @@ function draw() {
       expires on its own and is written into their activity log where they can see it.
     </div>`;
   drawMail();
+  drawSchema();
   drawHealth();
   drawAI();
   drawStorage();
@@ -406,6 +410,43 @@ async function toggleOp(id, on) {
   if (!confirm(on ? "Give this account operator access?" : "Remove operator access?")) return;
   try { await api("/api/admin/operator", { method: "POST", body: { account: id, on } }); load(); }
   catch (e) { alert(e.message); }
+}
+
+/* -------------------------------- the schema -----------------------------
+   Worth a panel because a missing table is silent until somebody opens the
+   screen that needs it, and then it's a 500 with no explanation. */
+async function drawSchema() {
+  const box = document.getElementById("schemaBox");
+  if (!box) return;
+  let d;
+  try { d = await api("/api/admin/schema"); }
+  catch (e) { box.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+
+  const busiest = Object.entries(d.counts || {})
+    .filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]).slice(0, 8);
+
+  box.innerHTML = `
+    <div class="aitop">
+      <div><span>Schema version</span><b>${d.version}</b></div>
+      <div><span>Tables verified</span><b style="${d.ok ? "color:var(--ok)" : "color:var(--bad)"}">
+        ${d.expected - d.missingTables.length}/${d.expected}</b></div>
+      <div><span>Pending migrations</span><b style="${d.pending.length ? "color:var(--warn)" : ""}">
+        ${d.pending.length || "none"}</b></div>
+      <div><span>Rows in sales</span><b>${(d.counts.sales || 0).toLocaleString()}</b></div>
+    </div>
+    ${d.ok ? "" : `<div class="warnbox" style="margin:14px">
+      ${d.missingTables.map(t => `Missing table <b>${esc(t.table)}</b> — created by
+        ${esc(t.owner)}.`).join("<br>")}
+      ${d.missingColumns.map(c => `Table <b>${esc(c.table)}</b> is missing
+        ${c.columns.map(x => esc(x)).join(", ")} — see ${esc(c.owner)}.`).join("<br>")}
+      <br>Screens that read these will fail rather than showing an error.</div>`}
+    ${busiest.length ? `<table><thead><tr><th>Table</th><th>Rows</th></tr></thead><tbody>
+      ${busiest.map(([t, n]) => `<tr><td style="color:var(--txt2)">${esc(t)}</td>
+        <td class="num">${n.toLocaleString()}</td></tr>`).join("")}
+    </tbody></table>` : ""}
+    <div class="note" style="padding:0 14px 14px">Checked at every boot. A missing table or column
+      is reported here and in the server log rather than waiting to throw when somebody opens the
+      screen that needs it.</div>`;
 }
 
 /* ------------------------------ register health --------------------------
