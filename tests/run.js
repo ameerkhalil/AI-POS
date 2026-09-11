@@ -5,6 +5,10 @@ const { spawnSync } = require("child_process");
 const path = require("path");
 
 const suites = [
+  /* First, because it's the one that catches a boot failure on a database that
+     already exists — which no other suite touches. */
+  { name: "upgrading an existing database", file: "upgrade.test.js",
+    flags: ["--experimental-sqlite"] },
   { name: "the schema itself", file: "schema.test.js", flags: ["--experimental-sqlite"] },
   { name: "inventory engine", file: "stock.test.js", flags: ["--experimental-sqlite"] },
   { name: "sales cannot double-count stock", file: "sale-stock.test.js",
