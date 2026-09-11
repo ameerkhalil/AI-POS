@@ -21,11 +21,21 @@ const suites = [
   { name: "the customer display", file: "display.test.js", flags: [] },
   { name: "error capture", file: "errors.test.js", flags: ["--experimental-sqlite"] },
   { name: "forecourt services", file: "services.test.js", flags: ["--experimental-sqlite"] },
+  { name: "every screen renders", file: "screens.test.js", flags: [] },
   { name: "inventory over HTTP", file: "stock-e2e.test.js", flags: [], needsDeps: true }
 ];
 
 let failed = 0, skipped = 0;
 const haveDeps = (() => { try { require.resolve("express"); return true; } catch (e) { return false; } })();
+
+/* The wiring audit first: if a screen has no function behind it or a route is
+   unanswered, knowing that before the behaviour tests run saves reading a
+   hundred passing assertions about code nobody can reach. */
+console.log("\n── wiring audit ──");
+{
+  const r = spawnSync(process.execPath, [path.join(__dirname, "audit.js")], { stdio: "inherit" });
+  if (r.status !== 0) failed++;
+}
 
 for (const s of suites) {
   if (s.needsDeps && !haveDeps) {

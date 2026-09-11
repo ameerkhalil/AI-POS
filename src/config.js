@@ -36,7 +36,8 @@ const CGROUPS=[
         ["journal","Electronic journal","Search every sale this store has ever taken"],
         ["reports2","Reports","When you're busy, what makes money, who's selling it"]]},
  {n:"Your people",d:"Who can do what",
-  tabs:[["people","Staff & permissions","Names, codes and what each role can reach"]]},
+  tabs:[["people","Staff & permissions","Names, codes and what each role can reach"],
+        ["clock","Time clock","Who's on, hours worked, and what they cost"]]},
  {n:"The business",d:"Tax, receipts and your data",
   tabs:[["site","Store & tax","Name, address, tax rates, receipt"],
         ["hardware","Hardware & payments","Printer, drawer, card reader"],
@@ -135,7 +136,7 @@ function drawBody(){
     mod_commission:tCommission,mod_jobs:tJobs,mod_service:tService,mod_tanks:tTanks,
     journal:tJournal,stock:tStock,terminals:tTerminals,reports2:tReports2,
     purchasing:tPurchasing,loyalty:tLoyalty,tobacco:tTobacco,central:tCentral,
-    services2:tServices2};
+    services2:tServices2,clock:tClock};
   (views[TAB]||cfgHome)();
 }
 
@@ -177,7 +178,16 @@ async function tRetention(){
   drawRetention();
 }
 function drawRetention(){
-  const {policy:p,preview:pv,history:hist}=RET_STATE;
+  /* A failed request is already handled; this covers a request that succeeded
+     and came back the wrong shape, which otherwise throws on the first
+     property and leaves a blank screen with no explanation. */
+  const {policy:p,preview:pv,history:hist}=RET_STATE||{};
+  if(!p){
+    $("cfgBody").innerHTML=`<div class="finding"><b>Couldn't read your retention policy</b>
+      <span>The server answered, but not with a policy. Nothing has been changed — reload, and
+        tell us if it keeps happening.</span></div>`;
+    return;
+  }
   const wipe=p.mode==="wipe";
 
   W.retMode=m=>{RET_STATE.policy.mode=m;drawRetention()};
