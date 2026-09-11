@@ -256,6 +256,9 @@ function draw() {
       r => `<td><b>${esc(r.name)}</b></td><td style="color:var(--txt2)">${esc(r.email)}</td>
             <td style="color:var(--txt3)">open since ${ago(r.opened_at)}</td>`)}
 
+    <h2>What's broken</h2>
+    <div class="card" id="errBox"><div class="empty">Loading…</div></div>
+
     <h2>Database</h2>
     <div class="card" id="schemaBox"><div class="empty">Loading…</div></div>
 
@@ -279,6 +282,7 @@ function draw() {
       expires on its own and is written into their activity log where they can see it.
     </div>`;
   drawMail();
+  drawErrors();
   drawSchema();
   drawHealth();
   drawAI();
@@ -410,6 +414,79 @@ async function toggleOp(id, on) {
   if (!confirm(on ? "Give this account operator access?" : "Remove operator access?")) return;
   try { await api("/api/admin/operator", { method: "POST", body: { account: id, on } }); load(); }
   catch (e) { alert(e.message); }
+}
+
+/* ------------------------------- what's broken ---------------------------
+   Grouped, because one fault on a busy forecourt is four hundred rows and a
+   screen with four hundred rows is a screen nobody reads. */
+async function drawErrors() {
+  const box = document.getElementById("errBox");
+  if (!box) return;
+  let d;
+  try { d = await api("/api/admin/errors?days=14"); }
+  catch (e) { box.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+
+  const s = d.summary;
+  if (!d.groups.length) {
+    box.innerHTML = `<div class="empty">Nothing has thrown in the last fortnight.</div>`;
+    return;
+  }
+
+  box.innerHTML = `
+    <div class="aitop">
+      <div><span>Open faults</span><b style="${s.groups ? "color:var(--warn)" : ""}">${s.groups}</b></div>
+      <div><span>Occurrences</span><b>${s.events.toLocaleString()}</b></div>
+      <div><span>On more than one till</span><b style="${s.widespread ? "color:var(--bad)" : ""}">
+        ${s.widespread}</b></div>
+      <div><span>New today</span><b>${s.newToday}</b></div>
+    </div>
+    ${s.widespread ? `<div class="warnbox" style="margin:14px">${s.widespread} fault${
+      s.widespread === 1 ? " is" : "s are"} happening on more than one register. That usually means
+      a build rather than a shop's hardware.</div>` : ""}
+    <table><thead><tr><th>What</th><th>Where</th><th>Seen</th><th>Tills</th><th>Last</th>
+      <th></th></tr></thead><tbody>
+      ${d.groups.slice(0, 40).map(g => `<tr>
+        <td><b>${esc(g.message.slice(0, 90))}</b>
+          <div class="sub">${esc(g.kind)}${g.builds.length
+            ? " · " + g.builds.map(b => esc(b)).join(", ") : ""}</div></td>
+        <td style="color:var(--txt2)">${esc((g.where_ || "").slice(0, 40)) || "—"}</td>
+        <td class="num" style="${g.count > 50 ? "color:var(--warn)" : ""}">${g.count}</td>
+        <td class="num" style="${g.terminals.length > 1 ? "color:var(--bad)" : "color:var(--txt3)"}">
+          ${g.terminals.length}</td>
+        <td style="color:var(--txt3)">${ago(g.last_at)}</td>
+        <td style="text-align:right">
+          <button class="act" onclick="errDetail(${g.id})">Look</button>
+          <button class="act" onclick="errResolve(${g.id})">Done</button></td>
+      </tr>`).join("")}
+    </tbody></table>
+    <div class="note" style="padding:0 14px 14px">Messages are stripped of card numbers, keys,
+      emails, phone numbers and licence data before they're stored — a stack trace is exactly where
+      those end up.</div>`;
+}
+
+async function errDetail(id) {
+  let d;
+  try { d = await api("/api/admin/errors/" + id); } catch (e) { return alert(e.message); }
+  veil(`<div class="modal" style="max-width:760px">
+    <h3>${esc(d.group.message.slice(0, 120))}</h3>
+    <p>${esc(d.group.kind)} · seen ${d.group.count} times · first ${ago(d.group.first_at)}</p>
+    <div class="card" style="margin-top:14px"><table><tbody>
+      ${d.events.map(e => `<tr>
+        <td style="color:var(--txt3);width:30%">${esc(String(e.at).slice(0, 16))}</td>
+        <td style="color:var(--txt2)">${esc(e.build || "—")}</td>
+        <td><pre style="white-space:pre-wrap;font-size:11.5px;margin:0;color:var(--txt2)">${
+          esc((e.detail || "").slice(0, 600))}</pre></td>
+      </tr>`).join("") || `<tr><td class="empty">No detail kept.</td></tr>`}
+    </tbody></table></div>
+    <div class="row"><button class="no" onclick="this.closest('.veil').remove()">Close</button>
+      <button class="go" onclick="errResolve(${id});this.closest('.veil').remove()">
+        Mark as done</button></div></div>`);
+}
+
+async function errResolve(id) {
+  try { await api(`/api/admin/errors/${id}/resolve`, { method: "POST", body: { on: true } }); }
+  catch (e) { return alert(e.message); }
+  drawErrors();
 }
 
 /* -------------------------------- the schema -----------------------------

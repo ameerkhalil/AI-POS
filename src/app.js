@@ -1576,6 +1576,8 @@ function ageGate(p,ex){
   const r=byId(CFG.restricts,p.restrictId);
   if(!r?.minAge)return add(p,ex);
 
+  if (typeof displayAge === "function")
+    displayAge(`This purchase needs proof of age (${r.minAge}+). Please have your ID ready.`);
   const el=veil(`<div class="card"><h3>Check ID</h3>
     <p><b>${esc(p.n)}</b> is ${r.minAge}+. Scan the barcode on the back of the licence, or check the
       date of birth by eye and confirm.</p>
@@ -1588,7 +1590,11 @@ function ageGate(p,ex){
       <button class="ok" id="agy">Checked by eye</button></div></div>`);
 
   const box=el.querySelector("#ageScan");
-  const close=()=>{AGE_GATE=null;el.remove()};
+  const close=()=>{
+    AGE_GATE=null;
+    el.remove();
+    if (typeof displayUpdate === "function") displayUpdate();
+  };
 
   /* A scan beats a button, so the gate records which one happened. */
   AGE_GATE={
@@ -1688,6 +1694,9 @@ function setTotal(v){
 const SHELLS={classic:()=>drawClassic(),menu:()=>drawMenuShell(),
   commerce:()=>drawCommerceShell(),board:()=>drawBoardShell(),kiosk:()=>drawKioskShell()};
 function refreshSale(){
+  /* The customer's screen follows the sale rather than being pushed to from a
+     dozen places, so it can't drift out of step with what the cashier sees. */
+  if (typeof displayUpdate === "function") displayUpdate();
   const s=typeof THEME!=="undefined"&&THEME.shell;
   if(s&&SHELLS[s])return SHELLS[s]();
   drawCart();
@@ -2044,6 +2053,10 @@ function redeemGiftCard(due){
 function finish(pays,roundAdj,reason,cid){
   if(PART_PAID){pays=PART_PAID.concat(pays);PART_PAID=null}
   const t=calc();
+  /* Taken before the cart is emptied, so the customer's screen can show what
+     they paid and any change while the receipt prints. */
+  if (typeof displayDone === "function")
+    displayDone(t, (pays.find(p => p.change > 0.001) || {}).change || 0);
   const sale={n:SHIFT.num++,at:new Date(),by:ME.n,lines:JSON.parse(JSON.stringify(CART)),...t,pays,
     ret:RETURN,manualDisc:DISC,roundAdj:roundAdj||0,reason:reason?.n,train:TRAIN,
     against:RETREF?RETREF.n:null,

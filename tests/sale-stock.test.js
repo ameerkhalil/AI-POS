@@ -20,6 +20,7 @@ db.exec(grab("lib/db.js", "CREATE TABLE IF NOT EXISTS accounts", "`);"));
 /* client_id is added by a migration in server.js; add it here the same way. */
 try { db.exec("ALTER TABLE sales ADD COLUMN client_id TEXT"); } catch (e) {}
 try { db.exec("ALTER TABLE sales ADD COLUMN terminal_id INTEGER"); } catch (e) {}
+try { db.exec("ALTER TABLE sales ADD COLUMN customer_id INTEGER"); } catch (e) {}
 db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_sales_cid ON sales(store_id, client_id)");
 
 const STOCK = require("../lib/stock.js");
@@ -32,8 +33,14 @@ const src = grab("server.js", "function insertSale(", "\n/* Cheap liveness check
    it found the real thing. */
 if (!src.startsWith("function insertSale(") || !src.includes("INSERT INTO sales"))
   { console.log("FAIL could not lift insertSale out of server.js"); process.exit(1); }
-const insertSale = new Function("db", "STOCK", "console", src + "; return insertSale;")(
-  db, STOCK, console);
+/* Lifted verbatim, so it needs whatever server.js has in scope at that point.
+   Passing them in explicitly means a new dependency shows up as a clear
+   "X is not defined" here rather than as a silently untested code path. */
+const LOY = require("../lib/loyalty.js");
+const TOB = require("../lib/tobacco.js");
+const WHEN = require("../lib/when.js");
+const insertSale = new Function("db", "STOCK", "LOY", "TOB", "WHEN", "console",
+  src + "; return insertSale;")(db, STOCK, LOY, TOB, WHEN, console);
 
 let bad = 0;
 const chk = (n, c, x) => { console.log((c ? "ok   " : "FAIL ") + n + (c || !x ? "" : " — " + x));

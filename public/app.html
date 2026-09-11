@@ -2734,6 +2734,18 @@ body.tp-plain .grand .amt{font-size:40px}
 
 .cbar b{color:var(--txt);font-weight:600}
 
+/* ---- forecourt services ---- */
+.svcgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:11px;
+  margin-top:16px}
+.svcbtn{border:1px solid var(--line);border-radius:var(--r2);padding:20px 18px;text-align:left;
+  background:rgba(255,255,255,.02);transition:border-color .14s,transform .12s}
+.svcbtn:hover{transform:translateY(-2px)}
+.svcbtn.in:hover{border-color:var(--vfd)}
+.svcbtn.out:hover{border-color:var(--warn)}
+.svcbtn b{display:block;font-size:17px;font-weight:600;margin-bottom:5px}
+.svcbtn em{display:block;font-style:normal;font-size:12.5px;color:var(--txt-3)}
+.svcbtn.out b{color:var(--warn)}
+
 .tchip.save{transition:color .2s,border-color .2s}
 .tchip.save.pending{color:var(--warn);border-color:rgba(224,178,85,.4)}
 .tchip.save.saving{color:var(--txt-2)}
@@ -4394,6 +4406,8 @@ function ageGate(p,ex){
   const r=byId(CFG.restricts,p.restrictId);
   if(!r?.minAge)return add(p,ex);
 
+  if (typeof displayAge === "function")
+    displayAge(`This purchase needs proof of age (${r.minAge}+). Please have your ID ready.`);
   const el=veil(`<div class="card"><h3>Check ID</h3>
     <p><b>${esc(p.n)}</b> is ${r.minAge}+. Scan the barcode on the back of the licence, or check the
       date of birth by eye and confirm.</p>
@@ -4406,7 +4420,11 @@ function ageGate(p,ex){
       <button class="ok" id="agy">Checked by eye</button></div></div>`);
 
   const box=el.querySelector("#ageScan");
-  const close=()=>{AGE_GATE=null;el.remove()};
+  const close=()=>{
+    AGE_GATE=null;
+    el.remove();
+    if (typeof displayUpdate === "function") displayUpdate();
+  };
 
   /* A scan beats a button, so the gate records which one happened. */
   AGE_GATE={
@@ -4506,6 +4524,9 @@ function setTotal(v){
 const SHELLS={classic:()=>drawClassic(),menu:()=>drawMenuShell(),
   commerce:()=>drawCommerceShell(),board:()=>drawBoardShell(),kiosk:()=>drawKioskShell()};
 function refreshSale(){
+  /* The customer's screen follows the sale rather than being pushed to from a
+     dozen places, so it can't drift out of step with what the cashier sees. */
+  if (typeof displayUpdate === "function") displayUpdate();
   const s=typeof THEME!=="undefined"&&THEME.shell;
   if(s&&SHELLS[s])return SHELLS[s]();
   drawCart();
@@ -4862,6 +4883,10 @@ function redeemGiftCard(due){
 function finish(pays,roundAdj,reason,cid){
   if(PART_PAID){pays=PART_PAID.concat(pays);PART_PAID=null}
   const t=calc();
+  /* Taken before the cart is emptied, so the customer's screen can show what
+     they paid and any change while the receipt prints. */
+  if (typeof displayDone === "function")
+    displayDone(t, (pays.find(p => p.change > 0.001) || {}).change || 0);
   const sale={n:SHIFT.num++,at:new Date(),by:ME.n,lines:JSON.parse(JSON.stringify(CART)),...t,pays,
     ret:RETURN,manualDisc:DISC,roundAdj:roundAdj||0,reason:reason?.n,train:TRAIN,
     against:RETREF?RETREF.n:null,
@@ -6118,7 +6143,7 @@ function health(){
   themeIssues().forEach(i=>f.push({sev:i.t==="warn"?"warn":"info",t:"Appearance",d:i.m,fix:null}));
   return f;
 }
-const BUILD="e6d3eacfc8";
+const BUILD="fbc28b2c19";
 function tHealth(){
   const f=health();
   window.__fix=i=>{f[i].fix&&f[i].fix();reload();drawConfig()};
@@ -7002,6 +7027,24 @@ function tHardware() {
       </div>
       <div class="note">On a WisePOS E or S700, the code is under Settings → Generate pairing code.</div>` : ""}
 
+    <div class="sect">Customer display</div>
+    <label class="chk"><input type="checkbox" id="dspOn" ${CFG.display?.on ? "checked" : ""}
+      style="width:auto;margin-right:8px">A second screen facing the customer</label>
+    <div id="dspMore" style="${CFG.display?.on ? "" : "display:none"}">
+      <label class="chk" style="margin-top:8px"><input type="checkbox" id="dspRemote"
+        ${CFG.display?.remote ? "checked" : ""} style="width:auto;margin-right:8px">
+        It's a tablet or another device, not a second monitor on this machine</label>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="mini" style="margin:0" onclick="displayOpen()">Open it</button>
+      </div>
+      <div class="note">A second monitor on this machine updates the moment a key is pressed.
+        Another device polls instead, so it needs the network and this address:
+        <span class="num">/display.html?store=${STORE_ID}</span>
+        <br><br>It shows the order, the tax, the total, and an ID-check prompt when one applies.
+        It never shows cost, margin, staff names or customer records — and it holds no login, so
+        it can't ring, refund or change anything.</div>
+    </div>
+
     <div class="sect">Receipt printer and drawer</div>
     ${STATION ? `<div class="verify ${STATION.ready ? "ok2" : ""}">
         <div class="vhead">${STATION.ready ? `Station agent connected` : `Agent running, no printer set`}</div>
@@ -7022,6 +7065,20 @@ node agent.js</pre>
     </div><div id="hwScan"></div>` : ""}
     <div class="note">The cash drawer plugs into the printer, not the computer — it opens when the printer
       gets a kick code. If the drawer won't open but receipts print, check the cable between the two.</div>`;
+
+  const dsp = document.getElementById("dspOn");
+  if (dsp) dsp.onchange = e => {
+    CFG.display = { ...(CFG.display || {}), on: e.target.checked };
+    document.getElementById("dspMore").style.display = e.target.checked ? "" : "none";
+    if (typeof displayInit === "function") displayInit();
+    queueSave();
+  };
+  const rem = document.getElementById("dspRemote");
+  if (rem) rem.onchange = e => {
+    CFG.display = { ...(CFG.display || {}), remote: e.target.checked };
+    if (typeof displayInit === "function") displayInit();
+    queueSave();
+  };
 }
 async function loadPayCfg() {
   try { PAYCFG = (await api("/api/pay/settings?store=" + STORE_ID)).settings; }
@@ -11549,6 +11606,911 @@ async function tobClaim() {
     </div>`;
 }
 
+/* ===========================================================================
+   Central pricebook.
+
+   The screen an owner of twenty shops uses: change a price once, see exactly
+   what it would do everywhere, then let it happen. The preview is the whole
+   point — a wrong price across twenty forecourts is a legal problem, not a
+   support ticket.
+   =========================================================================== */
+
+let CEN = { tab: "items", groups: [], master: [], pushes: [], scheduled: [], stores: [],
+            group: null, q: "", plan: null };
+
+async function tCentral() {
+  $("cfgBody").innerHTML = `<p class="lede">Loading…</p>`;
+  try {
+    const d = await api("/api/central");
+    Object.assign(CEN, d);
+    if (CEN.group == null) CEN.group = CEN.groups[0]?.id ?? null;
+  } catch (e) {
+    $("cfgBody").innerHTML = `<div class="finding"><b>Couldn't load this</b>
+      <span>${esc(e.message)}</span></div>`;
+    return;
+  }
+  drawCentral();
+}
+
+function drawCentral() {
+  W.cenTab = t => { CEN.tab = t; CEN.plan = null; drawCentral(); };
+  const tabs = [["items", "Central items"], ["groups", "Groups"],
+    ["push", "Push a change"], ["schedule", "Scheduled"], ["history", "History"]];
+
+  $("cfgBody").innerHTML = `
+    <p class="lede">One list of products, pushed to the stores you choose. A shop can hold a price
+      back deliberately, and it keeps that price through every push until somebody removes it.</p>
+    <div class="stktabs">${tabs.map(([k, l]) =>
+      `<button class="${CEN.tab === k ? "on" : ""}" onclick="__w.cenTab('${k}')">${l}</button>`).join("")}</div>
+    <div id="cenBody"></div>`;
+
+  ({ items: cenItems, groups: cenGroups, push: cenPush,
+     schedule: cenSchedule, history: cenHistory })[CEN.tab]();
+}
+
+/* ------------------------------ central items ----------------------------- */
+function cenItems() {
+  W.cenQ = v => {
+    CEN.q = v;
+    const q = v.trim().toLowerCase();
+    document.querySelectorAll("#cenRows tr").forEach(tr => {
+      tr.style.display = !q || (tr.dataset.k || "").includes(q) ? "" : "none";
+    });
+  };
+
+  W.cenAdopt = async () => {
+    const el = veil(`<div class="card"><h3>Build the list from a store</h3>
+      <p>Takes every product that has a barcode from one shop's pricebook. Anything without a
+        barcode is left alone — there's nothing to match it on in another store.</p>
+      <div class="frm"><label>Which store<select id="adStore">
+        ${CEN.stores.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join("")}
+      </select></label></div>
+      <div class="row"><button class="no" id="ax">Cancel</button>
+        <button class="ok" id="ay">Take them</button></div></div>`);
+    el.querySelector("#ax").onclick = () => el.remove();
+    el.querySelector("#ay").onclick = async () => {
+      try {
+        const r = await api("/api/central/adopt", { method: "POST",
+          body: { store: +el.querySelector("#adStore").value } });
+        el.remove();
+        toast(`Took <b>${r.added}</b> item${r.added === 1 ? "" : "s"}${
+          r.skipped ? `, skipped ${r.skipped} with no barcode` : ""}.`);
+        tCentral();
+      } catch (e) { toast(e.message, true); }
+    };
+  };
+
+  W.cenEdit = upc => {
+    const m = upc ? CEN.master.find(x => x.upc === upc) : {};
+    const el = veil(`<div class="card"><h3>${upc ? "Edit" : "New"} central item</h3>
+      <p>The barcode is what every store is matched on, so it has to be right.</p>
+      <div class="frm">
+        <label>Barcode<input id="mu" value="${esc(m.upc || "")}" ${upc ? "readonly" : ""}></label>
+        <label>Name<input id="mn" value="${esc(m.name || "")}"></label>
+      </div>
+      <div class="frm">
+        <label>Price<input class="n" id="mp" value="${m.price ?? ""}" placeholder="leave blank to not manage"></label>
+        <label>Cost<input class="n" id="mc" value="${m.cost ?? ""}" placeholder="—"></label>
+        <label>Section<input id="md" value="${esc(m.dept || "")}" placeholder="matched by name"></label>
+      </div>
+      <div class="note">A blank field isn't pushed at all, so you can manage the price centrally and
+        leave the cost to each shop.</div>
+      <div class="row"><button class="no" id="mx">Cancel</button>
+        <button class="ok" id="my">Save</button></div></div>`);
+    el.querySelector("#mx").onclick = () => el.remove();
+    el.querySelector("#my").onclick = async () => {
+      try {
+        await api("/api/central/item", { method: "POST", body: { item: {
+          upc: el.querySelector("#mu").value, name: el.querySelector("#mn").value,
+          price: el.querySelector("#mp").value, cost: el.querySelector("#mc").value,
+          dept: el.querySelector("#md").value } } });
+        el.remove();
+        toast("Saved.");
+        tCentral();
+      } catch (e) { toast(e.message, true); }
+    };
+    setTimeout(() => el.querySelector(upc ? "#mn" : "#mu").focus(), 40);
+  };
+
+  W.cenDel = async upc => {
+    if (!confirm("Remove this from the central list? Stores keep whatever they currently have.")) return;
+    await api("/api/central/item/" + encodeURIComponent(upc), { method: "DELETE" });
+    tCentral();
+  };
+
+  $("cenBody").innerHTML = `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center">
+      <button class="mini" style="margin:0" onclick="__w.cenEdit('')">Add an item</button>
+      <button class="mini" style="margin:0" onclick="__w.cenAdopt()">Build from a store</button>
+      <input placeholder="Find" value="${esc(CEN.q)}" oninput="__w.cenQ(this.value)"
+        style="margin-left:auto;max-width:220px">
+    </div>
+
+    ${CEN.master.length ? `<table class="tbl" style="margin-top:10px"><thead><tr>
+      <th style="width:30%">Item</th><th>Barcode</th><th>Price</th><th>Cost</th><th>Section</th>
+      <th>Changed</th><th></th></tr></thead><tbody id="cenRows">
+      ${CEN.master.map(m => `<tr data-k="${esc((m.name + " " + m.upc).toLowerCase())}">
+        <td style="padding-left:9px">${esc(m.name)}</td>
+        <td style="padding-left:9px" class="num" style="color:var(--txt-2)">${esc(m.upc)}</td>
+        <td style="padding-left:9px" class="num">${m.price == null
+          ? `<span style="color:var(--txt-3)">not managed</span>` : money(m.price)}</td>
+        <td style="padding-left:9px" class="num" style="color:var(--txt-2)">${
+          m.cost == null ? "—" : money(m.cost)}</td>
+        <td style="padding-left:9px;color:var(--txt-2)">${esc(m.dept || "—")}</td>
+        <td style="padding-left:9px;color:var(--txt-3);font-size:12px">${
+          esc(String(m.updated_at).slice(0, 10))}</td>
+        <td style="text-align:right;padding-right:9px">
+          <button class="mini" style="margin:0" onclick="__w.cenEdit('${esc(m.upc)}')">Edit</button>
+          <button class="del" onclick="__w.cenDel('${esc(m.upc)}')">×</button></td>
+      </tr>`).join("")}
+    </tbody></table>` : `<div class="note">Nothing central yet. If one of your stores already has a
+      good pricebook, <b>Build from a store</b> takes it as the starting point rather than typing
+      it in again.</div>`}`;
+}
+
+/* --------------------------------- groups --------------------------------- */
+function cenGroups() {
+  W.grpEdit = async id => {
+    const g = id ? CEN.groups.find(x => x.id === id) : {};
+    let inGroup = [];
+    if (id) {
+      try { inGroup = (await api("/api/central/group/" + id)).stores.map(s => s.id); }
+      catch (e) {}
+    }
+    const el = veil(`<div class="card tall"><h3>${id ? "Edit" : "New"} group</h3>
+      <p>A store belongs to one group at most — two groups pushing different prices to the same
+        shop is a fight nobody wins.</p>
+      <div class="frm"><label>Name<input id="gn" value="${esc(g.name || "")}"
+        placeholder="Illinois forecourts"></label></div>
+      <div class="sect">Stores</div>
+      <div class="chips" id="grpStores">${CEN.stores.map(s => `
+        <label class="chip ${inGroup.includes(s.id) ? "on" : ""}">
+          <input type="checkbox" value="${s.id}" ${inGroup.includes(s.id) ? "checked" : ""}
+            style="display:none"
+            onchange="this.closest('label').classList.toggle('on',this.checked)">
+          ${esc(s.name)}</label>`).join("")}</div>
+      <div class="row"><button class="no" id="gx">Cancel</button>
+        <button class="ok" id="gy">Save</button></div></div>`);
+    el.querySelector("#gx").onclick = () => el.remove();
+    el.querySelector("#gy").onclick = async () => {
+      const storeIds = [...el.querySelectorAll("#grpStores input:checked")].map(i => +i.value);
+      try {
+        await api("/api/central/group", { method: "POST",
+          body: { group: { id, name: el.querySelector("#gn").value }, storeIds } });
+        el.remove();
+        toast("Saved.");
+        tCentral();
+      } catch (e) { toast(e.message, true); }
+    };
+    setTimeout(() => el.querySelector("#gn").focus(), 40);
+  };
+
+  W.grpDel = async id => {
+    if (!confirm("Delete this group? The stores stay, they just aren't grouped.")) return;
+    await api("/api/central/group/" + id, { method: "DELETE" });
+    CEN.group = null;
+    tCentral();
+  };
+
+  const grouped = CEN.groups.reduce((a, g) => a + g.stores, 0);
+  const loose = CEN.stores.length - grouped;
+
+  $("cenBody").innerHTML = `
+    <button class="mini" onclick="__w.grpEdit(0)">New group</button>
+    ${CEN.groups.length ? `<table class="tbl" style="margin-top:10px"><thead><tr>
+      <th style="width:40%">Group</th><th>Stores</th><th></th></tr></thead><tbody>
+      ${CEN.groups.map(g => `<tr>
+        <td style="padding-left:9px"><b>${esc(g.name)}</b></td>
+        <td style="padding-left:9px" class="num">${g.stores}</td>
+        <td style="text-align:right;padding-right:9px">
+          <button class="mini" style="margin:0" onclick="__w.grpEdit(${g.id})">Edit</button>
+          <button class="del" onclick="__w.grpDel(${g.id})">×</button></td>
+      </tr>`).join("")}
+    </tbody></table>` : `<div class="note">No groups yet. Without one you can still push to every
+      store at once, but a group lets you price city shops differently from forecourts.</div>`}
+    ${loose > 0 ? `<div class="note">${loose} store${loose === 1 ? " isn't" : "s aren't"} in any
+      group. ${loose === 1 ? "It" : "They"} will only be reached by a push to all stores.</div>` : ""}`;
+}
+
+/* ------------------------------- push a change ---------------------------- */
+async function cenPush() {
+  W.cenGroup = v => { CEN.group = v === "" ? null : +v; CEN.plan = null; cenPush(); };
+
+  W.cenPlan = async () => {
+    $("planOut").innerHTML = `<p class="note">Working out what would change…</p>`;
+    try {
+      CEN.plan = await api("/api/central/plan", { method: "POST",
+        body: { groupId: CEN.group } });
+      cenPush();
+    } catch (e) { $("planOut").innerHTML = `<div class="finding"><b>Couldn't plan that</b>
+      <span>${esc(e.message)}</span></div>`; }
+  };
+
+  W.cenApply = async () => {
+    const t = CEN.plan.totals;
+    const el = veil(`<div class="card"><h3>Push to ${t.stores} store${
+      t.stores === 1 ? "" : "s"}?</h3>
+      <p><b>${t.changes}</b> price${t.changes === 1 ? "" : "s"} will change on tills that are
+        selling right now. ${t.skipped ? `${t.skipped} held locally will be left alone. ` : ""}
+        This can't be undone in one action — you'd have to push the old prices back.</p>
+      <div class="row"><button class="no" id="px">Not yet</button>
+        <button class="ok" id="py">Push it</button></div></div>`);
+    el.querySelector("#px").onclick = () => el.remove();
+    el.querySelector("#py").onclick = async () => {
+      el.remove();
+      try {
+        const r = await api("/api/central/push", { method: "POST",
+          body: { groupId: CEN.group, who: ME.n } });
+        toast(`Pushed <b>${r.changed}</b> change${r.changed === 1 ? "" : "s"} to ${r.stores} store${
+          r.stores === 1 ? "" : "s"}.`);
+        CEN.plan = null;
+        tCentral();
+      } catch (e) { toast(e.message, true); }
+    };
+  };
+
+  const p = CEN.plan;
+
+  $("cenBody").innerHTML = `
+    <div class="frm" style="margin-top:14px">
+      <label>Push to<select onchange="__w.cenGroup(this.value)">
+        <option value="" ${CEN.group == null ? "selected" : ""}>Every store (${CEN.stores.length})</option>
+        ${CEN.groups.map(g => `<option value="${g.id}" ${CEN.group === g.id ? "selected" : ""}>${
+          esc(g.name)} (${g.stores})</option>`).join("")}
+      </select></label>
+    </div>
+    <button class="mini" onclick="__w.cenPlan()">See what would change</button>
+    <div id="planOut">${p ? renderPlan(p) : `<div class="note">Nothing is written until you've
+      seen the list and said yes. With twenty shops a wrong price is a legal problem rather than a
+      support ticket, so there's no one-click push.</div>`}</div>`;
+}
+
+function renderPlan(p) {
+  const t = p.totals;
+  if (!t.changes && !t.skipped && !t.missing)
+    return `<div class="note" style="margin-top:14px">Every store already matches the central
+      list. Nothing to push.</div>`;
+
+  return `
+    <div class="rtiles" style="margin-top:14px">
+      <div><span>Stores affected</span><b>${p.stores.filter(s => s.changes.length).length}</b></div>
+      <div><span>Changes</span><b>${t.changes}</b></div>
+      <div><span>Held locally</span><b style="${t.skipped ? "color:var(--warn)" : ""}">${t.skipped}</b></div>
+      <div><span>Not stocked</span><b style="color:var(--txt-3)">${t.missing}</b></div>
+    </div>
+
+    ${p.stores.map(s => {
+      if (s.missing_config || s.unreadable)
+        return `<div class="finding"><b>${esc(s.store.name)}</b>
+          <span>${s.unreadable ? "Its pricebook can't be read." : "It has no pricebook yet."}</span></div>`;
+      if (!s.changes.length && !s.skipped.length) return "";
+      return `<div class="sect">${esc(s.store.name)} — ${s.changes.length} change${
+        s.changes.length === 1 ? "" : "s"}</div>
+      ${s.changes.length ? `<table class="tbl"><thead><tr><th style="width:34%">Item</th>
+        <th>What</th><th>Now</th><th>Becomes</th></tr></thead><tbody>
+        ${s.changes.map(c => `<tr>
+          <td style="padding-left:9px">${esc(c.name)}</td>
+          <td style="padding-left:9px;color:var(--txt-2)">${esc(c.field)}</td>
+          <td style="padding-left:9px" class="num" style="color:var(--txt-2)">${
+            c.field === "price" || c.field === "cost" ? money(c.from || 0) : esc(String(c.from ?? "—"))}</td>
+          <td style="padding-left:9px" class="num"><b>${
+            c.field === "price" || c.field === "cost" ? money(c.to) : esc(String(c.to))}</b></td>
+        </tr>`).join("")}
+      </tbody></table>` : ""}
+      ${s.skipped.length ? `<div class="note">Held here: ${s.skipped.map(x =>
+        `${esc(x.name)} (${esc(x.field)}${x.reason === "held locally" ? "" : " — " + esc(x.reason)})`)
+        .join(", ")}.</div>` : ""}`;
+    }).join("")}
+
+    ${t.changes ? `<button class="mini" onclick="__w.cenApply()">Push these ${t.changes} change${
+      t.changes === 1 ? "" : "s"}</button>` : ""}`;
+}
+
+/* -------------------------------- scheduled ------------------------------- */
+function cenSchedule() {
+  W.schNew = () => {
+    const el = veil(`<div class="card tall"><h3>Schedule a price change</h3>
+      <p>It's written to the central list on the date and pushed the same hour. Nobody has to be
+        there at six in the morning.</p>
+      <div class="frm">
+        <label>Item<select id="si">${CEN.master.map(m =>
+          `<option value="${esc(m.upc)}">${esc(m.name)}</option>`).join("")}</select></label>
+        <label>New price<input class="n" id="sp" placeholder="13.29"></label>
+        <label>From<input type="date" id="sd"></label>
+      </div>
+      <div class="frm">
+        <label>Push to<select id="sg">
+          <option value="">Every store</option>
+          ${CEN.groups.map(g => `<option value="${g.id}">${esc(g.name)}</option>`).join("")}
+        </select></label>
+      </div>
+      <div class="row"><button class="no" id="sx">Cancel</button>
+        <button class="ok" id="sy">Schedule it</button></div></div>`);
+    el.querySelector("#sx").onclick = () => el.remove();
+    el.querySelector("#sy").onclick = async () => {
+      try {
+        await api("/api/central/schedule", { method: "POST", body: { changes: [{
+          upc: el.querySelector("#si").value, field: "price",
+          value: el.querySelector("#sp").value, effective: el.querySelector("#sd").value,
+          groupId: el.querySelector("#sg").value || null, who: ME.n }] } });
+        el.remove();
+        toast("Scheduled.");
+        tCentral();
+      } catch (e) { toast(e.message, true); }
+    };
+  };
+
+  W.schDel = async id => {
+    await api("/api/central/schedule/" + id, { method: "DELETE" });
+    tCentral();
+  };
+
+  const nameOf = upc => (CEN.master.find(m => m.upc === upc) || {}).name || upc;
+  const groupOf = id => id ? (CEN.groups.find(g => g.id === id) || {}).name || "a group"
+    : "every store";
+
+  $("cenBody").innerHTML = `
+    <button class="mini" onclick="__w.schNew()" ${CEN.master.length ? "" : "disabled"}>
+      Schedule a change</button>
+    ${!CEN.master.length ? `<div class="note">Add something to the central list first.</div>` : ""}
+    ${CEN.scheduled.length ? `<table class="tbl" style="margin-top:10px"><thead><tr>
+      <th style="width:30%">Item</th><th>What</th><th>Becomes</th><th>From</th><th>Where</th>
+      <th></th></tr></thead><tbody>
+      ${CEN.scheduled.map(s => `<tr>
+        <td style="padding-left:9px">${esc(nameOf(s.upc))}</td>
+        <td style="padding-left:9px;color:var(--txt-2)">${esc(s.field)}</td>
+        <td style="padding-left:9px" class="num"><b>${s.field === "price"
+          ? money(s.value) : esc(String(s.value))}</b></td>
+        <td style="padding-left:9px">${esc(s.effective)}</td>
+        <td style="padding-left:9px;color:var(--txt-2)">${esc(groupOf(s.group_id))}</td>
+        <td style="text-align:right;padding-right:9px">
+          <button class="del" onclick="__w.schDel(${s.id})">×</button></td>
+      </tr>`).join("")}
+    </tbody></table>
+    <div class="note">Checked every hour and shortly after the server restarts. A change dated for
+      today goes out at the next check.</div>`
+      : `<div class="note">Nothing scheduled. Tobacco prices usually move on a date — setting it in
+        advance means it happens whether or not anyone remembers.</div>`}`;
+}
+
+/* --------------------------------- history -------------------------------- */
+function cenHistory() {
+  $("cenBody").innerHTML = CEN.pushes.length ? `
+    <table class="tbl" style="margin-top:14px"><thead><tr><th>When</th><th>Who</th>
+      <th>Stores</th><th>Changes</th><th>Held</th></tr></thead><tbody>
+      ${CEN.pushes.map(p => `<tr>
+        <td style="padding-left:9px;color:var(--txt-2)">${esc(String(p.at).slice(0, 16))}</td>
+        <td style="padding-left:9px">${esc(p.who || "—")}</td>
+        <td style="padding-left:9px" class="num">${p.stores}</td>
+        <td style="padding-left:9px" class="num">${p.changes}</td>
+        <td style="padding-left:9px" class="num" style="color:var(--txt-2)">${p.skipped || "—"}</td>
+      </tr>`).join("")}
+    </tbody></table>
+    <div class="note">Every push is recorded, so a price that appeared overnight can be traced to a
+      person and a time.</div>`
+    : `<div class="note" style="margin-top:14px">Nothing pushed yet.</div>`;
+}
+
+/* ===========================================================================
+   Driving the customer display.
+
+   The till broadcasts what the customer should see. Three routes, chosen by
+   what's actually available rather than configured:
+
+     BroadcastChannel   a second window on the same machine. Instant, no server.
+     localStorage       the same, for browsers without the channel.
+     the server         a tablet across the counter, which polls.
+
+   What is sent is deliberately not the sale object. It's a small, flat view
+   containing only what the customer is entitled to see — no cost, no margin,
+   no staff name, no customer record, no card details. Sending the whole cart
+   and letting the display pick would put all of that on a public screen.
+   =========================================================================== */
+
+let DISPLAY = { on: false, remote: false, channel: null, last: "" };
+
+function displayInit() {
+  const cfg = (CFG.display || {});
+  DISPLAY.on = !!cfg.on;
+  DISPLAY.remote = !!cfg.remote;
+  if (!DISPLAY.on) return;
+  try { DISPLAY.channel = new BroadcastChannel("pos_display"); } catch (e) {}
+  displayIdle();
+}
+
+/* Open the second screen. Deliberately a plain window the person drags onto the
+   other monitor — trying to place it automatically needs permissions browsers
+   don't give, and getting it wrong puts the customer's total on the till. */
+function displayOpen() {
+  const url = "/display.html" + (DISPLAY.remote ? "?store=" + STORE_ID : "");
+  window.open(url, "posDisplay", "width=1024,height=640");
+}
+
+/* Only what a customer may see. */
+function displayView(mode, extra) {
+  const t = typeof calc === "function" ? calc() : { tot: 0, taxes: {}, disc: 0 };
+  const lines = (CART || []).map(c => ({
+    n: c.n,
+    q: c.q,
+    amount: c.price * c.q * (1 - (c.disc || 0) / 100),
+    /* A note can carry an ID check or a weight; both are fine for the customer
+       to see. Anything else is left off. */
+    note: c.mods && c.mods.length ? c.mods.join(", ") : (c.weighNote || null)
+  }));
+
+  const taxes = (CFG.taxRates || [])
+    .filter(r => r.rate > 0 && Math.abs((t.taxes || {})[r.id] || 0) > 0.001)
+    .map(r => ({ n: `${r.n} ${r.rate}%`, amount: t.taxes[r.id] }));
+
+  return {
+    mode: mode || "sale",
+    shop: {
+      name: CFG.site.name,
+      slogan: CFG.site.slogan || "",
+      logo: CFG.site.logo || ""
+    },
+    lines,
+    taxes,
+    discount: Math.abs(t.disc || 0) + Math.abs(t.promoOff || 0),
+    total: Math.abs(t.tot || 0),
+    ret: !!RETURN,
+    ...extra
+  };
+}
+
+function displaySend(view) {
+  if (!DISPLAY.on) return;
+  const payload = JSON.stringify(view);
+  /* A screen redrawing on every keystroke flickers; nothing changed means
+     nothing sent. */
+  if (payload === DISPLAY.last) return;
+  DISPLAY.last = payload;
+
+  if (DISPLAY.channel) { try { DISPLAY.channel.postMessage(view); } catch (e) {} }
+  try { localStorage.setItem("pos_display", payload); } catch (e) {}
+
+  if (DISPLAY.remote && ONLINE) {
+    api("/api/display?store=" + STORE_ID, { method: "POST",
+      body: { store: STORE_ID, state: view } }).catch(() => {});
+  }
+}
+
+/* Called wherever the sale changes. */
+const displayUpdate = () => displaySend(displayView("sale"));
+const displayIdle = () => displaySend(displayView("idle", { lines: [], total: 0 }));
+
+/* Held for a few seconds so somebody can read their change, then cleared —
+   nothing on that screen should belong to the last customer. */
+function displayDone(sale, change) {
+  if (!DISPLAY.on) return;
+  displaySend({ ...displayView("done"), lines: [],
+    total: Math.abs(sale && sale.tot || 0), change: change || 0 });
+  clearTimeout(DISPLAY.timer);
+  DISPLAY.timer = setTimeout(displayIdle, 9000);
+}
+
+/* An ID check is worth putting on the customer's screen: it tells them why the
+   sale has paused without the cashier having to explain. */
+function displayAge(text) {
+  if (!DISPLAY.on) return;
+  displaySend({ ...displayView("age"), ageText: text });
+}
+
+/* ===========================================================================
+   Reporting what went wrong on this till.
+
+   A terminal in trouble is already having a bad time, so this is built to be
+   the least burdensome thing in the room:
+
+   - Errors are queued and sent in batches, not one request per throw.
+   - Offline, they wait. A till that lost the network is exactly when you most
+     want to know what it was doing.
+   - Nothing here can throw. An error reporter that fails while reporting an
+     error takes the whole page with it.
+   - The message is trimmed here as well as scrubbed on the server, so a
+     stack trace full of card data never leaves the building at all.
+   =========================================================================== */
+
+const ERRQ = [];
+let errTimer = null, errSending = false, errSeen = new Map();
+
+/* The same fault firing in a loop must not queue five hundred times. */
+function errAllowed(key) {
+  const now = Date.now();
+  const e = errSeen.get(key);
+  if (!e || now - e.at > 60000) { errSeen.set(key, { at: now, n: 1 }); return true; }
+  e.n++;
+  return e.n <= 5;
+}
+
+/* A first pass over anything obviously sensitive, before it leaves the till. */
+function errClean(s) {
+  try {
+    return String(s == null ? "" : s)
+      .replace(/\b(?:\d[ -]?){13,19}\b/g, "[card]")
+      .replace(/\b(?:sk|pk|rk)_(?:test|live)_[A-Za-z0-9]{6,}/g, "[key]")
+      .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, "[email]")
+      .replace(/ANSI\s?\d{6}[\s\S]{0,400}/g, "[licence data]")
+      .slice(0, 2000);
+  } catch (e) { return ""; }
+}
+
+function reportError(kind, message, where, detail) {
+  try {
+    if (!message) return;
+    const msg = errClean(message);
+    const key = kind + "|" + msg.slice(0, 80);
+    if (!errAllowed(key)) return;
+
+    ERRQ.push({
+      kind,
+      message: msg,
+      where: errClean(where).slice(0, 200),
+      detail: errClean(detail),
+      build: typeof BUILD !== "undefined" ? BUILD : null
+    });
+    if (ERRQ.length > 50) ERRQ.splice(0, ERRQ.length - 50);
+
+    /* Batched: a burst becomes one request rather than fifty. */
+    clearTimeout(errTimer);
+    errTimer = setTimeout(flushErrors, 4000);
+  } catch (e) { /* never make it worse */ }
+}
+
+async function flushErrors() {
+  if (errSending || !ERRQ.length) return;
+  if (typeof ONLINE !== "undefined" && !ONLINE) return;   /* they'll keep */
+  if (typeof STORE_ID === "undefined" || !STORE_ID) return;
+
+  errSending = true;
+  const batch = ERRQ.splice(0, 20);
+  try {
+    await api("/api/errors?store=" + STORE_ID, { method: "POST", body: {
+      store: STORE_ID, errors: batch,
+      token: typeof TERMINAL !== "undefined" ? TERMINAL : null } });
+  } catch (e) {
+    /* Put them back; the next flush tries again. Losing the report of a fault
+       is how a fault stays invisible. */
+    ERRQ.unshift(...batch);
+  } finally {
+    errSending = false;
+  }
+}
+
+function startErrorReporting() {
+  try {
+    window.addEventListener("error", e => {
+      reportError("client", e.message,
+        `${e.filename || ""}:${e.lineno || 0}:${e.colno || 0}`,
+        e.error && e.error.stack ? e.error.stack : "");
+    });
+
+    /* A rejected promise nobody caught is the commonest way a screen half
+       renders and nobody finds out. */
+    window.addEventListener("unhandledrejection", e => {
+      const r = e.reason;
+      reportError("promise", r && r.message ? r.message : String(r),
+        "promise", r && r.stack ? r.stack : "");
+    });
+
+    /* Send whatever is queued while the tab is closing. */
+    window.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") flushErrors();
+    });
+
+    setInterval(flushErrors, 30000);
+  } catch (e) {}
+}
+
+/* For places that catch their own errors but still want them recorded — a
+   failed print, a reader that wouldn't respond. */
+function noteProblem(what, e) {
+  reportError("client", `${what}: ${e && e.message ? e.message : e}`, what,
+    e && e.stack ? e.stack : "");
+}
+
+/* ===========================================================================
+   Forecourt services.
+
+   The screen is built around the one thing cashiers get wrong: what goes in the
+   drawer and what counts as a sale. So every form shows both, before it's
+   recorded, in words.
+   =========================================================================== */
+
+let SVC = { tab: "do", settings: null, recent: [], summary: [], kinds: {} };
+
+async function tServices2() {
+  $("cfgBody").innerHTML = `<p class="lede">Loading…</p>`;
+  try {
+    const d = await api("/api/services?store=" + STORE_ID);
+    SVC.settings = d.settings;
+    SVC.recent = d.recent;
+    SVC.summary = d.summary;
+    SVC.kinds = d.kinds;
+  } catch (e) {
+    $("cfgBody").innerHTML = `<div class="finding"><b>Couldn't load this</b>
+      <span>${esc(e.message)}</span></div>`;
+    return;
+  }
+  drawServices();
+}
+
+function drawServices() {
+  W.svcTab = t => { SVC.tab = t; drawServices(); };
+  const tabs = [["do", "Take one"], ["log", "What's been done"],
+    ["reconcile", "Reconcile"], ["setup", "Settings"]];
+
+  $("cfgBody").innerHTML = `
+    <p class="lede">Money orders, lottery payouts and bill payments move cash without being sales.
+      Only the fee is your income — ringing a ${money(500)} money order as a sale would add five
+      hundred dollars to your takings and put the tax somewhere absurd.</p>
+    <div class="stktabs">${tabs.map(([k, l]) =>
+      `<button class="${SVC.tab === k ? "on" : ""}" onclick="__w.svcTab('${k}')">${l}</button>`).join("")}</div>
+    <div id="svcBody"></div>`;
+
+  ({ do: svcDo, log: svcLog, reconcile: svcRec, setup: svcSetup })[SVC.tab]();
+}
+
+/* -------------------------------- take one -------------------------------- */
+function svcDo() {
+  const s = SVC.settings;
+  const on = [];
+  if (s.moneyOrders) on.push("money_order");
+  if (s.lottery) on.push("lottery_payout");
+  if (s.billPay) on.push("bill_pay");
+
+  if (!on.length) {
+    $("svcBody").innerHTML = `<div class="note" style="margin-top:16px">Nothing is switched on
+      yet. Turn on whichever of these your forecourt actually offers under <b>Settings</b>.</div>`;
+    return;
+  }
+
+  W.svcForm = kind => {
+    const label = (SVC.kinds[kind] || {}).label || kind;
+    const isOut = kind === "lottery_payout";
+    const defaultFee = kind === "money_order" ? s.mo_fee : kind === "bill_pay" ? s.bp_fee : 0;
+
+    const el = veil(`<div class="card"><h3>${esc(label)}</h3>
+      <p>${isOut
+        ? `Money leaves the drawer. This isn't a refund and it isn't a sale — it reduces cash with
+           no product attached.`
+        : `Money comes into the drawer, but only the fee is income. The rest is held and passed on.`}</p>
+      <div class="frm">
+        <label>${isOut ? "Ticket value" : "Amount"}
+          <input class="n" id="svFace" inputmode="decimal" placeholder="0.00"></label>
+        ${isOut ? "" : `<label>Fee<input class="n" id="svFee" value="${defaultFee.toFixed(2)}"></label>`}
+      </div>
+      ${kind === "money_order" ? `<div class="frm">
+        <label>Serial number<input id="svRef" placeholder="from the printed order"></label>
+        <label>Payable to<input id="svPayee" placeholder="optional"></label></div>` : ""}
+      ${kind === "lottery_payout" ? `<div class="frm">
+        <label>Ticket number<input id="svRef" placeholder="optional"></label></div>
+        <div class="note">Over ${money(s.lotto_max)} the customer claims from the state. Paying it
+          here is your own money.</div>` : ""}
+      ${kind === "bill_pay" ? `<div class="frm">
+        <label>Biller<select id="svBiller">
+          ${(s.billers || []).map(b => `<option>${esc(b)}</option>`).join("")}
+          ${!(s.billers || []).length ? `<option value="">none set up</option>` : ""}
+        </select></label>
+        <label>Account<input id="svRef" placeholder="account number"></label></div>` : ""}
+
+      <div class="cbar" id="svTell" style="margin-top:14px">Enter an amount</div>
+      <div class="err" id="svErr" style="display:none"></div>
+      <div class="row"><button class="no" id="svx">Cancel</button>
+        <button class="ok" id="svy">Record it</button></div></div>`);
+
+    const face = () => parseFloat(el.querySelector("#svFace").value) || 0;
+    const fee = () => {
+      const f = el.querySelector("#svFee");
+      return f ? parseFloat(f.value) || 0 : 0;
+    };
+
+    /* Say what the drawer does before it's committed, not after. */
+    const tell = () => {
+      const f = face(), e = fee();
+      const box = el.querySelector("#svTell");
+      if (!f) { box.textContent = "Enter an amount"; return; }
+      box.innerHTML = isOut
+        ? `Take <b>${money(f)}</b> out of the drawer. <b>Nothing</b> is a sale.`
+        : `Take <b>${money(f + e)}</b> into the drawer. Only <b>${money(e)}</b> is income —
+           the other <b>${money(f)}</b> is held and passed on.`;
+    };
+    el.querySelector("#svFace").oninput = tell;
+    if (el.querySelector("#svFee")) el.querySelector("#svFee").oninput = tell;
+
+    el.querySelector("#svx").onclick = () => el.remove();
+    el.querySelector("#svy").onclick = async () => {
+      const err = el.querySelector("#svErr");
+      const ref = el.querySelector("#svRef");
+      const biller = el.querySelector("#svBiller");
+      try {
+        const r = await api(`/api/services/${kind}?store=${STORE_ID}`, { method: "POST", body: {
+          store: STORE_ID, face: face(), fee: fee(),
+          reference: ref ? ref.value : null,
+          payee: el.querySelector("#svPayee") ? el.querySelector("#svPayee").value : null,
+          biller: biller ? biller.value : null,
+          who: ME.n, shiftId: typeof SHIFT_ID !== "undefined" ? SHIFT_ID : null } });
+        el.remove();
+        toast(r.cash > 0
+          ? `Took <b>${money(r.cash)}</b> in — <b>${money(r.fee)}</b> of it is income.`
+          : `Paid out <b>${money(Math.abs(r.cash))}</b>.`);
+        /* The drawer has physically changed, so the shift has to know. */
+        if (typeof drawerNote === "function") drawerNote(r.cash, (SVC.kinds[kind] || {}).label);
+        tServices2();
+      } catch (e) { err.textContent = e.message; err.style.display = "block"; }
+    };
+    setTimeout(() => el.querySelector("#svFace").focus(), 40);
+  };
+
+  $("svcBody").innerHTML = `
+    <div class="svcgrid">
+      ${on.map(k => {
+        const label = (SVC.kinds[k] || {}).label || k;
+        const out = k === "lottery_payout";
+        return `<button class="svcbtn ${out ? "out" : "in"}" onclick="__w.svcForm('${k}')">
+          <b>${esc(label)}</b>
+          <em>${out ? "money out of the drawer" : "money into the drawer"}</em>
+        </button>`;
+      }).join("")}
+    </div>
+    <div class="note">Each of these tells you what the drawer should do before it records anything.</div>`;
+}
+
+/* --------------------------- what's been done ----------------------------- */
+function svcLog() {
+  W.svcVoid = async id => {
+    const el = veil(`<div class="card"><h3>Void this?</h3>
+      <p>It stops counting towards the drawer and the day's totals, but the row is kept — a money
+        order serial that was issued and spoiled still has to be accounted for to the provider.</p>
+      <input id="vwhy" placeholder="Why — printer jammed, wrong amount" style="margin-top:12px">
+      <div class="row"><button class="no" id="vx">Keep it</button>
+        <button class="danger" id="vy">Void it</button></div></div>`);
+    el.querySelector("#vx").onclick = () => el.remove();
+    el.querySelector("#vy").onclick = async () => {
+      try {
+        const r = await api(`/api/services/void/${id}?store=${STORE_ID}`, { method: "POST",
+          body: { store: STORE_ID, who: ME.n, note: el.querySelector("#vwhy").value } });
+        el.remove();
+        toast(r.cashBack > 0
+          ? `Put <b>${money(r.cashBack)}</b> back in the drawer.`
+          : `Take <b>${money(Math.abs(r.cashBack))}</b> out of the drawer.`);
+        tServices2();
+      } catch (e) { toast(e.message, true); }
+    };
+  };
+
+  $("svcBody").innerHTML = SVC.recent.length ? `
+    <table class="tbl" style="margin-top:14px"><thead><tr><th>When</th><th style="width:18%">What</th>
+      <th>Amount</th><th>Fee</th><th>Drawer</th><th>Reference</th><th>Who</th><th></th>
+    </tr></thead><tbody>
+      ${SVC.recent.map(r => `<tr ${r.voided ? 'style="opacity:.45"' : ""}>
+        <td style="padding-left:9px;color:var(--txt-2);font-size:12.5px">${
+          esc(String(r.at).slice(0, 16))}</td>
+        <td style="padding-left:9px">${esc(r.label)}${r.voided
+          ? ` <em style="font-style:normal;color:var(--void);font-size:11.5px">void</em>` : ""}</td>
+        <td style="padding-left:9px" class="num">${money(r.face)}</td>
+        <td style="padding-left:9px" class="num" style="color:var(--vfd)">${
+          r.fee ? money(r.fee) : "—"}</td>
+        <td style="padding-left:9px" class="num" style="color:${r.cash < 0
+          ? "var(--void)" : "var(--txt)"}">${r.cash > 0 ? "+" : ""}${money(r.cash)}</td>
+        <td style="padding-left:9px;color:var(--txt-2);font-size:12.5px">${
+          esc(r.reference || r.biller || "—")}</td>
+        <td style="padding-left:9px;color:var(--txt-2)">${esc(r.who || "—")}</td>
+        <td style="text-align:right;padding-right:9px">${r.voided ? ""
+          : `<button class="mini" style="margin:0" onclick="__w.svcVoid(${r.id})">Void</button>`}</td>
+      </tr>`).join("")}
+    </tbody></table>` : `<div class="note" style="margin-top:16px">Nothing recorded yet.</div>`;
+}
+
+/* -------------------------------- reconcile ------------------------------- */
+async function svcRec() {
+  $("svcBody").innerHTML = `<p class="note" style="margin-top:16px">Working it out…</p>`;
+  const today = new Date().toISOString().slice(0, 10);
+  let lot, mo;
+  try {
+    [lot, mo] = await Promise.all([
+      api(`/api/services/lottery?store=${STORE_ID}&date=${today}`),
+      api(`/api/services/money-orders?store=${STORE_ID}&from=${today}&to=${today}`)
+    ]);
+  } catch (e) {
+    $("svcBody").innerHTML = `<div class="finding"><b>Couldn't load that</b>
+      <span>${esc(e.message)}</span></div>`;
+    return;
+  }
+
+  $("svcBody").innerHTML = `
+    <div class="sect">Lottery paid out today</div>
+    <div class="rtiles">
+      <div><span>Tickets paid</span><b>${lot.count}</b></div>
+      <div><span>Total</span><b>${money(lot.total)}</b></div>
+    </div>
+    <div class="note">Check this against the lottery terminal's own report before you close.
+      A difference here is the commonest reason a forecourt drawer comes up short and nobody can
+      say why.</div>
+    ${lot.biggest.length ? `<table class="tbl"><thead><tr><th>When</th><th>Amount</th>
+      <th>Ticket</th><th>Who</th></tr></thead><tbody>
+      ${lot.biggest.map(b => `<tr>
+        <td style="padding-left:9px;color:var(--txt-2)">${esc(String(b.at).slice(11, 16))}</td>
+        <td style="padding-left:9px" class="num">${money(b.face)}</td>
+        <td style="padding-left:9px;color:var(--txt-2)">${esc(b.reference || "—")}</td>
+        <td style="padding-left:9px;color:var(--txt-2)">${esc(b.who || "—")}</td>
+      </tr>`).join("")}</tbody></table>` : ""}
+
+    <div class="sect">Money orders today</div>
+    <div class="rtiles">
+      <div><span>Written</span><b>${mo.count}</b></div>
+      <div><span>Face value</span><b>${money(mo.face)}</b></div>
+      <div><span>Fees earned</span><b style="color:var(--vfd)">${money(mo.fees)}</b></div>
+      <div><span>Voided</span><b style="${mo.voided ? "color:var(--warn)" : ""}">${mo.voided}</b></div>
+    </div>
+    ${mo.serials.gaps.length ? `<div class="finding">
+      <b>${mo.serials.gaps.reduce((a, g) => a + g.missing, 0)} serial number${
+        mo.serials.gaps.reduce((a, g) => a + g.missing, 0) === 1 ? "" : "s"} unaccounted for</b>
+      <span>${mo.serials.gaps.map(g =>
+        `${g.missing} between ${g.after} and ${g.before}`).join(", ")}. Every form has to be
+        accounted for to the provider, including spoiled ones — void them here so there's a
+        record.</span></div>`
+      : mo.serials.checked > 1 ? `<div class="note">Serial numbers run in sequence with no gaps.</div>` : ""}
+
+    <div class="note">Face value isn't income — it's money you're holding until the order clears.
+      Only the fees column belongs to the shop.</div>`;
+}
+
+/* --------------------------------- settings ------------------------------- */
+function svcSetup() {
+  const s = SVC.settings;
+  W.svcSet = (k, v) => { s[k] = v; };
+  W.svcBillers = v => { s.billers = v.split(",").map(x => x.trim()).filter(Boolean); };
+  W.svcSave = async () => {
+    try {
+      const r = await api("/api/services?store=" + STORE_ID, { method: "PUT",
+        body: { store: STORE_ID, settings: {
+          moneyOrders: !!s.moneyOrders, mo_fee: parseFloat(s.mo_fee) || 0,
+          mo_max: parseFloat(s.mo_max) || 0,
+          lottery: !!s.lottery, lotto_max: parseFloat(s.lotto_max) || 0,
+          billPay: !!s.billPay, bp_fee: parseFloat(s.bp_fee) || 0,
+          billers: s.billers } } });
+      SVC.settings = r.settings;
+      toast("Saved.");
+      drawServices();
+    } catch (e) { toast(e.message, true); }
+  };
+
+  const row = (key, label, body) => `
+    <label class="chk" style="margin-top:16px;display:flex;gap:10px;align-items:center">
+      <input type="checkbox" ${s[key] ? "checked" : ""} style="width:auto"
+        onchange="__w.svcSet('${key}',this.checked);drawServices()">
+      <span>${label}</span></label>
+    ${s[key] ? body : ""}`;
+
+  $("svcBody").innerHTML = `
+    ${row("moneyOrders", "We write money orders", `
+      <div class="frm">
+        <label>Fee<input class="n" value="${s.mo_fee}" oninput="__w.svcSet('mo_fee',this.value)"></label>
+        <label>Most we'll write<input class="n" value="${s.mo_max}"
+          oninput="__w.svcSet('mo_max',this.value)"></label>
+      </div>`)}
+
+    ${row("lottery", "We pay out lottery winnings", `
+      <div class="frm">
+        <label>Most we'll pay<input class="n" value="${s.lotto_max}"
+          oninput="__w.svcSet('lotto_max',this.value)"></label>
+      </div>
+      <div class="note">Above this the customer claims from the state. Illinois is ${money(600)};
+        check yours, because paying over the limit is your own money and you don't get it back.</div>`)}
+
+    ${row("billPay", "We take bill payments", `
+      <div class="frm">
+        <label>Fee<input class="n" value="${s.bp_fee}" oninput="__w.svcSet('bp_fee',this.value)"></label>
+        <label style="flex:2">Billers<input value="${esc((s.billers || []).join(", "))}"
+          placeholder="ComEd, Nicor Gas" oninput="__w.svcBillers(this.value)"></label>
+      </div>`)}
+
+    <button class="mini" onclick="__w.svcSave()">Save</button>
+    <div class="note">Anything switched off never appears at the till, so a cashier can't record
+      something the shop doesn't actually offer.</div>`;
+}
+
 /* ============================ CONFIGURATION CLIENT ============================
    Modelled on Commander's Config Client and Passport's Manager Workstation:
    every domain is its own form over its own table, and nothing here knows
@@ -11582,6 +12544,8 @@ const CGROUPS=[
         ["terminals","Registers","Every lane in this store, and the drawers under the shift"],
         ["loyalty","Loyalty","Points, offers and who keeps coming back"],
         ["tobacco","Tobacco scan data","Buydowns, and what the manufacturers owe you"],
+        ["central","Central pricebook","One price list pushed to many stores"],
+        ["services2","Forecourt services","Money orders, lottery payouts and bill pay"],
         ["journal","Electronic journal","Search every sale this store has ever taken"],
         ["reports2","Reports","When you're busy, what makes money, who's selling it"]]},
  {n:"Your people",d:"Who can do what",
@@ -11683,7 +12647,8 @@ function drawBody(){
     mod_customers:tCustomers,mod_tips:tTips,mod_giftcards:tGiftcards,mod_waste:tWaste,
     mod_commission:tCommission,mod_jobs:tJobs,mod_service:tService,mod_tanks:tTanks,
     journal:tJournal,stock:tStock,terminals:tTerminals,reports2:tReports2,
-    purchasing:tPurchasing,loyalty:tLoyalty,tobacco:tTobacco};
+    purchasing:tPurchasing,loyalty:tLoyalty,tobacco:tTobacco,central:tCentral,
+    services2:tServices2};
   (views[TAB]||cfgHome)();
 }
 
@@ -13585,6 +14550,8 @@ async function initApp() {
     CFG.modGroups = CFG.modGroups || [];
     CFG.reminders = CFG.reminders || [];
     ensureTerminal().then(startHeartbeat);
+    if (typeof displayInit === "function") displayInit();
+    if (typeof startErrorReporting === "function") startErrorReporting();
     document.getElementById("setup").classList.add("hide");
     boot();
   } else if (!ONLINE) {

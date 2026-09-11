@@ -16,6 +16,11 @@ const suites = [
     flags: ["--experimental-sqlite"] },
   { name: "loyalty", file: "loyalty.test.js", flags: ["--experimental-sqlite"] },
   { name: "tobacco scan data", file: "tobacco.test.js", flags: ["--experimental-sqlite"] },
+  { name: "central pricebook", file: "central.test.js", flags: ["--experimental-sqlite"] },
+  { name: "the time clock", file: "timeclock.test.js", flags: ["--experimental-sqlite"] },
+  { name: "the customer display", file: "display.test.js", flags: [] },
+  { name: "error capture", file: "errors.test.js", flags: ["--experimental-sqlite"] },
+  { name: "forecourt services", file: "services.test.js", flags: ["--experimental-sqlite"] },
   { name: "inventory over HTTP", file: "stock-e2e.test.js", flags: [], needsDeps: true }
 ];
 

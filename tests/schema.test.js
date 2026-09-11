@@ -85,6 +85,25 @@ console.log(`   backfilled digits: ${row.digits}`);
 chk("a customer saved before normalisation gets their digits", row.digits === "7085550142");
 chk("and the migration reports how many", back.some(r => r.version === 2 && r.detail));
 
+console.log("\n── the timestamp repair ──");
+/* The bug this migration exists for: a sale stored the way a browser sends it
+   is invisible to every report, because "T" sorts after " ". */
+db.prepare("INSERT INTO sales (store_id,seq,at,total,is_return,json) " +
+  "VALUES (1,1,'2026-09-10T04:11:05.855Z',9.99,0,'{}')").run();
+const bound = "2026-09-10 23:59:59";
+const beforeFix = db.prepare("SELECT COUNT(*) n FROM sales WHERE at <= ?").get(bound).n;
+console.log(`   before the migration, a report for that day sees ${beforeFix} of 1 sales`);
+chk("an ISO timestamp really is invisible to a range query", beforeFix === 0);
+
+db.prepare("DELETE FROM schema_migrations WHERE version = 4").run();
+const fixed = S.migrate(() => {});
+const afterFix = db.prepare("SELECT COUNT(*) n FROM sales WHERE at <= ?").get(bound).n;
+console.log(`   after it, ${afterFix} of 1`);
+chk("the migration makes it visible", afterFix === 1);
+chk("and reports how many it repaired", fixed.some(r => r.version === 4 && r.detail));
+chk("the value is the same moment, just written differently",
+  db.prepare("SELECT at FROM sales WHERE seq = 1").get().at === "2026-09-10 04:11:05");
+
 console.log("\n── it catches a missing column ──");
 /* Exactly today's operator console bug: query a column that isn't there. */
 db.exec("CREATE TABLE probe_a (id INTEGER PRIMARY KEY)");

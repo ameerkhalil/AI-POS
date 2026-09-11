@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your order</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Azeret+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ===========================================================================
+   The customer display.
+
+   A second screen facing the customer. It is not a smaller copy of the till —
+   the person reading it is standing a metre away, isn't holding it, and has one
+   question: is that right and what do I owe.
+
+   So: very large type, the total never off screen, the newest line highlighted
+   because that's the one they're checking, and nothing that isn't theirs. No
+   staff names, no cost, no margin, no other customer's business.
+   =========================================================================== */
+:root{
+  --bg:#0E1113; --panel:#171B1E; --line:#262C31;
+  --txt:#F2F5F6; --txt-2:#9AA5AC; --txt-3:#6B757C;
+  --accent:#5CE0A8; --warn:#E0B255;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--txt);font-family:Archivo,system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;display:flex;flex-direction:column;
+  /* A display sits untouched for hours; don't let it be selected or zoomed. */
+  user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.num{font-family:"Azeret Mono",monospace;font-variant-numeric:tabular-nums}
+
+.head{display:flex;align-items:center;gap:18px;padding:22px 34px;border-bottom:1px solid var(--line)}
+.head img{height:46px;max-width:180px;object-fit:contain}
+.head b{font-size:26px;font-weight:600;letter-spacing:-.02em}
+.head em{font-style:normal;font-size:16px;color:var(--txt-3);margin-left:auto}
+
+.lines{flex:1;overflow:hidden;padding:10px 34px;display:flex;flex-direction:column;
+  justify-content:flex-end}
+.line{display:grid;grid-template-columns:74px minmax(0,1fr) auto;gap:20px;align-items:baseline;
+  padding:14px 0;border-bottom:1px solid var(--line);font-size:30px;
+  animation:in .25s cubic-bezier(.2,.9,.3,1) both}
+.line:last-child{border-bottom:none}
+.line.newest{color:var(--accent)}
+.line .q{color:var(--txt-3);font-size:24px}
+.line.newest .q{color:var(--accent)}
+.line .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.line .n small{display:block;font-size:17px;color:var(--txt-3);margin-top:4px}
+.line .a{font-size:30px}
+@keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+.foot{border-top:1px solid var(--line);background:var(--panel);padding:20px 34px 26px}
+.sub{display:flex;justify-content:space-between;font-size:19px;color:var(--txt-2);padding:4px 0}
+.sub.save{color:var(--accent)}
+.total{display:flex;justify-content:space-between;align-items:baseline;margin-top:12px;
+  padding-top:14px;border-top:1px solid var(--line)}
+.total span{font-size:22px;letter-spacing:.14em;text-transform:uppercase;color:var(--txt-3)}
+.total b{font-size:clamp(56px,9vw,104px);font-weight:600;letter-spacing:-.03em;line-height:1}
+
+/* Between customers. Nothing on screen belongs to the last person. */
+.idle{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:20px;text-align:center;padding:40px}
+.idle img{max-height:130px;max-width:70%;object-fit:contain;opacity:.9}
+.idle b{font-size:38px;font-weight:600;letter-spacing:-.02em}
+.idle em{font-style:normal;font-size:20px;color:var(--txt-3);max-width:26ch;line-height:1.5}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--accent);opacity:.5;
+  animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.25}50%{opacity:.8}}
+
+/* Paid. Held for a few seconds so they can see the change. */
+.done{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;text-align:center;padding:40px}
+.done .tick{width:96px;height:96px;border-radius:50%;border:4px solid var(--accent);
+  display:grid;place-items:center;margin-bottom:6px}
+.done .tick svg{width:52px;height:52px;fill:none;stroke:var(--accent);stroke-width:5;
+  stroke-linecap:round;stroke-linejoin:round}
+.done b{font-size:34px;font-weight:600}
+.done .change{margin-top:10px}
+.done .change span{display:block;font-size:19px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--txt-3)}
+.done .change em{font-style:normal;font-size:64px;font-weight:600;color:var(--accent)}
+
+.age{position:fixed;inset:0;background:rgba(14,17,19,.96);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:16px;text-align:center;padding:40px;z-index:5}
+.age b{font-size:40px;font-weight:600;color:var(--warn)}
+.age em{font-style:normal;font-size:21px;color:var(--txt-2);max-width:24ch;line-height:1.5}
+
+.lost{position:fixed;left:0;right:0;bottom:0;background:var(--warn);color:#241A05;
+  padding:10px;text-align:center;font-size:16px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* The display is a reader, never a writer. It holds no session and can't ring,
+   refund or change anything — it takes what the till broadcasts and draws it.
+   That matters because this screen faces the public. */
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const money = n => (Math.round((Number(n) || 0) * 100) / 100).toFixed(2);
+
+const KEY = "pos_display";
+let state = null, lastSeen = 0, connected = true;
+
+/* Two ways the till talks to this screen. Same-machine second monitor uses the
+   browser's own channel, which is instant and needs no server. A tablet across
+   the counter polls instead. */
+let channel = null;
+try { channel = new BroadcastChannel("pos_display"); } catch (e) {}
+if (channel) channel.onmessage = e => { apply(e.data); };
+
+/* Also watch storage, so a second window on the same machine works even where
+   BroadcastChannel isn't available. */
+window.addEventListener("storage", e => {
+  if (e.key !== KEY || !e.newValue) return;
+  try { apply(JSON.parse(e.newValue)); } catch (err) {}
+});
+
+/* And poll, for a screen that isn't the same browser at all. */
+const params = new URLSearchParams(location.search);
+const store = params.get("store");
+if (store) {
+  setInterval(async () => {
+    try {
+      const r = await fetch(`/api/display?store=${encodeURIComponent(store)}`);
+      if (!r.ok) throw new Error("no");
+      const d = await r.json();
+      connected = true;
+      if (d && d.at && d.at !== lastSeen) { lastSeen = d.at; apply(d.state); }
+    } catch (e) { connected = false; draw(); }
+  }, 1200);
+}
+
+function apply(next) {
+  if (!next) return;
+  state = next;
+  draw();
+}
+
+/* Anything at all on the last screen belonging to the previous customer is a
+   problem, so idle is a full reset rather than a dimmed sale. */
+const idle = () => !state || state.mode === "idle" || (!state.lines || !state.lines.length)
+  && state.mode !== "done" && state.mode !== "age";
+
+function draw() {
+  const s = state || {};
+  const shop = s.shop || {};
+
+  if (s.mode === "age") return $("app").innerHTML = header(shop) + `
+    <div class="age">
+      <b>ID check</b>
+      <em>${esc(s.ageText || "This purchase needs proof of age. Please have your ID ready.")}</em>
+    </div>` + lost();
+
+  if (s.mode === "done") {
+    const change = Number(s.change) || 0;
+    return $("app").innerHTML = header(shop) + `
+      <div class="done">
+        <div class="tick"><svg viewBox="0 0 24 24"><path d="M4 12.5l5.5 5.5L20 7"/></svg></div>
+        <b>Thank you</b>
+        ${change > 0.001 ? `<div class="change"><span>Your change</span>
+          <em class="num">${money(change)}</em></div>`
+          : `<div class="change"><span>Paid</span>
+             <em class="num">${money(s.total)}</em></div>`}
+      </div>` + lost();
+  }
+
+  if (idle()) return $("app").innerHTML = header(shop) + `
+    <div class="idle">
+      ${shop.logo ? `<img src="${esc(shop.logo)}" alt="">` : ""}
+      <b>${esc(shop.name || "Welcome")}</b>
+      ${shop.slogan ? `<em>${esc(shop.slogan)}</em>` : ""}
+      <div class="dot"></div>
+    </div>` + lost();
+
+  const lines = (s.lines || []).slice(-7);
+  const newest = lines.length - 1;
+
+  $("app").innerHTML = header(shop) + `
+    <div class="lines">
+      ${lines.map((l, i) => `
+        <div class="line ${i === newest ? "newest" : ""}">
+          <span class="q num">${(Number(l.q) || 1) > 1 ? (l.q + " ×") : ""}</span>
+          <span class="n">${esc(l.n)}${l.note ? `<small>${esc(l.note)}</small>` : ""}</span>
+          <span class="a num">${money(l.amount)}</span>
+        </div>`).join("")}
+    </div>
+    <div class="foot">
+      ${Number(s.discount) ? `<div class="sub save"><span>You saved</span>
+        <span class="num">${money(s.discount)}</span></div>` : ""}
+      ${(s.taxes || []).map(t => `<div class="sub"><span>${esc(t.n)}</span>
+        <span class="num">${money(t.amount)}</span></div>`).join("")}
+      <div class="total"><span>${s.ret ? "Refund" : "Total"}</span>
+        <b class="num">${money(s.total)}</b></div>
+    </div>` + lost();
+}
+
+const header = shop => `
+  <div class="head">
+    ${shop.logo ? `<img src="${esc(shop.logo)}" alt="">` : ""}
+    <b>${esc(shop.name || "")}</b>
+    ${shop.slogan ? `<em>${esc(shop.slogan)}</em>` : ""}
+  </div>`;
+
+/* If the till stops talking, say so rather than showing a stale total that
+   somebody might pay against. */
+const lost = () => connected ? "" :
+  `<div class="lost">Lost contact with the till — this total may be out of date</div>`;
+
+draw();
+</script>
+</body>
+</html>

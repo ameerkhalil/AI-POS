@@ -315,6 +315,24 @@ function tHardware() {
       </div>
       <div class="note">On a WisePOS E or S700, the code is under Settings → Generate pairing code.</div>` : ""}
 
+    <div class="sect">Customer display</div>
+    <label class="chk"><input type="checkbox" id="dspOn" ${CFG.display?.on ? "checked" : ""}
+      style="width:auto;margin-right:8px">A second screen facing the customer</label>
+    <div id="dspMore" style="${CFG.display?.on ? "" : "display:none"}">
+      <label class="chk" style="margin-top:8px"><input type="checkbox" id="dspRemote"
+        ${CFG.display?.remote ? "checked" : ""} style="width:auto;margin-right:8px">
+        It's a tablet or another device, not a second monitor on this machine</label>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="mini" style="margin:0" onclick="displayOpen()">Open it</button>
+      </div>
+      <div class="note">A second monitor on this machine updates the moment a key is pressed.
+        Another device polls instead, so it needs the network and this address:
+        <span class="num">/display.html?store=${STORE_ID}</span>
+        <br><br>It shows the order, the tax, the total, and an ID-check prompt when one applies.
+        It never shows cost, margin, staff names or customer records — and it holds no login, so
+        it can't ring, refund or change anything.</div>
+    </div>
+
     <div class="sect">Receipt printer and drawer</div>
     ${STATION ? `<div class="verify ${STATION.ready ? "ok2" : ""}">
         <div class="vhead">${STATION.ready ? `Station agent connected` : `Agent running, no printer set`}</div>
@@ -335,6 +353,20 @@ node agent.js</pre>
     </div><div id="hwScan"></div>` : ""}
     <div class="note">The cash drawer plugs into the printer, not the computer — it opens when the printer
       gets a kick code. If the drawer won't open but receipts print, check the cable between the two.</div>`;
+
+  const dsp = document.getElementById("dspOn");
+  if (dsp) dsp.onchange = e => {
+    CFG.display = { ...(CFG.display || {}), on: e.target.checked };
+    document.getElementById("dspMore").style.display = e.target.checked ? "" : "none";
+    if (typeof displayInit === "function") displayInit();
+    queueSave();
+  };
+  const rem = document.getElementById("dspRemote");
+  if (rem) rem.onchange = e => {
+    CFG.display = { ...(CFG.display || {}), remote: e.target.checked };
+    if (typeof displayInit === "function") displayInit();
+    queueSave();
+  };
 }
 async function loadPayCfg() {
   try { PAYCFG = (await api("/api/pay/settings?store=" + STORE_ID)).settings; }

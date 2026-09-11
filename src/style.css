@@ -2723,3 +2723,15 @@ body.tp-plain .grand .amt{font-size:40px}
   color:var(--txt-3);white-space:nowrap;overflow:hidden}
 
 .cbar b{color:var(--txt);font-weight:600}
+
+/* ---- forecourt services ---- */
+.svcgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:11px;
+  margin-top:16px}
+.svcbtn{border:1px solid var(--line);border-radius:var(--r2);padding:20px 18px;text-align:left;
+  background:rgba(255,255,255,.02);transition:border-color .14s,transform .12s}
+.svcbtn:hover{transform:translateY(-2px)}
+.svcbtn.in:hover{border-color:var(--vfd)}
+.svcbtn.out:hover{border-color:var(--warn)}
+.svcbtn b{display:block;font-size:17px;font-weight:600;margin-bottom:5px}
+.svcbtn em{display:block;font-style:normal;font-size:12.5px;color:var(--txt-3)}
+.svcbtn.out b{color:var(--warn)}

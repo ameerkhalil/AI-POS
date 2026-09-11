@@ -31,6 +31,8 @@ const CGROUPS=[
         ["terminals","Registers","Every lane in this store, and the drawers under the shift"],
         ["loyalty","Loyalty","Points, offers and who keeps coming back"],
         ["tobacco","Tobacco scan data","Buydowns, and what the manufacturers owe you"],
+        ["central","Central pricebook","One price list pushed to many stores"],
+        ["services2","Forecourt services","Money orders, lottery payouts and bill pay"],
         ["journal","Electronic journal","Search every sale this store has ever taken"],
         ["reports2","Reports","When you're busy, what makes money, who's selling it"]]},
  {n:"Your people",d:"Who can do what",
@@ -132,7 +134,8 @@ function drawBody(){
     mod_customers:tCustomers,mod_tips:tTips,mod_giftcards:tGiftcards,mod_waste:tWaste,
     mod_commission:tCommission,mod_jobs:tJobs,mod_service:tService,mod_tanks:tTanks,
     journal:tJournal,stock:tStock,terminals:tTerminals,reports2:tReports2,
-    purchasing:tPurchasing,loyalty:tLoyalty,tobacco:tTobacco};
+    purchasing:tPurchasing,loyalty:tLoyalty,tobacco:tTobacco,central:tCentral,
+    services2:tServices2};
   (views[TAB]||cfgHome)();
 }
 

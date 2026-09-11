@@ -73,7 +73,33 @@ sale(1, 4, 3, "Sam", [{ pluId: "P1", n: "Coffee", q: 1, price: 1.99, cost: 0.31,
 /* another store's trade, which must never appear */
 sale(2, 1, 10, "Nobody", [{ pluId: "PX", n: "Not ours", q: 99, price: 100, deptId: "D9" }]);
 
-console.log("── the headline ──");
+console.log("── a sale stored the way a till sends it ──");
+/* The real failure: string comparison only reaches the "T" when the date part
+   is identical, so an ISO sale is invisible exactly on the day the window ends
+   — and every window ends today. Today's trade was missing from every report. */
+const isoNow = new Date().toISOString();
+db.prepare("INSERT INTO sales (store_id,seq,at,cashier,total,is_return,json) " +
+  "VALUES (1,999,?,?,?,0,?)")
+  .run(isoNow, "Dana", 7.77,
+    JSON.stringify({ lines: [{ pluId: "P1", n: "Coffee", q: 1, price: 7.77, cost: 1, deptId: "D1" }],
+      pays: [{ mop: "Cash", amt: 7.77 }] }));
+
+const rawSeen = db.prepare(
+  "SELECT COUNT(*) n FROM sales WHERE store_id = 1 AND at <= ?")
+  .get(new Date().toISOString().slice(0, 19).replace("T", " ")).n;
+const total = db.prepare("SELECT COUNT(*) n FROM sales WHERE store_id = 1").get().n;
+console.log(`   an ISO row on today's date: ${total - rawSeen} of ${total} invisible to a raw range`);
+chk("the raw comparison really does lose it", rawSeen < total);
+
+/* Written through stamp(), the way the server now does, it must be found. */
+db.prepare("UPDATE sales SET at = ? WHERE seq = 999")
+  .run(require("../lib/when.js").stamp(isoNow));
+const fixed = R.overview(1, 30);
+chk("stored canonically, today's sale is counted", fixed.sales === 47,
+  `saw ${fixed.sales}`);
+db.prepare("DELETE FROM sales WHERE seq = 999").run();
+
+console.log("\n── the headline ──");
 const ov = R.overview(1, 30);
 console.log(`   ${ov.sales} sales, ${ov.taken} taken, basket ${ov.basket}, ` +
   `${ov.returns} refund(s)`);
@@ -157,11 +183,19 @@ chk("with its hours", dy.hours.length === 24);
 chk("and its departments", dy.departments.length >= 1);
 
 console.log("\n── empty windows don't crash ──");
-const none = R.overview(1, 1);
-chk("a quiet window returns zeros rather than throwing", none.sales === 0 && none.taken === 0);
-chk("and basket is zero, not NaN", none.basket === 0);
-chk("busy handles no sales", R.busy(1, 1).hours.length === 24);
-chk("products handles no sales", Array.isArray(R.products(1, 1)));
+/* Store 3 has never traded. Asking store 1 for "the last day" depended on what
+   time the suite ran, which made this pass in the morning and fail at night. */
+db.prepare("INSERT INTO stores (id,account_id,name) VALUES (3,1,'Never opened')").run();
+const none = R.overview(3, 30);
+chk("a store with no sales returns zeros rather than throwing",
+  none.sales === 0 && none.taken === 0);
+chk("and basket is zero, not NaN", none.basket === 0 && !isNaN(none.basket));
+chk("change against an empty previous period is null, not Infinity", none.change === null);
+chk("busy handles no sales", R.busy(3, 30).hours.length === 24);
+chk("products handles no sales", R.products(3, 30).length === 0);
+chk("departments handles no sales", R.departments(3, 30, DEPTS).length === 0);
+chk("staff handles no sales", R.staff(3, 30).length === 0);
+chk("exceptions handles no sales", R.exceptions(3, 30).refundsNoOriginal.length === 0);
 const emptyDay = R.day(1, "1999-01-01", DEPTS);
 chk("a day with nothing on it is fine", emptyDay.totals.sales === 0);
 

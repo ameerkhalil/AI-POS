@@ -26,6 +26,11 @@ const PUR = require("./lib/purchasing");
 const LOY = require("./lib/loyalty");
 const TOB = require("./lib/tobacco");
 const SCHEMA = require("./lib/schema");
+const WHEN = require("./lib/when");
+const ERR = require("./lib/errors");
+const SVC = require("./lib/services");
+const CENTRAL = require("./lib/central");
+const CLOCK = require("./lib/timeclock");
 const MAIL = require("./lib/mail");
 
 const app = express();
@@ -262,7 +267,7 @@ function insertSale(storeId, shiftId, s, terminalId) {
     "INSERT INTO sales (store_id, shift_id, terminal_id, seq, at, cashier, total, is_return, " +
     "client_id, json) VALUES (?,?,?,?,?,?,?,?,?,?)")
     .run(storeId, shiftId || null, terminalId || null, Number(s.n) || 0,
-         s.at || new Date().toISOString(), s.by || null, Number(s.tot) || 0,
+         WHEN.stamp(s.at), s.by || null, Number(s.tot) || 0,
          s.ret ? 1 : 0, cid, JSON.stringify(s));
   if (s.customer)
     db.prepare("UPDATE sales SET customer_id = ? WHERE store_id = ? AND client_id IS ?")
@@ -550,6 +555,269 @@ function resetOnBoot() {
 
   console.log(`  ADMIN_RESET applied to ${a.email} — sign in, then REMOVE the variable`);
 }
+
+/* --------------------------- forecourt services ---------------------------- */
+app.get("/api/services", auth, ownStore, (req, res) => res.json({
+  settings: SVC.settings(req.store.id),
+  kinds: SVC.KINDS,
+  recent: SVC.list(req.store.id, { limit: 60 }),
+  summary: SVC.summary(req.store.id, +req.query.days || 30)
+}));
+
+app.put("/api/services", auth, ownStore, (req, res) => {
+  SVC.setSettings(req.store.id, req.body.settings || {});
+  res.json({ ok: true, settings: SVC.settings(req.store.id) });
+});
+
+app.post("/api/services/:kind", auth, ownStore, (req, res) => {
+  try {
+    const r = SVC.record(req.store.id, req.params.kind, {
+      ...req.body, shiftId: req.body.shiftId, who: req.body.who });
+    P.audit(req.account.id, "service-" + req.params.kind,
+      `face ${r.face}, fee ${r.fee}`, req);
+    res.json(r);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.post("/api/services/void/:id", auth, ownStore, (req, res) => {
+  try {
+    const r = SVC.voidService(req.store.id, +req.params.id, req.body.who, req.body.note);
+    P.audit(req.account.id, "service-voided", String(req.params.id), req);
+    res.json(r);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.get("/api/services/shift/:id", auth, ownStore, (req, res) =>
+  res.json(SVC.forShift(req.store.id, +req.params.id)));
+
+app.get("/api/services/lottery", auth, ownStore, (req, res) =>
+  res.json(SVC.lotteryDay(req.store.id,
+    String(req.query.date || new Date().toISOString().slice(0, 10)))));
+
+app.get("/api/services/money-orders", auth, ownStore, (req, res) => {
+  const from = String(req.query.from || new Date().toISOString().slice(0, 10));
+  const to = String(req.query.to || from);
+  res.json({ ...SVC.moneyOrderLog(req.store.id, from, to),
+    serials: SVC.serialGaps(req.store.id, from, to) });
+});
+
+/* --------------------------------- errors ---------------------------------
+   A till reports what went wrong on it. Deliberately cheap and forgiving: a
+   terminal in trouble is already having a bad time and mustn't be given a
+   second failure to handle. */
+app.post("/api/errors", auth, ownStore, (req, res) => {
+  const list = Array.isArray(req.body.errors) ? req.body.errors.slice(0, 20) : [];
+  const t = TERM.byToken(req.body.token);
+  list.forEach(e => ERR.record({
+    kind: e.kind || "client",
+    message: e.message,
+    where: e.where,
+    detail: e.detail,
+    storeId: req.store.id,
+    accountId: req.account.id,
+    terminal: t && t.store_id === req.store.id ? t.id : null,
+    build: e.build
+  }));
+  res.json({ ok: true });
+});
+
+app.get("/api/admin/errors", auth, operator, (req, res) => res.json({
+  summary: ERR.summary(+req.query.days || 7),
+  groups: ERR.groups({ days: +req.query.days || 14,
+    includeResolved: req.query.all === "1" })
+}));
+
+app.get("/api/admin/errors/:id", auth, operator, (req, res) =>
+  res.json(ERR.detail(+req.params.id)));
+
+app.post("/api/admin/errors/:id/resolve", auth, operator, (req, res) => {
+  ERR.resolve(+req.params.id, req.body.on !== false, req.body.note);
+  ADMIN.log(req.account.id, null, "error-resolved", String(req.params.id));
+  res.json({ ok: true });
+});
+
+/* ---------------------------- the customer display -------------------------
+   A relay, held in memory only. It's a view of a sale in progress, worthless a
+   minute later, and writing it to disk would put a customer's basket in the
+   backups for no reason. */
+const DISPLAYS = new Map();
+
+app.post("/api/display", auth, ownStore, (req, res) => {
+  DISPLAYS.set(req.store.id, { at: Date.now(), state: req.body.state || null });
+  res.json({ ok: true });
+});
+
+/* Read without a session: the screen faces the public and holds no login. It's
+   given only what the till chose to broadcast, and only for one store. */
+app.get("/api/display", (req, res) => {
+  const id = Number(req.query.store);
+  if (!id) return res.status(400).json({ error: "Which store?" });
+  const d = DISPLAYS.get(id);
+  if (!d) return res.json({ at: 0, state: null });
+  /* Stale means the till stopped talking — say nothing rather than show an old
+     total somebody might pay against. */
+  if (Date.now() - d.at > 60000) return res.json({ at: d.at, state: { mode: "idle" } });
+  res.json(d);
+});
+
+/* Nothing here should outlive the shift that made it. */
+setInterval(() => {
+  const cutoff = Date.now() - 10 * 60000;
+  DISPLAYS.forEach((v, k) => { if (v.at < cutoff) DISPLAYS.delete(k); });
+}, 5 * 60000);
+
+/* ------------------------------- the time clock ---------------------------- */
+app.get("/api/clock", auth, ownStore, (req, res) => res.json({
+  settings: CLOCK.settings(req.store.id),
+  wages: CLOCK.wages(req.store.id),
+  onDuty: CLOCK.onDuty(req.store.id)
+}));
+
+app.put("/api/clock", auth, ownStore, (req, res) => {
+  CLOCK.setSettings(req.store.id, req.body.settings || {});
+  if (req.body.wages) Object.entries(req.body.wages)
+    .forEach(([who, rate]) => CLOCK.setWage(req.store.id, who, rate));
+  res.json({ ok: true, settings: CLOCK.settings(req.store.id) });
+});
+
+app.post("/api/clock/in", auth, ownStore, (req, res) =>
+  res.json(CLOCK.clockIn(req.store.id, req.body.who, req.body.at)));
+
+app.post("/api/clock/out", auth, ownStore, (req, res) =>
+  res.json(CLOCK.clockOut(req.store.id, req.body.who, req.body.at, req.body.note)));
+
+app.get("/api/clock/sheet", auth, ownStore, (req, res) => {
+  const from = String(req.query.from || CLOCK.weekStart());
+  const to = String(req.query.to || new Date().toISOString().slice(0, 10));
+  res.json(CLOCK.timesheet(req.store.id, from, to));
+});
+
+app.get("/api/clock/labour", auth, ownStore, (req, res) => {
+  const from = String(req.query.from || new Date().toISOString().slice(0, 10));
+  const to = String(req.query.to || from);
+  res.json(CLOCK.labourVsSales(req.store.id, from, to));
+});
+
+app.post("/api/clock/punch", auth, ownStore, (req, res) => {
+  try { res.json({ ok: true, id: CLOCK.addPunch(req.store.id, req.body, req.body.by) }); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.put("/api/clock/punch/:id", auth, ownStore, (req, res) => {
+  try {
+    CLOCK.editPunch(req.store.id, +req.params.id, req.body, req.body.by);
+    P.audit(req.account.id, "punch-edited", `punch ${req.params.id}`, req);
+    res.json({ ok: true });
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.delete("/api/clock/punch/:id", auth, ownStore, (req, res) => {
+  CLOCK.deletePunch(req.store.id, +req.params.id);
+  P.audit(req.account.id, "punch-deleted", `punch ${req.params.id}`, req);
+  res.json({ ok: true });
+});
+
+app.get("/api/clock/payroll", auth, ownStore, (req, res) => {
+  const from = String(req.query.from || CLOCK.weekStart());
+  const to = String(req.query.to || new Date().toISOString().slice(0, 10));
+  const rows = CLOCK.payrollRows(req.store.id, from, to);
+  if (req.query.format === "csv") {
+    const head = Object.keys(rows[0] || { employee: "" });
+    const esc = v => /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : v;
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename="payroll-${from}.csv"`);
+    return res.send([head.join(",")]
+      .concat(rows.map(r => head.map(h => esc(r[h])).join(","))).join("\r\n"));
+  }
+  res.json({ rows });
+});
+
+/* ---------------------------- central pricebook ----------------------------
+   Account-level, not store-level: this is the owner looking across the estate,
+   so it takes the session's account rather than a store parameter. */
+app.get("/api/central", auth, (req, res) => res.json({
+  groups: CENTRAL.groups(req.account.id),
+  master: CENTRAL.master(req.account.id),
+  pushes: CENTRAL.pushes(req.account.id),
+  scheduled: CENTRAL.scheduled(req.account.id),
+  stores: db.prepare("SELECT id, name FROM stores WHERE account_id = ? ORDER BY id")
+    .all(req.account.id)
+}));
+
+app.post("/api/central/group", auth, (req, res) => {
+  try {
+    const id = CENTRAL.saveGroup(req.account.id, req.body.group || {});
+    if (Array.isArray(req.body.storeIds))
+      CENTRAL.setGroupStores(req.account.id, id, req.body.storeIds);
+    res.json({ ok: true, id, stores: CENTRAL.groupStores(id) });
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.delete("/api/central/group/:id", auth, (req, res) => {
+  CENTRAL.deleteGroup(req.account.id, +req.params.id);
+  res.json({ ok: true });
+});
+
+app.get("/api/central/group/:id", auth, (req, res) =>
+  res.json({ stores: CENTRAL.groupStores(+req.params.id) }));
+
+app.post("/api/central/item", auth, (req, res) => {
+  try { res.json({ ok: true, upc: CENTRAL.saveMaster(req.account.id, req.body.item || {}) }); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.delete("/api/central/item/:upc", auth, (req, res) => {
+  CENTRAL.deleteMaster(req.account.id, req.params.upc);
+  res.json({ ok: true });
+});
+
+app.post("/api/central/adopt", auth, (req, res) => {
+  /* Only from a store this account owns. */
+  const own = db.prepare("SELECT id FROM stores WHERE id = ? AND account_id = ?")
+    .get(+req.body.store, req.account.id);
+  if (!own) return res.status(403).json({ error: "That isn't your store." });
+  try { res.json(CENTRAL.adoptFrom(req.account.id, +req.body.store)); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+/* Preview and apply are the same function, so what's approved is what happens. */
+app.post("/api/central/plan", auth, (req, res) =>
+  res.json(CENTRAL.plan(req.account.id, req.body.groupId || null, { only: req.body.only })));
+
+app.post("/api/central/push", auth, (req, res) => {
+  const r = CENTRAL.apply(req.account.id, req.body.groupId || null,
+    { who: req.body.who, only: req.body.only });
+  P.audit(req.account.id, "pricebook-push",
+    `${r.changed} changes across ${r.stores} stores`, req);
+  res.json(r);
+});
+
+app.post("/api/central/schedule", auth, (req, res) => {
+  try { res.json({ ok: true, added: CENTRAL.schedule(req.account.id, req.body.changes) }); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.delete("/api/central/schedule/:id", auth, (req, res) => {
+  CENTRAL.cancelScheduled(req.account.id, +req.params.id);
+  res.json({ ok: true });
+});
+
+/* Store-level: what this shop holds back from the central book. */
+app.get("/api/overrides", auth, ownStore, (req, res) =>
+  res.json({ overrides: CENTRAL.overrides(req.store.id) }));
+
+app.post("/api/overrides", auth, ownStore, (req, res) => {
+  try {
+    CENTRAL.setOverride(req.store.id, req.body.upc, req.body.field, req.body.value,
+      { reason: req.body.reason, who: req.body.who });
+    res.json({ ok: true });
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.delete("/api/overrides/:upc/:field", auth, ownStore, (req, res) => {
+  CENTRAL.clearOverride(req.store.id, req.params.upc, req.params.field);
+  res.json({ ok: true });
+});
 
 /* -------------------------------- tobacco ---------------------------------- */
 app.get("/api/tobacco", auth, ownStore, (req, res) => res.json({
@@ -1525,6 +1793,23 @@ app.listen(PORT, () => {
     console.log("  the database is unchanged past the last successful migration");
   }
 
+  /* Anything that escapes a route lands here. Without this the only record of
+     a server fault is a line in a log nobody reads. */
+  app.use((err, req, res, next) => {
+    ERR.fromServer(err, req, req && req.path);
+    console.log(`  unhandled: ${req && req.method} ${req && req.path} — ${err && err.message}`);
+    if (res.headersSent) return next(err);
+    res.status(500).json({ error: "Something went wrong at our end." });
+  });
+
+  process.on("unhandledRejection", e => {
+    ERR.record({ kind: "promise", message: e && e.message ? e.message : String(e),
+      where: "server", detail: e && e.stack ? e.stack : "" });
+    console.log("  unhandled rejection: " + (e && e.message ? e.message : e));
+  });
+
+  setInterval(() => { try { ERR.sweep(90); } catch (e) {} }, 24 * 60 * 60 * 1000);
+
   ADMIN.seedOperator(bcrypt);
   resetOnBoot();
 
@@ -1534,6 +1819,19 @@ app.listen(PORT, () => {
   console.log(`  operators: ${ops.length ? ops.map(o => o.email).join(", ") : "none"}`);
   setTimeout(runSweep, 5000);
   setTimeout(pollGauges, 9000);
+
+  /* Price changes dated for today. Run shortly after boot and then hourly, so a
+     price that should move at midnight moves without anybody being there. */
+  const runSchedules = () => {
+    db.prepare("SELECT id FROM accounts").all().forEach(a => {
+      try {
+        const r = CENTRAL.runScheduled(a.id, "schedule");
+        if (r.applied) console.log(`  scheduled prices: ${r.applied} applied, ${r.pushed} pushed`);
+      } catch (e) { console.log("  scheduled prices failed — " + e.message); }
+    });
+  };
+  setTimeout(runSchedules, 12000);
+  setInterval(runSchedules, 60 * 60 * 1000);
   setInterval(pollGauges, 15 * 60 * 1000);
   setInterval(runSweep, 6 * 60 * 60 * 1000);
   if (!KEY) console.warn("  ! ANTHROPIC_API_KEY is not set — AI features will return 503.");
