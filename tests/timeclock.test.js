@@ -184,6 +184,36 @@ chk("one row per person", pay.length === 1);
 chk("with hours split", pay[0].normal_hours === "8.00" && pay[0].overtime_hours === "0.00");
 chk("and a cost", pay[0].cost === "128.00");
 
+console.log("\n── what the till card shows ──");
+db.prepare("DELETE FROM punches").run();
+/* Two days this week, then on the clock now. */
+T.addPunch(1, { who: "Dana", in_at: at(dayOf(0), 8), out_at: at(dayOf(0), 16) }, "x");
+T.addPunch(1, { who: "Dana", in_at: at(dayOf(1), 9), out_at: at(dayOf(1), 14) }, "x");
+let me = T.forPerson(1, "Dana");
+console.log(`   ${me.who}: ${me.weekHours}h this week over ${me.daysThisWeek} days, ` +
+  `on now: ${me.on}`);
+chk("the week adds up", near(me.weekHours, 13));
+chk("days worked are counted", me.daysThisWeek === 2);
+chk("not on the clock", me.on === false && me.minutes === 0);
+chk("and it knows the overtime line", me.overtimeAfter === 40 && me.intoOvertime === false);
+
+T.clockIn(1, "Dana", at(dayOf(2), 10));
+me = T.forPerson(1, "Dana");
+chk("on the clock is reported", me.on === true && !!me.since);
+chk("with minutes so far", me.minutes >= 0);
+
+/* Somebody already past forty should be told before they start. */
+for (let d = 3; d < 8; d++)
+  T.addPunch(1, { who: "Heavy", in_at: at(dayOf(d - 3), 6), out_at: at(dayOf(d - 3), 18) }, "x");
+const heavy = T.forPerson(1, "Heavy");
+console.log(`   Heavy: ${heavy.weekHours}h — into overtime: ${heavy.intoOvertime}`);
+chk("past the threshold is flagged", heavy.intoOvertime === true);
+
+chk("somebody with no punches doesn't throw",
+  T.forPerson(1, "Nobody").weekHours === 0);
+chk("and another store's hours never appear",
+  T.forPerson(2, "Dana").weekHours === 0);
+
 console.log("\n── store isolation ──");
 chk("another store has nobody on duty", T.onDuty(2).length === 0);
 chk("and an empty sheet", T.timesheet(2, MON, dayOf(13)).people.length === 0);

@@ -1355,12 +1355,19 @@ function drawRail(){
     `<button class="rbtn ${k===VIEW?"on":""}" data-v="${k}" ${perm&&!can(perm)?'disabled style="opacity:.3"':""}>
       <svg viewBox="0 0 24 24">${ICONS[ic]}</svg><span>${label}</span>
       ${k==="office"?`<span class="badge" style="display:none">0</span>`:""}</button>`).join("")
-    +`<div class="railfoot"><button class="rbtn" id="railLock"><svg viewBox="0 0 24 24">${ICONS.lock}</svg><span>Lock</span></button></div>`;
+    +`<div class="railfoot">
+      <button class="rbtn" id="railClock" title="Time clock">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        <span>Clock</span></button>
+      <button class="rbtn" id="railLock"><svg viewBox="0 0 24 24">${ICONS.lock}</svg><span>Lock</span></button></div>`;
   $("rail").querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>{
     const perm=NAV.find(n=>n[0]===b.dataset.v)[3];
     if(perm&&!can(perm))return auth(perm,`Opening ${b.dataset.v}`,()=>go(b.dataset.v));
     go(b.dataset.v)});
   $("railLock").onclick=()=>{ME=null;signIn()};
+  const rc=$("railClock");
+  if(rc)rc.onclick=()=>{ if(typeof openClock==="function") openClock(); };
 }
 function go(v){
   VIEW=v;drawRail();

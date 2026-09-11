@@ -26,6 +26,7 @@ dsp=open(f"{SRC}/display.js").read()
 err=open(f"{SRC}/errors-ui.js").read()
 svc=open(f"{SRC}/services-ui.js").read()
 clk=open(f"{SRC}/clock-ui.js").read()
+ctl=open(f"{SRC}/clock-till.js").read()
 cfg=open(f"{SRC}/config.js").read()
 per=open("lib/persist.js").read()
 off=open("lib/offline.js").read()
@@ -85,7 +86,7 @@ css+='''
 
 shell=open("shell.html").read()
 html=(shell.replace("__CSS__",css).replace("__APP__",app).replace("__PRI__",pri)
-      .replace("__THM__",thm).replace("__IMP__",imp).replace("__HW__",hw).replace("__MOD__",mod).replace("__MOD2__",mod2).replace("__STUDIO__",stu).replace("__CLASSIC__",cls).replace("__SHELLS__",shl).replace("__MENUSHELL__",msh).replace("__SHELLS2__",sh2).replace("__SHELLS3__",sh3).replace("__LICENCE__",lic).replace("__STOCKUI__",stk).replace("__REPORTSUI__",rpt).replace("__PURUI__",pur).replace("__LOYUI__",loy).replace("__TOBUI__",tob).replace("__CENUI__",cen).replace("__DISPLAY__",dsp).replace("__ERRORSUI__",err).replace("__SVCUI__",svc).replace("__CLKUI__",clk).replace("__CFG__",cfg).replace("__OFFLINE__",off).replace("__PERSIST__",per)
+      .replace("__THM__",thm).replace("__IMP__",imp).replace("__HW__",hw).replace("__MOD__",mod).replace("__MOD2__",mod2).replace("__STUDIO__",stu).replace("__CLASSIC__",cls).replace("__SHELLS__",shl).replace("__MENUSHELL__",msh).replace("__SHELLS2__",sh2).replace("__SHELLS3__",sh3).replace("__LICENCE__",lic).replace("__STOCKUI__",stk).replace("__REPORTSUI__",rpt).replace("__PURUI__",pur).replace("__LOYUI__",loy).replace("__TOBUI__",tob).replace("__CENUI__",cen).replace("__DISPLAY__",dsp).replace("__ERRORSUI__",err).replace("__SVCUI__",svc).replace("__CLKUI__",clk).replace("__CLKTILL__",ctl).replace("__CFG__",cfg).replace("__OFFLINE__",off).replace("__PERSIST__",per)
       .replace(head_old,head_new).replace(lock_old,lock_new))
 os.makedirs("public",exist_ok=True)
 open("public/app.html","w").write(html)
@@ -116,6 +117,7 @@ checks = [
     ("build stamped",             lambda h: 'const BUILD="' in h),
     ("module registry",           lambda h: "const MODULES = {" in h),
     ("design studio",             lambda h: "function openStudio" in h and "launchPOS" in h),
+    ("clocking in at the till",   lambda h: "function openClock" in h and "function clockCard" in h),
     ("time clock",                lambda h: "function tClock" in h and "function clkLabour" in h),
     ("forecourt services",        lambda h: "function tServices2" in h and "function svcRec" in h),
     ("error reporting",           lambda h: "function reportError" in h and "unhandledrejection" in h),

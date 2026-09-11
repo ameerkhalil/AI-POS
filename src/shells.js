@@ -36,6 +36,7 @@ window.__sh = {
     const el = veil(`<div class="card"><h3>${esc(CFG.site.name)}</h3>
       <p>Signed in as ${esc(ME ? ME.n : "")} · Register ${esc(CFG.site.register)}</p>
       <div class="opts" style="flex-direction:column;margin-top:16px">
+        <button data-g="clock" style="width:100%">Time clock — in or out</button>
         <button data-g="office" style="width:100%">Office — shift, cash, tasks</button>
         <button data-g="reports" style="width:100%">Reports</button>
         <button data-g="config" style="width:100%">Settings</button>
@@ -46,6 +47,7 @@ window.__sh = {
     el.querySelector("#shx").onclick = () => el.remove();
     el.querySelectorAll("[data-g]").forEach(b => b.onclick = () => {
       const g = b.dataset.g; el.remove();
+      if (g === "clock") return openClock();
       if (g === "ret") return toggleReturn();
       if (g === "lock") return lock();
       go(g);

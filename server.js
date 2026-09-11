@@ -680,11 +680,24 @@ app.put("/api/clock", auth, ownStore, (req, res) => {
   res.json({ ok: true, settings: CLOCK.settings(req.store.id) });
 });
 
-app.post("/api/clock/in", auth, ownStore, (req, res) =>
-  res.json(CLOCK.clockIn(req.store.id, req.body.who, req.body.at)));
+app.post("/api/clock/in", auth, ownStore, (req, res) => {
+  const r = CLOCK.clockIn(req.store.id, req.body.who, req.body.at);
+  /* Returned together so the till can show the card without a second request
+     — a cashier is standing at a counter, not waiting on a round trip. */
+  res.json({ ...r, person: CLOCK.forPerson(req.store.id, req.body.who) });
+});
 
-app.post("/api/clock/out", auth, ownStore, (req, res) =>
-  res.json(CLOCK.clockOut(req.store.id, req.body.who, req.body.at, req.body.note)));
+app.post("/api/clock/out", auth, ownStore, (req, res) => {
+  const r = CLOCK.clockOut(req.store.id, req.body.who, req.body.at, req.body.note);
+  res.json({ ...r, person: CLOCK.forPerson(req.store.id, req.body.who) });
+});
+
+/* One person, for the till. */
+app.get("/api/clock/who", auth, ownStore, (req, res) => {
+  const who = String(req.query.who || "");
+  if (!who) return res.status(400).json({ error: "Who?" });
+  res.json(CLOCK.forPerson(req.store.id, who));
+});
 
 app.get("/api/clock/sheet", auth, ownStore, (req, res) => {
   const from = String(req.query.from || CLOCK.weekStart());
