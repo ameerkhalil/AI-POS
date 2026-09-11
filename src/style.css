@@ -2838,3 +2838,27 @@ body.tp-plain .grand .amt{font-size:40px}
   .cc-stat{opacity:1;transform:none}
   .cc-note{opacity:1}
 }
+
+/* the code pad */
+.codepad{max-width:340px;text-align:center}
+.codepad h3,.codepad p{text-align:left}
+.cdots{display:flex;justify-content:center;gap:14px;margin:22px 0 6px}
+.cdots i{width:13px;height:13px;border-radius:50%;border:2px solid var(--line-2);
+  transition:background .12s,border-color .12s,transform .12s}
+.cdots i.on{background:var(--vfd);border-color:var(--vfd);transform:scale(1.12)}
+.cdots.wrong{animation:cshake .4s}
+.cdots.wrong i{border-color:var(--void);background:transparent}
+@keyframes cshake{
+  0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)}
+  40%{transform:translateX(7px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(3px)}}
+.cmsg{min-height:20px;font-size:13px;color:var(--void);margin-bottom:8px}
+.cpad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.cpad button{padding:18px 0;border-radius:var(--r2);border:1px solid var(--line);
+  background:var(--up);font-family:var(--fm),monospace;font-size:21px;
+  transition:background .1s,transform .08s}
+.cpad button:hover{background:var(--hi)}
+.cpad button:active{transform:translateY(1px)}
+.cpad button.wide{font-family:var(--ff),sans-serif;font-size:19px}
+.cpad button.go{background:var(--vfd);color:#0E241C;border-color:var(--vfd);
+  font-family:var(--ff),sans-serif;font-size:15px;font-weight:600}
+.cc-by{font-size:13px;color:var(--txt-3);margin-top:5px}

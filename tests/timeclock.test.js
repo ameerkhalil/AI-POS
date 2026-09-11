@@ -36,48 +36,106 @@ T.setSettings(1, { on: true, week_hours: 40, ot_multiplier: 1.5 });
 T.setWage(1, "Dana", 16.00);
 T.setWage(1, "Sam", 18.50);
 
+/* Codes live in the store's configuration, which is where the server reads
+   them from. */
+db.prepare("INSERT INTO configs (store_id,json) VALUES (1,?)").run(JSON.stringify({
+  employees: [
+    { n: "Dana", role: "Cashier", pin: "1111" },
+    { n: "Sam", role: "Cashier", pin: "2222" },
+    { n: "Ameer", role: "Manager", pin: "9999" },
+    { n: "Rounder", role: "Cashier", pin: "3333" },
+    { n: "Longshift", role: "Cashier", pin: "4444" },
+    { n: "Shortshift", role: "Cashier", pin: "5555" },
+    { n: "Forgetful", role: "Cashier", pin: "6666" }
+  ]
+}));
+const PIN = { Dana: "1111", Sam: "2222", Ameer: "9999", Rounder: "3333",
+  Longshift: "4444", Shortshift: "5555", Forgetful: "6666" };
+
 console.log("── punching ──");
-let r = T.clockIn(1, "Dana", at(MON, 6));
+let r = T.clockIn(1, "Dana", at(MON, 6), PIN.Dana);
 chk("clocking in works", r.ok && !r.alreadyIn);
 chk("they're on duty", T.onDuty(1).length === 1);
 
-r = T.clockIn(1, "Dana", at(MON, 6, 30));
+r = T.clockIn(1, "Dana", at(MON, 6, 30), PIN.Dana);
 chk("a second clock-in is never refused", r.ok === true);
 chk("but it says the shift was already open", r.alreadyIn === true && !!r.warning);
 chk("and doesn't open a second one", T.onDuty(1).length === 1);
 
-r = T.clockOut(1, "Dana", at(MON, 14));
+r = T.clockOut(1, "Dana", at(MON, 14), null, PIN.Dana);
 console.log(`   worked ${r.hours} hours`);
 chk("clocking out closes it", r.ok && near(r.hours, 8));
 chk("nobody is left on duty", T.onDuty(1).length === 0);
 
-r = T.clockOut(1, "Dana", at(MON, 15));
+r = T.clockOut(1, "Dana", at(MON, 15), null, PIN.Dana);
 chk("clocking out twice is refused with a reason", !r.ok && r.error.includes("aren't clocked in"));
 
-T.clockIn(1, "Sam", at(MON, 14));
-r = T.clockOut(1, "Sam", at(MON, 13));
+T.clockIn(1, "Sam", at(MON, 14), PIN.Sam);
+r = T.clockOut(1, "Sam", at(MON, 13), null, PIN.Sam);
 chk("clocking out before clocking in is refused", !r.ok);
-T.clockOut(1, "Sam", at(MON, 22));
+T.clockOut(1, "Sam", at(MON, 22), null, PIN.Sam);
+
+console.log("\n── nobody punches for anybody else ──");
+db.prepare("DELETE FROM punches").run();
+
+let r2 = T.clockIn(1, "Dana", at(MON, 6), "0000");
+chk("a wrong code is refused", r2.ok === false && /doesn't match/.test(r2.error));
+chk("and nothing was recorded", T.onDuty(1).length === 0);
+
+r2 = T.clockIn(1, "Dana", at(MON, 6), "");
+chk("no code at all is refused", r2.ok === false);
+
+r2 = T.clockIn(1, "Dana", at(MON, 6), PIN.Sam);
+console.log(`   using Sam's code for Dana: ${r2.error}`);
+chk("a colleague's code is refused", r2.ok === false);
+chk("and it says whose it was, so it isn't a guessing game",
+  /Sam/.test(r2.error));
+chk("still nothing recorded", T.onDuty(1).length === 0);
+
+r2 = T.clockIn(1, "Dana", at(MON, 6), PIN.Dana);
+chk("their own code works", r2.ok === true && r2.self !== false);
+chk("and it's recorded as theirs",
+  db.prepare("SELECT note FROM punches WHERE who='Dana'").get().note === null);
+
+console.log("\n── a manager can fix somebody's punch ──");
+r2 = T.clockOut(1, "Dana", at(MON, 14), null, PIN.Ameer);
+console.log(`   ${r2.by} clocked Dana out on her behalf`);
+chk("a manager's code works for another person", r2.ok === true);
+chk("it's marked as done on their behalf", r2.onBehalf === true && r2.by === "Ameer");
+chk("and the punch says who did it",
+  /clocked out by Ameer/.test(db.prepare("SELECT note FROM punches WHERE who='Dana'").get().note));
+
+console.log("\n── guessing is slowed down ──");
+for (let i = 0; i < 5; i++) T.clockIn(1, "Sam", at(MON, 8), "0" + i + "00");
+const locked = T.clockIn(1, "Sam", at(MON, 8), PIN.Sam);
+console.log(`   after five wrong tries: ${locked.error}`);
+chk("too many wrong codes locks it briefly", locked.ok === false &&
+  /Too many/.test(locked.error));
+chk("even the right code won't get through", T.onDuty(1).every(p => p.who !== "Sam"));
+chk("but only for that person",
+  T.clockIn(1, "Rounder", at(MON, 8), PIN.Rounder).ok === true);
+
+db.prepare("DELETE FROM punches").run();
 
 console.log("\n── rounding ──");
 T.setSettings(1, { round_mins: 15 });
-T.clockIn(1, "Rounder", at(MON, 6, 7));
+T.clockIn(1, "Rounder", at(MON, 6, 7), PIN.Rounder);
 const rp = T.openPunch(1, "Rounder");
 console.log(`   punched 06:07, recorded ${rp.in_at.slice(11, 16)}`);
 chk("a punch rounds to the nearest quarter", rp.in_at.includes("06:00"));
-T.clockOut(1, "Rounder", at(MON, 14, 8));
+T.clockOut(1, "Rounder", at(MON, 14, 8), null, PIN.Rounder);
 chk("and so does clocking out",
   db.prepare("SELECT out_at FROM punches WHERE who='Rounder'").get().out_at.includes("14:15"));
 T.setSettings(1, { round_mins: 0 });
 
 console.log("\n── automatic breaks ──");
 T.setSettings(1, { auto_break: 30, auto_break_after: 6 });
-T.clockIn(1, "Longshift", at(dayOf(1), 6));
-r = T.clockOut(1, "Longshift", at(dayOf(1), 14));
+T.clockIn(1, "Longshift", at(dayOf(1), 6), PIN.Longshift);
+r = T.clockOut(1, "Longshift", at(dayOf(1), 14), null, PIN.Longshift);
 console.log(`   8 hours worked, ${r.paidHours} paid`);
 chk("a long shift loses its break", near(r.paidHours, 7.5));
-T.clockIn(1, "Shortshift", at(dayOf(1), 9));
-r = T.clockOut(1, "Shortshift", at(dayOf(1), 13));
+T.clockIn(1, "Shortshift", at(dayOf(1), 9), PIN.Shortshift);
+r = T.clockOut(1, "Shortshift", at(dayOf(1), 13), null, PIN.Shortshift);
 chk("a short one doesn't", near(r.paidHours, 4));
 T.setSettings(1, { auto_break: 0, auto_break_after: 0 });
 
@@ -85,8 +143,8 @@ console.log("\n── overtime is per week ──");
 /* Dana: 9 hours a day, Monday to Saturday = 54 hours */
 db.prepare("DELETE FROM punches WHERE who = 'Dana'").run();
 for (let d = 0; d < 6; d++) {
-  T.clockIn(1, "Dana", at(dayOf(d), 8));
-  T.clockOut(1, "Dana", at(dayOf(d), 17));
+  T.clockIn(1, "Dana", at(dayOf(d), 8), PIN.Dana);
+  T.clockOut(1, "Dana", at(dayOf(d), 17), null, PIN.Dana);
 }
 let sheet = T.timesheet(1, MON, dayOf(6));
 let dana = sheet.people.find(p => p.who === "Dana");
@@ -100,8 +158,8 @@ chk("overtime is paid at the multiplier",
 
 /* the following week, also 54 hours: two weeks of overtime, not one big one */
 for (let d = 7; d < 13; d++) {
-  T.clockIn(1, "Dana", at(dayOf(d), 8));
-  T.clockOut(1, "Dana", at(dayOf(d), 17));
+  T.clockIn(1, "Dana", at(dayOf(d), 8), PIN.Dana);
+  T.clockOut(1, "Dana", at(dayOf(d), 17), null, PIN.Dana);
 }
 sheet = T.timesheet(1, MON, dayOf(13));
 dana = sheet.people.find(p => p.who === "Dana");
@@ -110,7 +168,7 @@ chk("a fortnight is two weeks, not one long one",
   near(dana.normalHours, 80) && near(dana.overtimeHours, 28));
 
 console.log("\n── things that need a human ──");
-T.clockIn(1, "Forgetful", at(dayOf(2), 8));
+T.clockIn(1, "Forgetful", at(dayOf(2), 8), PIN.Forgetful);
 sheet = T.timesheet(1, MON, dayOf(13));
 console.log("   " + sheet.problems.map(p => `${p.who}: ${p.kind}`).join(", "));
 chk("a shift never closed is flagged",
@@ -124,7 +182,11 @@ chk("an implausibly long shift is flagged",
   sheet.problems.some(p => p.who === "Marathon" && p.kind === "very long"));
 
 console.log("\n── edits keep the original ──");
-const punch = db.prepare("SELECT id FROM punches WHERE who='Sam' LIMIT 1").get();
+/* Its own punch, rather than whatever an earlier section happened to leave
+   behind — a test that depends on the state above it breaks whenever anything
+   is inserted before it. */
+const punchId = T.addPunch(1, { who: "Sam", in_at: at(MON, 14), out_at: at(MON, 22) }, "setup");
+const punch = { id: punchId };
 T.editPunch(1, punch.id, { out_at: at(MON, 20) }, "Ameer");
 let row = db.prepare("SELECT * FROM punches WHERE id = ?").get(punch.id);
 console.log(`   original kept: ${row.original}`);
@@ -197,7 +259,7 @@ chk("days worked are counted", me.daysThisWeek === 2);
 chk("not on the clock", me.on === false && me.minutes === 0);
 chk("and it knows the overtime line", me.overtimeAfter === 40 && me.intoOvertime === false);
 
-T.clockIn(1, "Dana", at(dayOf(2), 10));
+T.clockIn(1, "Dana", at(dayOf(2), 10), PIN.Dana);
 me = T.forPerson(1, "Dana");
 chk("on the clock is reported", me.on === true && !!me.since);
 chk("with minutes so far", me.minutes >= 0);

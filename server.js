@@ -681,14 +681,17 @@ app.put("/api/clock", auth, ownStore, (req, res) => {
 });
 
 app.post("/api/clock/in", auth, ownStore, (req, res) => {
-  const r = CLOCK.clockIn(req.store.id, req.body.who, req.body.at);
+  const r = CLOCK.clockIn(req.store.id, req.body.who, req.body.at, req.body.code);
+  if (!r.ok) return res.status(403).json(r);
   /* Returned together so the till can show the card without a second request
      — a cashier is standing at a counter, not waiting on a round trip. */
   res.json({ ...r, person: CLOCK.forPerson(req.store.id, req.body.who) });
 });
 
 app.post("/api/clock/out", auth, ownStore, (req, res) => {
-  const r = CLOCK.clockOut(req.store.id, req.body.who, req.body.at, req.body.note);
+  const r = CLOCK.clockOut(req.store.id, req.body.who, req.body.at, req.body.note,
+    req.body.code);
+  if (!r.ok) return res.status(403).json(r);
   res.json({ ...r, person: CLOCK.forPerson(req.store.id, req.body.who) });
 });
 

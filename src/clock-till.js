@@ -33,9 +33,11 @@ async function openClock() {
     </div>
     <div class="row"><button class="no" id="cx">Close</button></div></div>`);
 
-  const close = () => { CLOCKING = false; el.remove(); };
-  el.querySelector("#cx").onclick = close;
-  el.onclick = e => { if (e.target === el) close(); };
+  /* The picker hands over to the code pad, which owns the flag from there. */
+  const close = () => { el.remove(); };
+  const abandon = () => { CLOCKING = false; el.remove(); };
+  el.querySelector("#cx").onclick = abandon;
+  el.onclick = e => { if (e.target === el) abandon(); };
 
   /* Who's already on, so the button says the right thing before it's pressed. */
   const cards = [...el.querySelectorAll(".cperson")];
@@ -53,26 +55,99 @@ async function openClock() {
     }
   }));
 
-  cards.forEach(b => b.onclick = async () => {
+  cards.forEach(b => b.onclick = () => {
     const who = b.dataset.who;
     const dir = b.dataset.on === "1" ? "out" : "in";
-    b.disabled = true;
-    b.querySelector("em").textContent = dir === "in" ? "clocking in…" : "clocking out…";
+    close();
+    askCode(who, dir);
+  });
+}
+
+/* The code. On the person's own terminal, in front of whoever else is standing
+   there — so the digits never appear, and there's no list of names to guess
+   against because the name was already chosen. */
+function askCode(who, dir) {
+  let entered = "";
+
+  const el = veil(`<div class="card codepad">
+    <h3>${esc(who)}</h3>
+    <p>${dir === "in" ? "Clocking in" : "Clocking out"} — enter your own sign-in code.
+      A manager's code works too, and is recorded as theirs.</p>
+    <div class="cdots" id="cdots">${[0,1,2,3].map(() => `<i></i>`).join("")}</div>
+    <div class="cmsg" id="cmsg"></div>
+    <div class="cpad">
+      ${[1,2,3,4,5,6,7,8,9].map(n => `<button data-k="${n}">${n}</button>`).join("")}
+      <button data-k="del" class="wide">←</button>
+      <button data-k="0">0</button>
+      <button data-k="ok" class="go">Enter</button>
+    </div>
+    <div class="row"><button class="no" id="kx">Cancel</button></div></div>`);
+
+  const dots = el.querySelector("#cdots");
+  const msg = el.querySelector("#cmsg");
+  const paint = () => {
+    [...dots.children].forEach((d, i) => d.classList.toggle("on", i < entered.length));
+  };
+  const shake = text => {
+    msg.textContent = text;
+    dots.classList.add("wrong");
+    setTimeout(() => dots.classList.remove("wrong"), 420);
+    entered = "";
+    paint();
+  };
+
+  const submit = async () => {
+    if (entered.length < 4) return shake("That's not a full code.");
+    const code = entered;
+    entered = ""; paint();
+    msg.textContent = "Checking…";
     try {
       const r = await api(`/api/clock/${dir}?store=${STORE_ID}`, { method: "POST",
-        body: { store: STORE_ID, who } });
-      if (r.ok === false) {
-        b.disabled = false;
-        b.querySelector("em").textContent = r.error || "that didn't work";
-        return;
-      }
-      close();
+        body: { store: STORE_ID, who, code } });
+      if (r.ok === false) return shake(r.error || "That didn't work.");
+      el.remove();
       clockCard(dir, who, r);
     } catch (e) {
-      b.disabled = false;
-      b.querySelector("em").textContent = e.message;
+      /* A refused code comes back as an error, so read the message rather than
+         assuming it was a network problem. */
+      shake(e.message || "That didn't work.");
     }
+  };
+
+  el.querySelectorAll("[data-k]").forEach(b => b.onclick = () => {
+    const k = b.dataset.k;
+    if (k === "del") entered = entered.slice(0, -1);
+    else if (k === "ok") return submit();
+    else if (entered.length < 4) entered += k;
+    msg.textContent = "";
+    paint();
+    /* Four digits is a whole code; waiting for Enter is a keystroke nobody
+       needs. */
+    if (entered.length === 4) setTimeout(submit, 120);
   });
+
+  /* The keypad on the counter works too — most tills have one. */
+  const keys = e => {
+    if (/^[0-9]$/.test(e.key)) {
+      if (entered.length < 4) entered += e.key;
+      msg.textContent = "";
+      paint();
+      if (entered.length === 4) setTimeout(submit, 120);
+    } else if (e.key === "Backspace") { entered = entered.slice(0, -1); paint(); }
+    else if (e.key === "Enter") submit();
+    else if (e.key === "Escape") done();
+    e.preventDefault();
+  };
+  document.addEventListener("keydown", keys);
+
+  const done = () => {
+    document.removeEventListener("keydown", keys);
+    CLOCKING = false;
+    el.remove();
+  };
+  el.querySelector("#kx").onclick = done;
+  el.onclick = e => { if (e.target === el) done(); };
+  paint();
 }
 
 /* "7h 20m" rather than "7.33", because nobody thinks in decimal hours. */
@@ -112,6 +187,7 @@ function clockCard(dir, who, r) {
       </div>
 
       <div class="cc-who">${esc(who)}</div>
+      ${r.onBehalf ? `<div class="cc-by">by ${esc(r.by)}</div>` : ""}
       <div class="cc-what">${dir === "in" ? "clocked in" : "clocked out"}
         <b>${esc(clockTime(dir === "in" ? inAt : new Date().toISOString()))}</b></div>
 
@@ -143,6 +219,7 @@ function clockCard(dir, who, r) {
         : `<div class="cc-note">Thanks — see you next time.</div>`}
     </div>`;
 
+  CLOCKING = false;
   document.body.appendChild(el);
   requestAnimationFrame(() => el.classList.add("up"));
 
